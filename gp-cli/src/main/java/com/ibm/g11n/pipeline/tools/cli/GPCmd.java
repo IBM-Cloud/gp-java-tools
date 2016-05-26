@@ -38,12 +38,13 @@ public class GPCmd {
 
         jc.addCommand("help", new HelpCmd());
 
-        jc.addCommand("list-bundle", new ListBundleCmd(), "list");
+        jc.addCommand("list-bundle", new ListBundlesCmd(), "list");
         jc.addCommand("show-bundle", new ShowBundleCmd(), "show");
         jc.addCommand("create-bundle", new CreateBundleCmd(), "create");
         jc.addCommand("delete-bundle", new DeleteBundleCmd(), "delete");
         jc.addCommand("export", new ExportCmd());
         jc.addCommand("import", new ImportCmd());
+        jc.addCommand("list-mt-languages", new ListMTLanguagesCmd());
 
         //users
         jc.addCommand("list-users", new ListUsersCmd());

@@ -1,4 +1,4 @@
-/*  
+/*
  * Copyright IBM Corp. 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,19 +22,23 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.text.BreakIterator;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Scanner;
+import java.util.TreeSet;
+
+import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 
 public class IOSStringsResource implements ResourceFilter {
 
     private static final String CHARSET_STRING = "UTF-8";
 
     @Override
-    public Map<String, String> parse(InputStream in) throws IOException {
-        Map<String, String> map = new HashMap<String, String>();
+    public Collection<ResourceString> parse(InputStream in) throws IOException {
+        Collection<ResourceString> resultCol = new LinkedList<ResourceString>();
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
         String temp = "";
+        int sequenceNum = 0;
         while ((temp = br.readLine()) != null) {
             int index;
             // looking for key = value
@@ -47,32 +51,39 @@ public class IOSStringsResource implements ResourceFilter {
                 valueString.append(value);
 
                 while (temp.indexOf(";") == -1) {
+                    // TODO: null handling?
                     temp = br.readLine();
                     valueString.append(temp.trim().replace(";", "").replaceAll("%@\n *", ""));
                 }
-
-                map.put(key, valueString.toString());
+                ResourceString res = new ResourceString(key, valueString.toString());
+                sequenceNum++;
+                res.setSequenceNumber(sequenceNum);
+                resultCol.add(res);
             }
         }
 
-        return map;
+        return resultCol;
     }
 
     @Override
-    public void write(OutputStream os, String language, Map<String, String> map) throws IOException {
+    public void write(OutputStream os, String language, Collection<ResourceString> resStrings) throws IOException {
+        TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
+        sortedResources.addAll(resStrings);
+
         StringBuilder temp = new StringBuilder(100);
-        for (String key : map.keySet()) {
+        for (ResourceString res : sortedResources) {
             // empties the buffer
             temp.setLength(0);
-
-            String value = map.get(key);
-            temp.append(key).append("=").append(value).append("\n");
+            temp.append("\"").append(res.getKey()).append("\"");
+            temp.append(" = ");
+            temp.append("\"").append(res.getValue()).append("\";");
+            temp.append("\n");
             os.write(temp.toString().getBytes(Charset.forName(CHARSET_STRING)));
         }
     }
 
     @Override
-    public void merge(InputStream base, OutputStream os, String language, Map<String, String> map) throws IOException {
+    public void merge(InputStream base, OutputStream os, String language, Collection<ResourceString> resStrings) throws IOException {
         Scanner in = new Scanner(base, "UTF-8");
         String line = "";
         while (in.hasNextLine()) {
@@ -81,44 +92,46 @@ public class IOSStringsResource implements ResourceFilter {
                 os.write(line.getBytes());
             } else {
                 String key = line.substring(0, line.indexOf("=")).trim();
-                if (map.containsKey(key)) {
-                    StringBuilder temp = new StringBuilder(100);
-                    temp.append("\"").append(key).append("=").append("\"");
+                for (ResourceString res : resStrings) {
+                    if (res.getKey() == key) {
+                        StringBuilder temp = new StringBuilder(100);
+                        temp.append("\"").append(key).append("=").append("\"");
 
-                    final int character_offset = 80;
-                    BreakIterator b = BreakIterator.getWordInstance();
-                    b.setText(map.get(key));
+                        final int character_offset = 80;
+                        BreakIterator b = BreakIterator.getWordInstance();
+                        b.setText(res.getValue());
 
-                    int offset = 80;
-                    int start = 0;
+                        int offset = 80;
+                        int start = 0;
 
-                    boolean first = true;
+                        boolean first = true;
 
-                    while (start < map.get(key).length()) {
-                        if (map.get(key).length() > character_offset) {
-                            if (first) {
-                                temp.append("\"");
+                        while (start < res.getValue().length()) {
+                            if (res.getValue().length() > character_offset) {
+                                if (first) {
+                                    temp.append("\"");
+                                }
+                                if (!first) {
+                                    temp.append(" ");
+                                }
+
+                                first = false;
+                                int end = b.following(offset);
+                                String str = res.getValue().substring(start, end);
+                                start = end;
+                                offset += 80;
+                                temp.append(str).append(" %@\n");
+                            } else {
+                                temp.append("\"").append(res.getValue());
+                                start = res.getValue().length();
                             }
-                            if (!first) {
-                                temp.append(" ");
-                            }
-
-                            first = false;
-                            int end = b.following(offset);
-                            String str = map.get(key).substring(start, end);
-                            start = end;
-                            offset += 80;
-                            temp.append(str).append(" %@\n");
-                        } else {
-                            temp.append("\"").append(map.get(key));
-                            start = map.get(key).length();
                         }
-                    }
 
-                    temp.append("\";");
-                    os.write(temp.toString().getBytes(Charset.forName(CHARSET_STRING)));
-                } else {
-                    os.write(line.getBytes());
+                        temp.append("\";");
+                        os.write(temp.toString().getBytes(Charset.forName(CHARSET_STRING)));
+                    } else {
+                        os.write(line.getBytes());
+                    }
                 }
             }
         }

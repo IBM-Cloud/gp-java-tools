@@ -26,7 +26,7 @@ import com.ibm.g11n.pipeline.client.ServiceException;
  * @author Yoshito Umaoka
  */
 @Parameters(commandDescription = "Prints out translation bundle IDs.")
-final class ListBundleCmd extends ServiceInstanceCmd {
+final class ListBundlesCmd extends ServiceInstanceCmd {
     @Override
     protected void _execute() {
         try {

@@ -18,13 +18,17 @@ package com.ibm.g11n.pipeline.tools.cli;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.ibm.g11n.pipeline.client.NewResourceEntryData;
 import com.ibm.g11n.pipeline.client.ServiceException;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilter;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterFactory;
+import com.ibm.g11n.pipeline.resfilter.ResourceString;
 import com.ibm.g11n.pipeline.resfilter.ResourceType;
 
 /**
@@ -55,18 +59,27 @@ final class ImportCmd extends BundleCmd {
 
     @Override
     protected void _execute() {
-        Map<String, String> resStrings = null;
+        Map<String, NewResourceEntryData> resEntries = null;
         ResourceFilter filter = ResourceFilterFactory.get(type);
         File f = new File(fileName);
         try (FileInputStream fis = new FileInputStream(f)) {
-            resStrings = filter.parse(fis);
+            Collection<ResourceString> resStrings = filter.parse(fis);
+            resEntries = new HashMap<>(resStrings.size());
+            for (ResourceString resString : resStrings) {
+                NewResourceEntryData resEntryData = new NewResourceEntryData(resString.getValue());
+                int seqNum = resString.getSequenceNumber();
+                if (seqNum >= 0) {
+                    resEntryData.setSequenceNumber(Integer.valueOf(seqNum));
+                }
+                resEntries.put(resString.getKey(), resEntryData);
+            }
         } catch (IOException e) {
             throw new RuntimeException("Failed to read the resoruce data from "
                     + fileName + ": " + e.getMessage(), e);
         }
 
         try {
-            getClient().uploadResourceStrings(bundleId, languageId, resStrings);
+            getClient().uploadResourceEntries(bundleId, languageId, resEntries);
         } catch (ServiceException e) {
             throw new RuntimeException(e);
         }

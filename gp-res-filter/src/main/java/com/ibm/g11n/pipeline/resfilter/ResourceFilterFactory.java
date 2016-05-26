@@ -1,4 +1,4 @@
-/*  
+/*
  * Copyright IBM Corp. 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@ package com.ibm.g11n.pipeline.resfilter;
 
 /**
  * Factory for ResourceFilter.
- * 
+ *
  * @author Yoshito Umaoka
  */
 public class ResourceFilterFactory {
@@ -63,7 +63,7 @@ public class ResourceFilterFactory {
             return new IOSStringsResource();
         case POT:
             return new POTResource();
-        case PO: 
+        case PO:
             return new POResource();
         }
         throw new IllegalArgumentException("Unknown resource type: " + type);

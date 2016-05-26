@@ -1,4 +1,4 @@
-/*  
+/*
  * Copyright IBM Corp. 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@ package com.ibm.g11n.pipeline.resfilter;
 
 /**
  * An exception used when input resource data is illegal.
- * 
+ *
  * @author Yoshito Umaoka
  */
 public class IllegalResourceFormatException extends RuntimeException {

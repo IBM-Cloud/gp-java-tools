@@ -1,4 +1,4 @@
-/*  
+/*
  * Copyright IBM Corp. 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,12 +21,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.text.BreakIterator;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
+import java.util.TreeSet;
 
 import org.mozilla.javascript.Node;
 import org.mozilla.javascript.Parser;
@@ -40,16 +44,23 @@ import org.mozilla.javascript.ast.ObjectProperty;
 import org.mozilla.javascript.ast.ParenthesizedExpression;
 import org.mozilla.javascript.ast.StringLiteral;
 
+import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
+
 /**
  * AMD i18n JS resource filter implementation.
- * 
+ *
  * @author Yoshito Umaoka
  */
 public class AmdJsResource implements ResourceFilter {
 
-    private static class KeyValueVisitor implements NodeVisitor {
-        Map<String, String> elements = new HashMap<String, String>();
+    private static String KEY_LINE_PATTERN = "^\\s*\".+\" *:.*";
+    private static String ENTRY_END_LINE_PATTERN = ".*[\\},]\\s*";
+    private static String CLOSE_BRACE_PATTERN = ".*}.*";
 
+    private static class KeyValueVisitor implements NodeVisitor {
+        LinkedHashMap<String, String> elements = new LinkedHashMap<String, String>();
+
+        @Override
         public boolean visit(AstNode node) {
             boolean continueProcessing = true;
             // We only need to check Object Literals
@@ -174,92 +185,178 @@ public class AmdJsResource implements ResourceFilter {
     }
 
     @Override
-    public Map<String, String> parse(InputStream inStream) throws IOException {
-        Map<String, String> resultMap = null;
+    public Collection<ResourceString> parse(InputStream inStream) throws IOException {
+        LinkedHashMap<String, String> resultMap = null;
+        Collection<ResourceString> resultCol = new LinkedList<ResourceString>();
         try (InputStreamReader reader = new InputStreamReader(new BomInputStream(inStream), "UTF-8")) {
             AstRoot root = new Parser().parse(reader, null, 1);
             KeyValueVisitor visitor = new KeyValueVisitor();
             root.visitAll(visitor);
             resultMap = visitor.elements;
+            int sequenceNum = 0;
+            for (Entry<String, String> entry : resultMap.entrySet()) {
+                sequenceNum++;
+                ResourceString res = new ResourceString(entry.getKey(), entry.getValue());
+                res.setSequenceNumber(sequenceNum);
+                resultCol.add(res);
+            }
         } catch (Exception e) {
             throw new IllegalResourceFormatException(e);
         }
-        return resultMap;
+        return resultCol;
     }
 
     @Override
-    public void write(OutputStream outStream, String language, Map<String, String> data) throws IOException {
+    public void write(OutputStream outStream, String language, Collection<ResourceString> resStrings)
+            throws IOException {
+        TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
+        sortedResources.addAll(resStrings);
+
         try (OutputStreamWriter writer = new OutputStreamWriter(new BufferedOutputStream(outStream), "UTF-8")) {
             writer.write("define({\n");
             boolean first = true;
-            for (Entry<String, String> entry : data.entrySet()) {
+            for (ResourceString res : sortedResources) {
                 if (first) {
                     first = false;
                 } else {
                     writer.write(",\n");
                 }
-                writer.write("\"" + entry.getKey() + "\": " + "\"" + entry.getValue() + "\"");
+                writer.write("\"" + res.getKey() + "\": ");
+                writer.write("\"" + res.getValue() + "\"");
             }
             writer.write("\n});\n");
         }
     }
 
     @Override
-    public void merge(InputStream base, OutputStream outStream, String language, Map<String, String> data) throws IOException{
+    public void merge(InputStream base, OutputStream outStream, String language, Collection<ResourceString> data)
+            throws IOException {
+        Map<String, String> resMap = new HashMap<String, String>(data.size() * 4 / 3 + 1);
+        for (ResourceString res : data) {
+            resMap.put(res.getKey(), res.getValue());
+        }
+
         Scanner in = new Scanner(base, "UTF-8");
-        
-        String line = "";
-        
-        while(in.hasNextLine()){
-            line = in.nextLine() + "\n";
-            
-            if (line.indexOf(":") == -1){
+        String line;
+        while (in.hasNextLine()) {
+            line = in.nextLine();
+
+            if (!line.matches(KEY_LINE_PATTERN) || line.trim().endsWith("{")) {
                 outStream.write(line.getBytes());
-            }
-            
-            else {
-                String key = line.substring(0, line.indexOf(":")).trim().replace("\"", "");
-                final int character_offset = 80;
-                
-                BreakIterator b = BreakIterator.getWordInstance();
-                b.setText(data.get(key));
-                
-                int offset = 80;
-                int start = 0;
-                
-                boolean first = true;
-                
-                if (data.containsKey(key)){
-                    StringBuilder temp = new StringBuilder(1000);
-                    temp.append("\"").append(key).append("\"").append(":");
-                    
-                    while (start < data.get(key).length()){
-                        if (data.get(key).length() > character_offset){
-                            if (!first){
-                                temp.append(" ");
-                            }
-                            
-                            first = false;
-                            int end = b.following(offset);
-                            String str = data.get(key).substring(start,end);
-                            start = end;
-                            offset += 80;
-                            temp.append("\"").append(str).append("\"\\\n");
-                        }
-                        else {
-                            temp.append("\"").append(data.get(key)).append("\"");
-                            start = data.get(key).length();
-                        }
+                outStream.write('\n');
+            } else {
+                String[] parts = line.split(":");
+                String left = parts[0];
+
+                String key = left.trim().replace("\"", "");
+
+                if (resMap.containsKey(key)) {
+                    outStream.write(left.getBytes());
+                    outStream.write(": ".getBytes());
+
+                    String value = resMap.get(key);
+                    outStream.write(formatValue(value, left).getBytes());
+
+                    while (!line.matches(ENTRY_END_LINE_PATTERN) && !in.hasNext(CLOSE_BRACE_PATTERN)) {
+                        line = in.nextLine();
                     }
-                    temp.append(",\n");
-                    outStream.write(temp.toString().getBytes());
-                }
-                else {
+
+                    if (!in.hasNext(CLOSE_BRACE_PATTERN)) {
+                        outStream.write(',');
+                    }
+                    outStream.write('\n');
+                } else {
                     outStream.write(line.getBytes());
+                    outStream.write('\n');
+                    while (!line.matches(ENTRY_END_LINE_PATTERN)) {
+                        line = in.nextLine();
+                        outStream.write(line.getBytes());
+                        outStream.write('\n');
+                    }
                 }
             }
         }
-        
         in.close();
+    }
+
+    /**
+     * Formats the value into the format:
+     *
+     * "description" : "Translated - IBM Globalization " +
+     *         "Pipeline provides machine translation and editing " +
+     *         "capabilities that enable you to rapidly translate your web " +
+     *         "or mobile UI and release to your global customers without " +
+     *         "having to rebuild or re-deploy your application. Access " +
+     *         "Globalization Pipeline capabilities through its dashboard, " +
+     *         "RESTful API, or integrate it seamlessly into your " +
+     *         "application's Delivery Pipeline. File types such as Java " +
+     *         "properties, JSON, AMD i18n are currently supported.",
+     *
+     * In the example above, formattedKey would be: "description" :
+     *
+     * @param value
+     *            the value to be formatted
+     * @param formattedKey
+     * @return formatted string
+     */
+    private static String formatValue(String value, String formattedKey) {
+        int initialOffset = formattedKey.length() + 2;
+
+        int spaces = 0;
+        for (int i = 0; i < formattedKey.length(); i++) {
+            char c = formattedKey.charAt(i);
+
+            if (c == ' ') {
+                spaces++;
+            } else if (c == '\t') {
+                spaces += 4;
+            } else {
+                break;
+            }
+        }
+
+        char[] chars = new char[spaces + 8];
+        Arrays.fill(chars, ' ');
+        String spaceOffSet = new String(chars);
+
+        int extraChar = 6;
+        int maxLineLen = 80 - extraChar - spaceOffSet.length();
+
+        int valueLen = value.length();
+        if (valueLen < (maxLineLen - initialOffset + 2)) {
+            return '"' + value + '"';
+        }
+
+        StringBuilder formattedValue = new StringBuilder(valueLen + (valueLen / maxLineLen) * extraChar);
+
+        int end = maxLineLen - initialOffset;
+        int start = 0;
+        while (start < valueLen) {
+            // make sure not to split words onto multiple lines
+            int emptySpaceIndex = value.lastIndexOf(" ", end);
+            if (end != valueLen && emptySpaceIndex != -1 && emptySpaceIndex + 1 < valueLen) {
+                end = emptySpaceIndex + 1;
+            }
+
+            formattedValue.append('"');
+            // sanity check
+            if (end > valueLen) {
+                end = valueLen;
+            }
+            formattedValue.append(value.substring(start, end));
+
+            if (end != valueLen) {
+                formattedValue.append("\"\n");
+                formattedValue.append(spaceOffSet);
+                formattedValue.append("+ ");
+            } else {
+                formattedValue.append("\"");
+            }
+
+            start = end;
+            end = start + maxLineLen >= valueLen ? valueLen : start + maxLineLen;
+        }
+
+        return formattedValue.toString();
     }
 }

@@ -1,4 +1,4 @@
-/*  
+/*
  * Copyright IBM Corp. 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,9 +19,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.BreakIterator;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Scanner;
+import java.util.TreeSet;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -41,14 +42,17 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
+
 public class AndroidStringsResource implements ResourceFilter {
 
     private static final String RESOURCES_STRING = "resources";
     private static final String NAME_STRING = "name";
     private static final String STR_STRING = "string";
+    private static final String STR_ARRAY = "string-array";
 
     @Override
-    public Map<String, String> parse(InputStream in) throws IOException {
+    public Collection<ResourceString> parse(InputStream in) throws IOException {
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = null;
@@ -68,32 +72,51 @@ public class AndroidStringsResource implements ResourceFilter {
 
         Element elem = document.getDocumentElement();
         NodeList nodeList = elem.getChildNodes();
-        Map<String, String> map = new HashMap<String, String>();
-        MapGenerator(nodeList, map);
+        Collection<ResourceString> resultCol = new LinkedList<ResourceString>();
+        collectResourceStrings(nodeList, 1 /* the first sequence number */, resultCol);
 
-        return map;
+        return resultCol;
     }
 
-    // this function traverses through the DOM tree to generate the map
-    public void MapGenerator(NodeList nodeList, Map<String, String> map) {
-
+    /**
+     * This method traverses through the DOM tree and collect resource
+     * strings
+     *
+     * @param nodeList      NodeList object
+     * @param startSeqNum   The first sequence number to be used
+     * @param resStrings    Collection to store result resource strings
+     * @return The last sequence number + 1
+     */
+    private int collectResourceStrings(NodeList nodeList, int startSeqNum, Collection<ResourceString> resStrings) {
+        int seqNum = startSeqNum;
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
             // looking for DOM element <string name=$NAME>VALUE</string>
-            if (node.getNodeName().equals(STR_STRING)) {
-                String key = node.getAttributes().getNamedItem(NAME_STRING)
-                        .getNodeValue();
-                String value = node.getTextContent().replaceAll("\\\\\n *", "");
-                map.put(key, value);
+            String nodeName = node.getNodeName();
+            if (nodeName.equals(STR_STRING) || nodeName.equals(STR_ARRAY)) {
+                String key = node.getAttributes().getNamedItem(NAME_STRING).getNodeValue();
+                String value = node.getTextContent();
+
+                // turn into array format, i.e. [vale1, value2]
+                if (nodeName.equals(STR_ARRAY)) {
+                    value = "[" + value.trim().replaceAll("\\n[ \t]+", ", ") + "]";
+                }
+
+                resStrings.add(new ResourceString(key, value, seqNum++));
             } else {
-                MapGenerator(node.getChildNodes(), map);
+                seqNum = collectResourceStrings(node.getChildNodes(), seqNum, resStrings);
             }
         }
+        return seqNum;
     }
 
     @Override
     public void write(OutputStream os, String language,
-            Map<String, String> map) {
+            Collection<ResourceString> map) {
+
+        TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
+        sortedResources.addAll(map);
+
         DocumentBuilderFactory docFactory = DocumentBuilderFactory
                 .newInstance();
         DocumentBuilder docBuilder = null;
@@ -110,15 +133,46 @@ public class AndroidStringsResource implements ResourceFilter {
         // creating <resources></resources>
         Element rootElement = doc.createElement(RESOURCES_STRING);
 
-        for (String key : map.keySet()) {
-            // creating <string name=$NAME>VALUE</string>
-            String value = map.get(key);
-            Element child = doc.createElement(STR_STRING);
-            Attr attr = doc.createAttribute(NAME_STRING);
-            attr.setValue(key);
-            child.setAttributeNode(attr);
-            child.setTextContent(value);
-            rootElement.appendChild(child);
+        for (ResourceString key : sortedResources) {
+            String value = key.getValue();
+
+            if (value.startsWith("[") && value.endsWith("]")) {
+                // creating <string-array name="$NAME">
+                Element child = doc.createElement(STR_ARRAY);
+                Attr attr = doc.createAttribute(NAME_STRING);
+                attr.setValue(key.getKey());
+                child.setAttributeNode(attr);
+
+                int startIndex = 0;
+                int endIndex = -1;
+
+                while (endIndex < value.length()-1) {
+                    endIndex = value.indexOf(',', startIndex);
+
+                    if (endIndex == -1) {
+                        endIndex = value.length()-1;
+                    }
+
+                    String itemValue = value.substring(startIndex + 1, endIndex);
+
+                    Element arrayChild = doc.createElement("item");
+                    arrayChild.setTextContent(itemValue);
+                    child.appendChild(arrayChild);
+
+                    startIndex = endIndex + 1;
+                }
+                rootElement.appendChild(child);
+            } else {
+                // creating <string name=$NAME>VALUE</string>
+                Element child = doc.createElement(STR_STRING);
+                Attr attr = doc.createAttribute(NAME_STRING);
+                attr.setValue(key.getKey());
+                child.setAttributeNode(attr);
+                child.setTextContent(value);
+                rootElement.appendChild(child);
+            }
+
+
         }
         doc.appendChild(rootElement);
 
@@ -151,7 +205,7 @@ public class AndroidStringsResource implements ResourceFilter {
 
     @Override
     public void merge(InputStream base, OutputStream outStream, String language,
-            Map<String, String> data) throws IOException {
+            Collection<ResourceString> data) throws IOException {
         Scanner in = new Scanner(base, "UTF-8");
         String line = "";
         String pattern = "^.*<string.*name=\".*\">.*\n";
@@ -165,50 +219,56 @@ public class AndroidStringsResource implements ResourceFilter {
                 String[] wordList = line.split("\"");
                 String key = wordList[1].trim();
 
-                if (data.containsKey(key)) {
-                    StringBuilder temp = new StringBuilder(100);
-                    final int character_offset = 80;
+                // TODO: build hash map first, instead of
+                // linear search in the given collection
+                // every time?
+                for (ResourceString res : data) {
+                    if (res.getKey().equals(key)) {
+                        StringBuilder temp = new StringBuilder(100);
+                        final int character_offset = 80;
 
-                    BreakIterator b = BreakIterator.getWordInstance();
-                    b.setText(data.get(key));
+                        BreakIterator b = BreakIterator.getWordInstance();
+                        b.setText(res.getValue());
 
-                    int offset = 80;
-                    int start = 0;
+                        int offset = 80;
+                        int start = 0;
 
-                    boolean first = true;
+                        boolean first = true;
 
-                    String whiteSpaceStr = line.substring(0, line.indexOf("<"));
-                    temp.append(whiteSpaceStr).append("<string name=\"").append(key).append("\">");
+                        String whiteSpaceStr = line.substring(0, line.indexOf("<"));
+                        temp.append(whiteSpaceStr).append("<string name=\"").append(key).append("\">");
 
-                    while (start < data.get(key).length()) {
-                        if (data.get(key).length() > character_offset) {
-                            
-                            if (!first) {
-                                temp.append(whiteSpaceStr).append(" ");
+                        while (start < res.getValue().length()) {
+                            if (res.getValue().length() > character_offset) {
+
+                                if (!first) {
+                                    temp.append(whiteSpaceStr).append(" ");
+                                }
+
+                                first = false;
+                                int end = b.following(offset);
+                                String str = res.getValue().substring(start, end);
+                                start = end;
+                                offset += 80;
+                                temp.append(str).append(" \\\n");
+                            } else {
+                                temp.append(res.getValue());
+                                start = res.getValue().length();
                             }
+                        }
 
-                            first = false;
-                            int end = b.following(offset);
-                            String str = data.get(key).substring(start, end);
-                            start = end;
-                            offset += 80;
-                            temp.append(str).append(" \\\n");
-                        } else {
-                            temp.append(data.get(key));
-                            start = data.get(key).length();
+                        if (res.getValue().length() > character_offset) {
+                            temp.append(whiteSpaceStr);
+                        }
+                        temp.append("</string>\n");
+                        outStream.write(temp.toString().getBytes());
+
+                        while (line.indexOf("</string>") == -1) {
+                            line = in.nextLine();
                         }
                     }
-                    
-                    if (data.get(key).length() > character_offset){
-                        temp.append(whiteSpaceStr);
-                    }
-                    temp.append("</string>\n");
-                    outStream.write(temp.toString().getBytes());
-                    
-                    while (line.indexOf("</string>") == -1){
-                        line = in.nextLine();
-                    }
                 }
+
             }
         }
         in.close();

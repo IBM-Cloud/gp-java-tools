@@ -1,4 +1,4 @@
-/*  
+/*
  * Copyright IBM Corp. 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,9 +20,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -34,26 +37,32 @@ public class YMLResource implements ResourceFilter {
     // Take a yml file and converts a flattened map object to upload
     // to Globalization Pipeline service
     @Override
-    public Map<String, String> parse(InputStream in) throws JsonParseException, FileNotFoundException, IOException {
+    public Collection<ResourceString> parse(InputStream in) throws JsonParseException, FileNotFoundException, IOException {
 
         char separator = '.';
 
         YAMLFactory yf = new YAMLFactory();
         ObjectMapper mapper = new ObjectMapper(yf);
-        Map<String, Object> YAML_map = new HashMap<String, Object>();
-
+        Map<String, Object> YAML_map = new LinkedHashMap<String, Object>();
+        Collection<ResourceString> resultCol = new LinkedList<ResourceString>();
         // Reads contents of YAML file and converts it to a hashmap
-        YAML_map = mapper.readValue(in, new TypeReference<HashMap<String, Object>>() {
+        YAML_map = mapper.readValue(in, new TypeReference<LinkedHashMap<String, Object>>() {
         });
 
-        Map<String, String> result_map = MapFlattener("", YAML_map, new HashMap<String, String>(), separator);
-
-        return result_map;
+        Map<String, String> resultMap = flattenMap("", YAML_map, new LinkedHashMap<String, String>(), separator);
+        int sequenceNum = 0;
+        for (Entry<String, String> entry : resultMap.entrySet()) {
+            ResourceString res = new ResourceString(entry.getKey(), entry.getValue());
+            sequenceNum++;
+            res.setSequenceNumber(sequenceNum);
+            resultCol.add(res);
+        }
+        return resultCol;
     }
 
     // flattens map object from {a={b=c}} to {a<sep>b=c}
     @SuppressWarnings("unchecked")
-    private Map<String, String> MapFlattener(String prefix, Map<String, Object> map, Map<String, String> resource,
+    private Map<String, String> flattenMap(String prefix, Map<String, Object> map, Map<String, String> resource,
             char separator) {
 
         for (Object key : map.keySet()) {
@@ -75,7 +84,7 @@ public class YMLResource implements ResourceFilter {
             }
 
             else if (isMap) {
-                MapFlattener(new_prefix.toString(), (Map<String, Object>) value, resource, separator);
+                flattenMap(new_prefix.toString(), (Map<String, Object>) value, resource, separator);
             }
         }
 
@@ -85,7 +94,7 @@ public class YMLResource implements ResourceFilter {
     // Takes a flattened hashmap and creates a yml file
     @SuppressWarnings("unchecked")
     @Override
-    public void write(OutputStream os, String language, Map<String, String> map) throws IOException {
+    public void write(OutputStream os, String language, Collection<ResourceString> resStrings) throws IOException {
         // First we need to unflatten the map before writing the file
 
         char separator = '.';
@@ -96,8 +105,9 @@ public class YMLResource implements ResourceFilter {
         // map that points to the top so we always have a reference
         HashMap<String, Object> new_map = temp_map;
 
-        for (String key : map.keySet()) {
-            String value = map.get(key);
+        for (ResourceString res : resStrings) {
+            String value = res.getValue();
+            String key = res.getKey();
             String[] temp = key.split("\\" + separator);
 
             for (int i = 0; i < temp.length; i++) {
@@ -159,7 +169,7 @@ public class YMLResource implements ResourceFilter {
     }
 
     @Override
-    public void merge(InputStream base, OutputStream outStream, String language, Map<String, String> data)
+    public void merge(InputStream base, OutputStream outStream, String language, Collection<ResourceString> data)
             throws IOException {
         throw new UnsupportedOperationException("Merging YML resource is not supported.");
     }
