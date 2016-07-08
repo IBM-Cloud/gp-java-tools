@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2015
+ * Copyright IBM Corp. 2015,2016
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,12 @@
  */
 package com.ibm.g11n.pipeline.tools.cli;
 
+import java.util.Date;
+import java.util.Set;
+
 import com.beust.jcommander.Parameters;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.ibm.g11n.pipeline.client.BundleData;
 import com.ibm.g11n.pipeline.client.ServiceException;
 
@@ -26,20 +31,35 @@ import com.ibm.g11n.pipeline.client.ServiceException;
  */
 @Parameters(commandDescription = "Prints out a translation bundle's information.")
 final class ShowBundleCmd extends BundleCmd {
+
+    // Used for generating output format
+    static class BundleDataJson {
+        String sourceLanguage;
+        Set<String> targetLanguages;
+        boolean readOnly;
+        String updatedBy;
+        Date updatedAt;
+    }
+
     @Override
     protected void _execute() {
         try {
             BundleData bundleData = getClient().getBundleInfo(bundleId);
 
-            System.out.println("Bundle ID:        " + bundleId);
-            System.out.println("Source Language:  " + bundleData.getSourceLanguage());
-            System.out.println("Target Languages: " + bundleData.getTargetLanguages());
-            System.out.println("Read Only:        " + bundleData.isReadOnly());
-            if (bundleData.getPartner() != null) {
-                System.out.println("Partner:          " + bundleData.getPartner());
-            }
-            System.out.println("Updated by:       " + bundleData.getUpdatedBy());
-            System.out.println("Updated at:       " + bundleData.getUpdatedAt());
+            BundleDataJson outJson = new BundleDataJson();
+
+            outJson.sourceLanguage = bundleData.getSourceLanguage();
+            outJson.targetLanguages = bundleData.getTargetLanguages();
+            outJson.readOnly = bundleData.isReadOnly();
+            outJson.updatedBy = bundleData.getUpdatedBy();
+            outJson.updatedAt = bundleData.getUpdatedAt();
+
+            Gson gson = new GsonBuilder()
+                    .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX")
+                    .setPrettyPrinting()
+                    .create();
+            String outStr = gson.toJson(outJson);
+            System.out.println(outStr);
         } catch (ServiceException e) {
             throw new RuntimeException(e);
         }

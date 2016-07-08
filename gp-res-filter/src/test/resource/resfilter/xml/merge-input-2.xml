@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string-array name="planets_array"> <!-- comment -->
+		<item>Mercury</item>
+		<item>Venus</item>
+		<item>Earth</item>
+		<item>Mars</item>
+	</string-array>
+	<string-array name="Lorem_array">
+		<item>Lorem Ipsum is simply dummy text of the printing and typesetting
+			industry. Lorem Ipsum has been the industry's standard dummy text
+			ever since the 1500s, when an unknown printer took a galley of type
+			and scrambled it to make a type specimen book. It has survived not
+			only five centuries, but also the leap into electronic typesetting,
+			remaining essentially unchanged. It was popularised in the 1960s with
+			the release of Letraset sheets containing Lorem Ipsum passages, and
+			more recently with desktop publishing software like Aldus PageMaker
+			including versions of Lorem Ipsum.
+		</item>
+	</string-array>
+	<plurals name="numberOfSongsAvailable">
+		<item quantity="one">Znaleziono %d piosenke.</item>
+		<item quantity="few">Znaleziono %d piosenki.</item>
+		<item quantity="other">Znaleziono %d piosenek.</item>
+	</plurals>
+	<string name="bear">
+		Brown Bear
+	</string>
+	<string name="numbers">123</string>
+	<string name="frog">Red-eyed Tree Frog</string>
+	<!-- comment -->
+	<string name="Lorem">Lorem Ipsum is simply dummy text of the printing
+		and typesetting
+		industry. Lorem Ipsum has been the industry's standard dummy text
+		ever since the 1500s, when an unknown printer took a galley of type
+		and scrambled it to make a type specimen book. It has survived not
+		only five centuries, but also the leap into electronic typesetting,
+		remaining essentially unchanged. It was popularised in the 1960s with
+		the release of Letraset sheets containing Lorem Ipsum passages, and
+		more recently with desktop publishing software like Aldus PageMaker
+		including versions of Lorem Ipsum.
+	</string>
+	<string name="owl">Great Horned Owl</string>
+	<string name="not-found">Not found</string>
+</resources>

@@ -1,0 +1,25 @@
+/* Insert = Element menu item */
+"Insert Element" = "Insert Element - translated";
+/* Error string used 
+    for unknown error types. */
+"ErrorString_1" = "An unknown error occurred - translated.";
+"bear 3" = "Brown Bear - translated";
+"frog 4" = "Red-eyed Tree Frog - translated";
+"owl 5" = "Great Horned Owl - translated";
+
+"Lorem Ipsum is simply dummy text of the printing and typesetting industry. 
+    Lorem Ipsum has been the industry's standard dummy text ever since the 1500s
+    , when an unknown printer took a galley of type and scrambled it to make a 
+    type specimen book. It has survived not only five centuries, but also the 
+    leap into electronic typesetting, remaining essentially unchanged. It was 
+    popularised in the 1960s with the release of Letraset sheets containing 
+    Lorem Ipsum passages, and more recently with desktop publishing software 
+    like Aldus PageMaker including versions of Lorem Ipsum." = "Loremのイプサムは、単に印刷
+    と植字業界のダミーテキストです。 Loremのイプサムは、未知のプリンターがタイプのゲラを取り、タイプ標本の本を作ってそれをスクランブル1500年代、
+    以来、業界の標準ダミーテキストとなっています。それは本質的に変わらず、何世紀だけでなく、電子組版に飛躍するだけでなく5を生き延びてきました。それは
+    Loremのイプサムのバージョンを含むアルダスのPageMakerのようなデスクトップパブリッシングソフトウェアと、より最近Loremのイプサムの通路を
+    含むLetrasetシートのリリースでは、1960年代に普及したところ。";
+"numbers" = "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4
+     5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
+     3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 ";
+"not found" = "Not found";

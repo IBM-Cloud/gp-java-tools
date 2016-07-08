@@ -27,17 +27,21 @@ import java.io.OutputStream;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
- * @author farhan
+ * @author Farhan Arshad
  *
  */
 public class POTResourceTest {
-    private static final File INPUT_FILE = new File("src/test/resource/resfilter/pot/test.pot");
+    private static final File INPUT_FILE = new File("src/test/resource/resfilter/pot/input.pot");
 
-    private static final File EXPECTED_WRITE_FILE = new File("src/test/resource/resfilter/pot/expected.pot");
+    private static final File EXPECTED_WRITE_FILE = new File("src/test/resource/resfilter/pot/write-output.pot");
+
+    private static final File MERGE_INPUT_1_FILE = new File("src/test/resource/resfilter/pot/merge-input-1.pot");
+    private static final File MERGE_INPUT_2_FILE = new File("src/test/resource/resfilter/pot/merge-input-2.pot");
+    private static final File EXPECTED_MERGE_1_FILE = new File("src/test/resource/resfilter/pot/merge-output-1.pot");
+    private static final File EXPECTED_MERGE_2_FILE = new File("src/test/resource/resfilter/pot/merge-output-2.pot");
 
     private static Collection<ResourceString> EXPECTED_INPUT_RES_LIST;
 
@@ -83,6 +87,51 @@ public class POTResourceTest {
         WRITE_RES_LIST.add(new ResourceString(key, value, 2));
     }
 
+    private static Collection<ResourceString> MERGE_RES_LIST;
+
+    static {
+        MERGE_RES_LIST = new LinkedList<ResourceString>();
+        String key, value;
+
+        key = "Here is an example of how one might continue a very long string\\n"
+                + "for the common case the string represents multi-line output.\\n";
+        value = "Voici un exemple de la façon dont on pourrait continuer à une très longue chaîne\\n"
+                + "Pour le cas courant de la chaîne représente la sortie multi-ligne.\\n";
+        MERGE_RES_LIST.add(new ResourceString(key, value, 1));
+
+        key = "Enter a comma separated list of user names.";
+        value = "Entrez une virgule liste séparée par des noms d'utilisateur.";
+        MERGE_RES_LIST.add(new ResourceString(key, value, 2));
+
+        key = "Unable to find user: @users";
+        value = "Impossible de trouver l'utilisateur : @users";
+        MERGE_RES_LIST.add(new ResourceString(key, value, 3));
+
+        key = "Unable to find users: @users";
+        value = "Impossible de trouver les utilisateurs: @users";
+        MERGE_RES_LIST.add(new ResourceString(key, value, 4));
+
+        key = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. "
+                + "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, "
+                + "when an unknown printer took a galley of type and scrambled it to make a type specimen book. "
+                + "It has survived not only five centuries, but also the leap into electronic typesetting, "
+                + "remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset "
+                + "sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like"
+                + " Aldus PageMaker including versions of Lorem Ipsum.";
+        value = "Loremのイプサムは、単に印刷と植字業界のダミーテキストです。 Loremのイプサムは、未知のプリンターがタイプのゲラを取り、"
+                + "タイプ標本の本を作ってそれをスクランブル1500年代、以来、業界の標準ダミーテキストとなっています。それは本質的に変わらず、"
+                + "何世紀だけでなく、電子組版に飛躍するだけでなく5を生き延びてきました。"
+                + "それはLoremのイプサムのバージョンを含むアルダスのPageMakerのようなデスクトップパブリッシングソフトウェアと、"
+                + "より最近Loremのイプサムの通路を含むLetrasetシートのリリースでは、1960年代に普及したところ。";
+        MERGE_RES_LIST.add(new ResourceString(key, value, 6));
+
+        key = "numbers";
+        value = "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 "
+                + "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 "
+                + "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 ";
+        MERGE_RES_LIST.add(new ResourceString(key, value, 5));
+    }
+
     private static final POTResource res = new POTResource();
 
     @Test
@@ -109,8 +158,29 @@ public class POTResourceTest {
         }
     }
 
-    @Ignore("not ready yet")
     @Test
     public void testMerge() throws IOException {
+        File tempFile;
+
+        tempFile = File.createTempFile(this.getClass().getSimpleName(), ".pot");
+        tempFile.deleteOnExit();
+
+        try (OutputStream os = new FileOutputStream(tempFile);
+                InputStream is = new FileInputStream(MERGE_INPUT_1_FILE)) {
+            res.merge(is, os, "en", MERGE_RES_LIST);
+            os.flush();
+            assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_1_FILE, tempFile));
+        }
+
+        tempFile = File.createTempFile(this.getClass().getSimpleName(), ".pot");
+        tempFile.deleteOnExit();
+
+        try (OutputStream os = new FileOutputStream(tempFile);
+                InputStream is = new FileInputStream(MERGE_INPUT_2_FILE)) {
+            res.merge(is, os, "ja", MERGE_RES_LIST);
+            os.flush();
+            assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_2_FILE, tempFile));
+        }
     }
+
 }

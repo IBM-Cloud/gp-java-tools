@@ -21,12 +21,15 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.util.Arrays;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.text.BreakIterator;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
@@ -49,7 +52,7 @@ import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 /**
  * AMD i18n JS resource filter implementation.
  *
- * @author Yoshito Umaoka
+ * @author Yoshito Umaoka, Farhan Arshad
  */
 public class AmdJsResource implements ResourceFilter {
 
@@ -193,12 +196,9 @@ public class AmdJsResource implements ResourceFilter {
             KeyValueVisitor visitor = new KeyValueVisitor();
             root.visitAll(visitor);
             resultMap = visitor.elements;
-            int sequenceNum = 0;
+            int sequenceNum = 1;
             for (Entry<String, String> entry : resultMap.entrySet()) {
-                sequenceNum++;
-                ResourceString res = new ResourceString(entry.getKey(), entry.getValue());
-                res.setSequenceNumber(sequenceNum);
-                resultCol.add(res);
+                resultCol.add(new ResourceString(entry.getKey(), entry.getValue(), sequenceNum++));
             }
         } catch (Exception e) {
             throw new IllegalResourceFormatException(e);
@@ -236,127 +236,184 @@ public class AmdJsResource implements ResourceFilter {
             resMap.put(res.getKey(), res.getValue());
         }
 
+        // do not close the scanner because it closes the base input stream
+        @SuppressWarnings("resource")
         Scanner in = new Scanner(base, "UTF-8");
+        PrintWriter pw = new PrintWriter(new OutputStreamWriter(outStream, StandardCharsets.UTF_8), true);
         String line;
         while (in.hasNextLine()) {
             line = in.nextLine();
 
             if (!line.matches(KEY_LINE_PATTERN) || line.trim().endsWith("{")) {
-                outStream.write(line.getBytes());
-                outStream.write('\n');
+                pw.println(line);
             } else {
                 String[] parts = line.split(":");
                 String left = parts[0];
 
-                String key = left.trim().replace("\"", "");
+                String key = left.substring(left.indexOf('"') + 1, left.lastIndexOf('"')).trim();
 
                 if (resMap.containsKey(key)) {
-                    outStream.write(left.getBytes());
-                    outStream.write(": ".getBytes());
-
                     String value = resMap.get(key);
-                    outStream.write(formatValue(value, left).getBytes());
+                    String tabPrefix = extractTabPrefix(left);
+                    pw.write(formatEntry(key, value, tabPrefix, language));
 
                     while (!line.matches(ENTRY_END_LINE_PATTERN) && !in.hasNext(CLOSE_BRACE_PATTERN)) {
                         line = in.nextLine();
                     }
 
                     if (!in.hasNext(CLOSE_BRACE_PATTERN)) {
-                        outStream.write(',');
+                        pw.write(',');
                     }
-                    outStream.write('\n');
+                    pw.println();
                 } else {
-                    outStream.write(line.getBytes());
-                    outStream.write('\n');
+                    pw.println(line);
                     while (!line.matches(ENTRY_END_LINE_PATTERN)) {
                         line = in.nextLine();
-                        outStream.write(line.getBytes());
-                        outStream.write('\n');
+                        pw.println(line);
                     }
                 }
             }
         }
-        in.close();
     }
 
     /**
      * Formats the value into the format:
      *
-     * "description" : "Translated - IBM Globalization " +
-     *         "Pipeline provides machine translation and editing " +
-     *         "capabilities that enable you to rapidly translate your web " +
-     *         "or mobile UI and release to your global customers without " +
-     *         "having to rebuild or re-deploy your application. Access " +
-     *         "Globalization Pipeline capabilities through its dashboard, " +
-     *         "RESTful API, or integrate it seamlessly into your " +
-     *         "application's Delivery Pipeline. File types such as Java " +
-     *         "properties, JSON, AMD i18n are currently supported.",
+     * \<tabPrefix\>"key" : "value",
      *
-     * In the example above, formattedKey would be: "description" :
-     *
-     * @param value
-     *            the value to be formatted
-     * @param formattedKey
-     * @return formatted string
+     * Entry may be split onto multiple lines in the form: "bear 1": "Brown " +
+     * "Bear"
      */
-    private static String formatValue(String value, String formattedKey) {
-        int initialOffset = formattedKey.length() + 2;
+    private static String formatEntry(String key, String value, String tabPrefix, String localeStr) {
+        int maxLineLen = 80;
 
-        int spaces = 0;
-        for (int i = 0; i < formattedKey.length(); i++) {
-            char c = formattedKey.charAt(i);
+        StringBuilder output = new StringBuilder();
 
-            if (c == ' ') {
-                spaces++;
-            } else if (c == '\t') {
-                spaces += 4;
-            } else {
-                break;
-            }
-        }
-
-        char[] chars = new char[spaces + 8];
-        Arrays.fill(chars, ' ');
-        String spaceOffSet = new String(chars);
-
-        int extraChar = 6;
-        int maxLineLen = 80 - extraChar - spaceOffSet.length();
-
+        int keyLen = key.length();
         int valueLen = value.length();
-        if (valueLen < (maxLineLen - initialOffset + 2)) {
-            return '"' + value + '"';
+
+        // entry fits on one line
+        if (maxLineLen > keyLen + valueLen + tabPrefix.length() + 7) {
+            return output.append(tabPrefix).append('"').append(key).append("\" : \"").append(value).append('"')
+                    .toString();
         }
 
-        StringBuilder formattedValue = new StringBuilder(valueLen + (valueLen / maxLineLen) * extraChar);
+        // message needs to be split onto multiple lines
+        output.append(tabPrefix);
 
-        int end = maxLineLen - initialOffset;
+        // word breaks differ based on the locale
+        Locale locale = localeStr == null ? Locale.getDefault() : new Locale(localeStr);
+
+        BreakIterator wordIterator = BreakIterator.getWordInstance(locale);
+
+        // the available char space once we account for the tabbing
+        // spaces and other necessary chars such as quotes
+        int available = maxLineLen - getSpacesSize(tabPrefix) - 2;
+
+        // the tab prefix for multi-lined entries
+        String tabStr = tabPrefix + getTabStr(tabPrefix);
+
+        // actual size of prefix, i.e. tabs count as 4 spaces
+        int tabStrSize = getSpacesSize(tabStr);
+
+        // process the key first
+        // splitting it into multiple lines if necessary
+        wordIterator.setText(key);
         int start = 0;
-        while (start < valueLen) {
-            // make sure not to split words onto multiple lines
-            int emptySpaceIndex = value.lastIndexOf(" ", end);
-            if (end != valueLen && emptySpaceIndex != -1 && emptySpaceIndex + 1 < valueLen) {
-                end = emptySpaceIndex + 1;
-            }
+        int end = wordIterator.first();
+        int prevEnd = end;
+        boolean firstLine = true;
+        while (end != BreakIterator.DONE) {
+            prevEnd = end;
+            end = wordIterator.next();
+            if (end - start > available) {
+                output.append('"').append(key.substring(start, prevEnd)).append('"').append('\n').append(tabStr)
+                        .append("+ ");
+                start = prevEnd;
 
-            formattedValue.append('"');
-            // sanity check
-            if (end > valueLen) {
-                end = valueLen;
+                // after first line, indent subsequent lines with 4 additional
+                // spaces
+                if (firstLine) {
+                    available = maxLineLen - tabStrSize - 5;
+                    firstLine = false;
+                }
+            } else if (end == keyLen) {
+                output.append('"').append(key.substring(start, end)).append("\" : ");
+                available = available - 5 - (end - start);
             }
-            formattedValue.append(value.substring(start, end));
-
-            if (end != valueLen) {
-                formattedValue.append("\"\n");
-                formattedValue.append(spaceOffSet);
-                formattedValue.append("+ ");
-            } else {
-                formattedValue.append("\"");
-            }
-
-            start = end;
-            end = start + maxLineLen >= valueLen ? valueLen : start + maxLineLen;
         }
 
-        return formattedValue.toString();
+        // process the key first
+        // splitting it into multiple lines if necessary
+        wordIterator.setText(value);
+        start = 0;
+        end = wordIterator.first();
+        prevEnd = end;
+        firstLine = true;
+        while (end != BreakIterator.DONE) {
+            prevEnd = end;
+            end = wordIterator.next();
+            if (end - start > available) {
+                output.append('"').append(value.substring(start, prevEnd)).append('"').append('\n').append(tabStr)
+                        .append("+ ");
+                start = prevEnd;
+
+                // after first line, indent subsequent lines with 4 additional
+                // spaces
+                if (firstLine) {
+                    available = maxLineLen - tabStrSize - 5;
+                    firstLine = false;
+                }
+            } else if (end == valueLen) {
+                output.append('"').append(value.substring(start, end)).append('"');
+            }
+        }
+
+        return output.toString();
+    }
+
+    /**
+     * This method looks at the provided string to determine if a tab char or
+     * spaces are being used for tabbing.
+     *
+     * Defaults to spaces
+     */
+    static String getTabStr(String str) {
+        if (!str.isEmpty() && str.charAt(0) == '\t') {
+            return "\t\t";
+        } else {
+            return "        ";
+        }
+    }
+
+    /**
+     * Returns the whitespace prefix of the provided string e.g. if s =
+     * "    hello"
+     *
+     * Then the return value will be "    ".
+     */
+    private static String extractTabPrefix(String s) {
+        int i = 0;
+        while (i < s.length() && (s.charAt(i) == ' ' || s.charAt(i) == '\t')) {
+            i++;
+        }
+
+        return s.substring(0, i);
+    }
+
+    /**
+     * Gets the number of spaces the whitespace string is using. Tab chars are
+     * equal to 4 chars. i.e. a tab is considered to be of size 4.
+     */
+    static int getSpacesSize(String whitespace) {
+        int size = 0;
+        for (int i = 0; i < whitespace.length(); i++) {
+            if (whitespace.charAt(i) == '\t') {
+                size += 4;
+            } else if (whitespace.charAt(i) == ' ') {
+                size++;
+            }
+        }
+        return size;
     }
 }

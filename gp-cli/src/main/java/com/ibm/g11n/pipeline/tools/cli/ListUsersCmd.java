@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2015
+ * Copyright IBM Corp. 2015,2016
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import com.ibm.g11n.pipeline.client.UserData;
  * @author Visaahan Anandarajah
  */
 @Parameters(commandDescription = "Prints out a list of users.")
-final class ListUsersCmd extends ServiceInstanceCmd{
+final class ListUsersCmd extends BaseCmd {
     @Override
     protected void _execute() {
         try {

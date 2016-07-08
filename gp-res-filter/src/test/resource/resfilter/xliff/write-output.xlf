@@ -1,7 +1,6 @@
-<?xml version="1.0"?> 
-<xliff version="1.1">
+<xliff version="1.2">
  <file original="Graphic Example.psd"
-  source-language="EN-US" target-language="JA-JP"
+  source-language="en-US" target-language="ja-JP"
   tool="Rainbow" datatype="photoshop">
   <header>
    <skl>
@@ -11,7 +10,7 @@
     <phase phase-name="extract" process-name="extraction"
      tool="Rainbow" date="20010926T152258Z"
      company-name="NeverLand Inc." job-id="123"
-     contact-name="Peter Pan" contact-email="ppan@xyzcorp.com">
+     contact-name="Peter Pan" contact-email="ppan@example.com">
      <note>Make sure to use the glossary I sent you yesterday.
       Thanks.</note>
     </phase>
@@ -19,18 +18,18 @@
   </header>
   <body>
    <trans-unit id="1" maxbytes="14">
-    <source xml:lang="EN-US">Quetzal</source>
-    <target xml:lang="JA-JP">Quetzal</target>
+    <source xml:lang="en-US">Quetzal</source>
+    <target xml:lang="ja-JP">Quetzal</target>
    </trans-unit>
    <trans-unit id="3" maxbytes="114">
-    <source xml:lang="EN-US">An application to manipulate and 
+    <source xml:lang="en-US">An application to manipulate and 
      process XLIFF documents</source>
-    <target xml:lang="JA-JP">XLIFF ???????????
-     ?????????????</target>
+    <target xml:lang="ja-JP">XLIFF 文書を編集、または処理
+     するアプリケーションです。</target>
    </trans-unit>
    <trans-unit id="4" maxbytes="36">
-    <source xml:lang="EN-US">XLIFF Data Manager</source>
-    <target xml:lang="JA-JP">XLIFF ???�?????</target>
+    <source xml:lang="en-US">XLIFF Data Manager</source>
+    <target xml:lang="ja-JP">XLIFF データ・マネージャ</target>
    </trans-unit>
   </body>
  </file>

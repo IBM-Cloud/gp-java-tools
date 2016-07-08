@@ -21,7 +21,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.BreakIterator;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Scanner;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -95,7 +97,7 @@ public class XLIFFResource implements ResourceFilter {
                 String newkey = node.getAttributes().getNamedItem(ID_STRING).getNodeValue();
                 seqNum = collectResourceStrings(node.getChildNodes(), seqNum, resStrings, version, newkey);
             } else if (node.getNodeName().equals(SOURCE_STRING)) {
-                String value = node.getTextContent().replaceAll("\\\\\n *", "");
+                String value = node.getTextContent().replaceAll("\\s*\n\\s*", " ");
                 ResourceString res = new ResourceString(key, value);
                 res.setSequenceNumber(seqNum++);
                 resStrings.add(res);
@@ -108,6 +110,13 @@ public class XLIFFResource implements ResourceFilter {
     }
 
     @Override
+    @Deprecated
+    /*
+     * This method is incomplete and may not produce a valid XLIFF output file.
+     *
+     * (non-Javadoc)
+     * @see com.ibm.g11n.pipeline.resfilter.ResourceFilter#write(java.io.OutputStream, java.lang.String, java.util.Collection)
+     */
     public void write(OutputStream os, String language, Collection<ResourceString> resStrings) {
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = null;
@@ -174,7 +183,19 @@ public class XLIFFResource implements ResourceFilter {
     }
 
     @Override
+    @Deprecated
+    /*
+     * This method is incomplete and may not produce the expected output.
+     *
+     * (non-Javadoc)
+     * @see com.ibm.g11n.pipeline.resfilter.ResourceFilter#merge(java.io.InputStream, java.io.OutputStream, java.lang.String, java.util.Collection)
+     */
     public void merge(InputStream base, OutputStream os, String language, Collection<ResourceString> data) throws IOException {
+        Map<String, String> resMap = new HashMap<String, String>(data.size() * 4/3 + 1);
+        for (ResourceString res : data) {
+            resMap.put(res.getKey(), res.getValue());
+        }
+
         // TODO: We should use xml encoding declaration, instead of hardcoding
         // "UTF-8"
         Scanner in = new Scanner(base, "UTF-8");
@@ -206,49 +227,48 @@ public class XLIFFResource implements ResourceFilter {
                 os.write(line.getBytes());
                 // TODO: Instead of linear search resource key every time,
                 // we may create hash map first.
-                for (ResourceString res : data) {
-                    if(res.getKey().equals(key)){
 
-                        final int character_offset = 80;
+                if (resMap.containsKey(key)) {
+                    String value = resMap.get(key);
+                    final int character_offset = 80;
 
-                        BreakIterator b = BreakIterator.getWordInstance();
-                        b.setText(res.getValue());
+                    BreakIterator b = BreakIterator.getWordInstance();
+                    b.setText(value);
 
-                        int offset = 80;
-                        int start = 0;
+                    int offset = 80;
+                    int start = 0;
 
-                        boolean first = true;
+                    boolean first = true;
 
-                        StringBuilder temp = new StringBuilder(100);
-                        temp.append(whiteSpace).append("<target>");
-                        while (start < res.getValue().length()) {
-                            if (res.getValue().length() > character_offset) {
+                    StringBuilder temp = new StringBuilder(100);
+                    temp.append(whiteSpace).append("<target>");
+                    while (start < value.length()) {
+                        if (value.length() > character_offset) {
 
-                                if (!first) {
-                                    temp.append(whiteSpace).append(" ");
-                                }
-
-                                first = false;
-                                int end = b.following(offset);
-                                String str = res.getValue().substring(start, end);
-                                start = end;
-                                offset += 80;
-                                temp.append(str).append(" \\\n");
-                            } else {
-                                temp.append(res.getValue());
-                                start = res.getValue().length();
+                            if (!first) {
+                                temp.append(whiteSpace).append(" ");
                             }
-                        }
 
-                        if (res.getValue().length() > character_offset) {
-                            temp.append(whiteSpace);
+                            first = false;
+                            int end = b.following(offset);
+                            String str = value.substring(start, end);
+                            start = end;
+                            offset += 80;
+                            temp.append(str).append(" \\\n");
+                        } else {
+                            temp.append(value);
+                            start = value.length();
                         }
-
-                        temp.append("</target>\n");
-                        os.write(temp.toString().getBytes());
-                    } else {
-                        os.write(line.getBytes());
                     }
+
+                    if (value.length() > character_offset) {
+                        temp.append(whiteSpace);
+                    }
+
+                    temp.append("</target>\n");
+                    os.write(temp.toString().getBytes());
+                } else {
+                    os.write(line.getBytes());
                 }
 
             }

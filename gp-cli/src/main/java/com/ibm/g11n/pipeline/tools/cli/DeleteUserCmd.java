@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2015
+ * Copyright IBM Corp. 2015,2016
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import com.ibm.g11n.pipeline.client.ServiceException;
  * @author Visaahan Anandarajah
  */
 @Parameters(commandDescription = "Deletes user with given ID")
-final class DeleteUserCmd extends ServiceInstanceCmd {
+final class DeleteUserCmd extends BaseCmd {
     @Parameter(
             names = { "-d", "--id" },
             description = "User ID to delete account for",

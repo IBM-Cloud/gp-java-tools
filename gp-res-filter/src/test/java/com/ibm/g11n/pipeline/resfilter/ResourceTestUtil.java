@@ -40,21 +40,16 @@ public class ResourceTestUtil {
      * ignored while comparing files.
      */
     public static boolean compareFiles(File expected, File actual, int n) throws FileNotFoundException, IOException {
-        // TODO file size check is disabled because of platform newline code issue for now.
-//        if (n <= 0 && expected.length() != actual.length()) {
-//            fail("Comparing file <" + actual.getAbsolutePath() + "> with file <" + expected.getAbsolutePath() + "> ..."
-//                    + "\nFile size did not match, expected " + expected.length() + " was " + actual.length() + ". "
-//                    + "\nExpected content \n" + fileToString(expected) + "\nActual content\n" + fileToString(actual)
-//                    + "\n");
-//        }
-
         try (BufferedReader expectedRdr = new BufferedReader(new FileReader(expected));
                 BufferedReader actualRdr = new BufferedReader(new FileReader(actual))) {
 
             String expectedLine;
             String actualLine;
+            int lineNum = 0;
             while ((expectedLine = expectedRdr.readLine()) != null) {
                 actualLine = actualRdr.readLine();
+
+                lineNum++;
 
                 if (n > 0) {
                     n--;
@@ -63,10 +58,19 @@ public class ResourceTestUtil {
 
                 if (!expectedLine.equals(actualLine)) {
                     fail("Comparing file <" + actual.getAbsolutePath() + "> with file <" + expected.getAbsolutePath()
-                            + "> ..." + "\nExpected content: \n" + fileToString(expected) + "\nActual content:\n"
-                            + fileToString(actual) + "\n");
+                            + "> ..." + "\nContent differs on line " + lineNum + "\nExpected content: \n"
+                            + fileToString(expected) + "\nActual content:\n" + fileToString(actual) + "\n");
                     return false;
                 }
+            }
+
+            // actualRdr should be at the end as well, if it's not,
+            // it means the actual file has extra content at the end
+            if ((actualLine = actualRdr.readLine()) != null) {
+                fail("Comparing file <" + actual.getAbsolutePath() + "> with file <" + expected.getAbsolutePath()
+                        + "> ..." + "\n" + "File <" + actual.getAbsolutePath()
+                        + "> contains extra lines. \nExpected content: \n" + fileToString(expected)
+                        + "\nActual content:\n" + fileToString(actual) + "\n");
             }
         }
 

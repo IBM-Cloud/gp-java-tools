@@ -15,13 +15,19 @@
  */
 package com.ibm.g11n.pipeline.resfilter;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.text.BreakIterator;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Scanner;
+import java.util.Locale;
+import java.util.Map;
 import java.util.TreeSet;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -44,12 +50,25 @@ import org.xml.sax.SAXException;
 
 import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 
+/**
+ *
+ * @author Farhan Arshad
+ *
+ */
 public class AndroidStringsResource implements ResourceFilter {
+
+    private static final String CHAR_SET = "UTF-8";
 
     private static final String RESOURCES_STRING = "resources";
     private static final String NAME_STRING = "name";
     private static final String STR_STRING = "string";
     private static final String STR_ARRAY = "string-array";
+
+    private static final String STR_ARRAY_OPEN_TAG_PTRN = "^(\\s*<string-array\\s*name=\".*\">).*";
+    private static final String STR_ARRAY_CLOSE_TAG_PTRN = ".*(\\s*</string-array\\s*>)$";
+
+    private static final String STR_OPEN_TAG_PTRN = "^(\\s*<string\\s*name=\".*\">).*";
+    private static final String STR_CLOSE_TAG_PTRN = ".*(\\s*</string\\s*>)$";
 
     @Override
     public Collection<ResourceString> parse(InputStream in) throws IOException {
@@ -79,12 +98,14 @@ public class AndroidStringsResource implements ResourceFilter {
     }
 
     /**
-     * This method traverses through the DOM tree and collect resource
-     * strings
+     * This method traverses through the DOM tree and collect resource strings
      *
-     * @param nodeList      NodeList object
-     * @param startSeqNum   The first sequence number to be used
-     * @param resStrings    Collection to store result resource strings
+     * @param nodeList
+     *            NodeList object
+     * @param startSeqNum
+     *            The first sequence number to be used
+     * @param resStrings
+     *            Collection to store result resource strings
      * @return The last sequence number + 1
      */
     private int collectResourceStrings(NodeList nodeList, int startSeqNum, Collection<ResourceString> resStrings) {
@@ -111,14 +132,12 @@ public class AndroidStringsResource implements ResourceFilter {
     }
 
     @Override
-    public void write(OutputStream os, String language,
-            Collection<ResourceString> map) {
+    public void write(OutputStream os, String language, Collection<ResourceString> map) {
 
         TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
         sortedResources.addAll(map);
 
-        DocumentBuilderFactory docFactory = DocumentBuilderFactory
-                .newInstance();
+        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = null;
         try {
             docBuilder = docFactory.newDocumentBuilder();
@@ -146,11 +165,11 @@ public class AndroidStringsResource implements ResourceFilter {
                 int startIndex = 0;
                 int endIndex = -1;
 
-                while (endIndex < value.length()-1) {
+                while (endIndex < value.length() - 1) {
                     endIndex = value.indexOf(',', startIndex);
 
                     if (endIndex == -1) {
-                        endIndex = value.length()-1;
+                        endIndex = value.length() - 1;
                     }
 
                     String itemValue = value.substring(startIndex + 1, endIndex);
@@ -172,12 +191,10 @@ public class AndroidStringsResource implements ResourceFilter {
                 rootElement.appendChild(child);
             }
 
-
         }
         doc.appendChild(rootElement);
 
-        TransformerFactory transformerFactory = TransformerFactory
-                .newInstance();
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = null;
         try {
             transformer = transformerFactory.newTransformer();
@@ -188,8 +205,9 @@ public class AndroidStringsResource implements ResourceFilter {
 
         // to add the tab spacing to files
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-        transformer.setOutputProperty(
-                "{http://xml.apache.org/xslt}indent-amount", "2");
+        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+
+        transformer.setOutputProperty(OutputKeys.STANDALONE, "no");
 
         DOMSource source = new DOMSource(doc);
         StreamResult result = new StreamResult(os);
@@ -204,73 +222,168 @@ public class AndroidStringsResource implements ResourceFilter {
     }
 
     @Override
-    public void merge(InputStream base, OutputStream outStream, String language,
-            Collection<ResourceString> data) throws IOException {
-        Scanner in = new Scanner(base, "UTF-8");
-        String line = "";
-        String pattern = "^.*<string.*name=\".*\">.*\n";
+    public void merge(InputStream base, OutputStream outStream, String language, Collection<ResourceString> data)
+            throws IOException {
+        // put res data into a map for easier searching
+        Map<String, String> resMap = new HashMap<String, String>(data.size() * 4 / 3 + 1);
+        for (ResourceString res : data) {
+            resMap.put(res.getKey(), res.getValue());
+        }
 
-        while (in.hasNextLine()) {
-            line = in.nextLine() + "\n";
+        BufferedReader reader = new BufferedReader(new InputStreamReader(base, CHAR_SET));
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outStream, CHAR_SET));
 
-            if (!line.matches(pattern)) {
-                outStream.write(line.getBytes());
-            } else {
-                String[] wordList = line.split("\"");
-                String key = wordList[1].trim();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            if (line.matches(STR_ARRAY_OPEN_TAG_PTRN)) {
+                // handle <string-array name="name"> tag
+                String openingTag = line.substring(0, line.indexOf('>') + 1);
+                String key = openingTag.substring(openingTag.indexOf('"') + 1, openingTag.lastIndexOf('"'));
 
-                // TODO: build hash map first, instead of
-                // linear search in the given collection
-                // every time?
-                for (ResourceString res : data) {
-                    if (res.getKey().equals(key)) {
-                        StringBuilder temp = new StringBuilder(100);
-                        final int character_offset = 80;
-
-                        BreakIterator b = BreakIterator.getWordInstance();
-                        b.setText(res.getValue());
-
-                        int offset = 80;
-                        int start = 0;
-
-                        boolean first = true;
-
-                        String whiteSpaceStr = line.substring(0, line.indexOf("<"));
-                        temp.append(whiteSpaceStr).append("<string name=\"").append(key).append("\">");
-
-                        while (start < res.getValue().length()) {
-                            if (res.getValue().length() > character_offset) {
-
-                                if (!first) {
-                                    temp.append(whiteSpaceStr).append(" ");
-                                }
-
-                                first = false;
-                                int end = b.following(offset);
-                                String str = res.getValue().substring(start, end);
-                                start = end;
-                                offset += 80;
-                                temp.append(str).append(" \\\n");
-                            } else {
-                                temp.append(res.getValue());
-                                start = res.getValue().length();
-                            }
-                        }
-
-                        if (res.getValue().length() > character_offset) {
-                            temp.append(whiteSpaceStr);
-                        }
-                        temp.append("</string>\n");
-                        outStream.write(temp.toString().getBytes());
-
-                        while (line.indexOf("</string>") == -1) {
-                            line = in.nextLine();
-                        }
-                    }
+                if (!resMap.containsKey(key)) {
+                    writer.write(line);
+                    writer.newLine();
+                    continue;
                 }
 
+                String value = resMap.get(key);
+
+                if (!(value.startsWith("[") && value.endsWith("]"))) {
+                    writer.write(line);
+                    writer.newLine();
+                    continue;
+                }
+
+                String tabSubString = openingTag.substring(0, openingTag.indexOf('<'));
+                String spaces = tabSubString + getTabStr(tabSubString);
+                writer.write(openingTag);
+                writer.newLine();
+
+                String[] items = value.substring(1, value.length() - 1).split(",");
+
+                for (int i = 0; i < items.length; i++) {
+                    writer.write(formatMessage("<item>", items[i].trim(), "</item>", spaces, language));
+                }
+
+                writer.write(openingTag.substring(0, openingTag.indexOf('<')));
+
+                writer.write("</string-array>");
+                writer.newLine();
+
+                while ((line = reader.readLine()) != null && !line.matches(STR_ARRAY_CLOSE_TAG_PTRN))
+                    ;
+            } else if (line.matches(STR_OPEN_TAG_PTRN)) {
+                // handle <string name="name"> tag
+                String openingTag = line.substring(0, line.indexOf('>') + 1);
+                String key = openingTag.substring(openingTag.indexOf('"') + 1, openingTag.lastIndexOf('"'));
+
+                if (!resMap.containsKey(key)) {
+                    writer.write(line);
+                    writer.newLine();
+                    continue;
+                }
+
+                String value = resMap.get(key);
+
+                String spaces = openingTag.substring(0, openingTag.indexOf('<'));
+
+                writer.write(formatMessage(openingTag.trim(), value, "</string>", spaces, language));
+
+                while (line != null && !line.matches(STR_CLOSE_TAG_PTRN)) {
+                    line = reader.readLine();
+                }
+            } else {
+                writer.write(line);
+                writer.newLine();
             }
         }
-        in.close();
+
+        writer.flush();
+    }
+
+    /**
+     * This method looks at the provided string to determine if a tab char or
+     * spaces are being used for tabbing.
+     *
+     * Defaults to spaces;
+     */
+    static String getTabStr(String str) {
+        if (!str.isEmpty() && str.charAt(0) == '\t') {
+            return "\t";
+        } else {
+            return "    ";
+        }
+    }
+
+    /**
+     * Gets the number of spaces the whitespace string is using. Tab chars are
+     * equal to 4 chars. i.e. a tab is considered to be of size 4.
+     */
+    static int getSpacesSize(String whitespace) {
+        int size = 0;
+        for (int i = 0; i < whitespace.length(); i++) {
+            if (whitespace.charAt(i) == '\t') {
+                size += 4;
+            } else if (whitespace.charAt(i) == ' ') {
+                size++;
+            }
+        }
+        return size;
+    }
+
+    static String formatMessage(String openingTag, String message, String closingTag, String whitespace,
+            String localeStr) {
+        int maxLineLen = 80;
+
+        StringBuilder output = new StringBuilder();
+
+        int messageLen = message.length();
+
+        output.append(whitespace).append(openingTag);
+
+        // message fits on one line
+        if (maxLineLen > getSpacesSize(whitespace) + openingTag.length() + messageLen + closingTag.length()) {
+            return output.append(message).append(closingTag).append('\n').toString();
+        }
+
+        // message needs to be split onto multiple lines
+        output.append('\n');
+
+        // word breaks differ based on the locale
+        Locale locale;
+        if (localeStr == null) {
+            locale = Locale.getDefault();
+        } else {
+            locale = new Locale(localeStr);
+        }
+        BreakIterator wordIterator = BreakIterator.getWordInstance(locale);
+        wordIterator.setText(message);
+
+        // the available char space once we account for the tabbing
+        // spaces and other chars such as quotes
+        int available = maxLineLen - getSpacesSize(whitespace) - 4;
+
+        String tabStr = getTabStr(whitespace);
+
+        // a word iterator is used to traverse the message;
+        // a reference to the previous word break is kept
+        // so that once the current reference goes beyond
+        // the available char limit, the message can be split
+        // without going over the limit
+        int start = 0;
+        int end = wordIterator.first();
+        int prevEnd = end;
+        while (end != BreakIterator.DONE) {
+            prevEnd = end;
+            end = wordIterator.next();
+            if (end - start > available) {
+                output.append(whitespace).append(tabStr).append(message.substring(start, prevEnd)).append('\n');
+                start = prevEnd;
+            } else if (end == messageLen) {
+                output.append(whitespace).append(tabStr).append(message.substring(start, end)).append('\n');
+            }
+        }
+
+        return output.append(whitespace).append(closingTag).append('\n').toString();
     }
 }

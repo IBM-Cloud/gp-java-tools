@@ -30,7 +30,7 @@ import java.util.LinkedList;
 import org.junit.Test;
 
 /**
- * @author farhan
+ * @author Farhan Arshad
  *
  */
 public class AmdJsResourceTest {
@@ -38,12 +38,12 @@ public class AmdJsResourceTest {
 
     private static final File EXPECTED_WRITE_FILE = new File("src/test/resource/resfilter/amdjs/write-output.js");
 
-    private static final File MERGE_INPUT_0_FILE = new File("src/test/resource/resfilter/amdjs/merge-input0.js");
-    private static final File MERGE_INPUT_1_FILE = new File("src/test/resource/resfilter/amdjs/merge-input1.js");
-    private static final File MERGE_INPUT_2_FILE = new File("src/test/resource/resfilter/amdjs/merge-input2.js");
-    private static final File EXPECTED_MERGE_0_FILE = new File("src/test/resource/resfilter/amdjs/merge-output0.js");
-    private static final File EXPECTED_MERGE_1_FILE = new File("src/test/resource/resfilter/amdjs/merge-output1.js");
-    private static final File EXPECTED_MERGE_2_FILE = new File("src/test/resource/resfilter/amdjs/merge-output2.js");
+    private static final File MERGE_INPUT_1_FILE = new File("src/test/resource/resfilter/amdjs/merge-input-1.js");
+    private static final File MERGE_INPUT_2_FILE = new File("src/test/resource/resfilter/amdjs/merge-input-2.js");
+    private static final File MERGE_INPUT_3_FILE = new File("src/test/resource/resfilter/amdjs/merge-input-3.js");
+    private static final File EXPECTED_MERGE_1_FILE = new File("src/test/resource/resfilter/amdjs/merge-output-1.js");
+    private static final File EXPECTED_MERGE_2_FILE = new File("src/test/resource/resfilter/amdjs/merge-output-2.js");
+    private static final File EXPECTED_MERGE_3_FILE = new File("src/test/resource/resfilter/amdjs/merge-output-3.js");
 
     private static Collection<ResourceString> EXPECTED_INPUT_RES_LIST;
 
@@ -74,6 +74,7 @@ public class AmdJsResourceTest {
                 + "Great Horned Owl - translated Great Horned Owl - translated "
                 + "Great Horned Owl - translated Great Horned Owl - translated ";
         MERGE_RES_LIST.add(new ResourceString("owl repeated", value, 3));
+
         MERGE_RES_LIST.add(new ResourceString("owl 3", "Great Horned Owl - translated", 5));
 
         value = "Translated - IBM Globalization Pipeline provides machine translation and editing "
@@ -85,6 +86,19 @@ public class AmdJsResourceTest {
         MERGE_RES_LIST.add(new ResourceString("bear 1", "Brown Bear - translated", 1));
         MERGE_RES_LIST.add(new ResourceString("description", value, 4));
         MERGE_RES_LIST.add(new ResourceString("frog 2", "Red-eyed Tree Frog - translated", 2));
+        MERGE_RES_LIST.add(new ResourceString(
+                "Lorem",
+                "Loremのイプサムは、単に印刷と植字業界のダミーテキストです。 Loremのイプサムは、未知のプリンターがタイプのゲラを取り、"
+                        + "タイプ標本の本を作ってそれをスクランブル1500年代、以来、業界の標準ダミーテキストとなっています。それは本質的に変わらず、"
+                        + "何世紀だけでなく、電子組版に飛躍するだけでなく5を生き延びてきました。"
+                        + "それはLoremのイプサムのバージョンを含むアルダスのPageMakerのようなデスクトップパブリッシングソフトウェアと、"
+                        + "より最近Loremのイプサムの通路を含むLetrasetシートのリリースでは、1960年代に普及したところ。",
+                7));
+        MERGE_RES_LIST.add(new ResourceString("numbers",
+                "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 "
+                        + "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 "
+                        + "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 ",
+                6));
     }
 
     private static final AmdJsResource res = new AmdJsResource();
@@ -119,16 +133,6 @@ public class AmdJsResourceTest {
         tempFile.deleteOnExit();
 
         try (OutputStream os = new FileOutputStream(tempFile);
-                InputStream is = new FileInputStream(MERGE_INPUT_0_FILE)) {
-            res.merge(is, os, "en", MERGE_RES_LIST);
-            os.flush();
-            assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_0_FILE, tempFile));
-        }
-
-        tempFile = File.createTempFile(this.getClass().getSimpleName(), ".js");
-        tempFile.deleteOnExit();
-
-        try (OutputStream os = new FileOutputStream(tempFile);
                 InputStream is = new FileInputStream(MERGE_INPUT_1_FILE)) {
             res.merge(is, os, "en", MERGE_RES_LIST);
             os.flush();
@@ -143,6 +147,16 @@ public class AmdJsResourceTest {
             res.merge(is, os, "en", MERGE_RES_LIST);
             os.flush();
             assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_2_FILE, tempFile));
+        }
+
+        tempFile = File.createTempFile(this.getClass().getSimpleName(), ".js");
+        tempFile.deleteOnExit();
+
+        try (OutputStream os = new FileOutputStream(tempFile);
+                InputStream is = new FileInputStream(MERGE_INPUT_3_FILE)) {
+            res.merge(is, os, "ja", MERGE_RES_LIST);
+            os.flush();
+            assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_3_FILE, tempFile));
         }
     }
 }

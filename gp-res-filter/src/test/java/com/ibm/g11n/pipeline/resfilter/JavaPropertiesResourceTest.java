@@ -35,7 +35,7 @@ import com.ibm.g11n.pipeline.resfilter.JavaPropertiesResource.PropDef;
 import com.ibm.g11n.pipeline.resfilter.JavaPropertiesResource.PropDef.PropSeparator;
 
 /**
- * @author farhan
+ * @author Farhan Arshad
  *
  */
 public class JavaPropertiesResourceTest {
@@ -48,7 +48,7 @@ public class JavaPropertiesResourceTest {
             "src/test/resource/resfilter/properties/merge-output.properties");
 
     private static final File PARSE_TEST_INPUT_FILE = new File(
-            "src/test/resource/resfilter/properties/parse-test-input.properties");
+            "src/test/resource/resfilter/properties/parseline-test-input.properties");
 
     private static Collection<ResourceString> EXPECTED_INPUT_RES_LIST;
 

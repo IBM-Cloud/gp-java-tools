@@ -39,17 +39,20 @@ public class XLIFFResourceTest {
 
     private static final File EXPECTED_WRITE_FILE = new File("src/test/resource/resfilter/xliff/write-output.xlf");
 
+    private static final File MERGE_INPUT_1_FILE = new File("src/test/resource/resfilter/xliff/merge-input-1.xlf");
+    private static final File MERGE_INPUT_2_FILE = new File("src/test/resource/resfilter/xliff/merge-input-2.xlf");
+    private static final File EXPECTED_MERGE_1_FILE = new File("src/test/resource/resfilter/xliff/merge-output-1.xlf");
+    private static final File EXPECTED_MERGE_2_FILE = new File("src/test/resource/resfilter/xliff/merge-output-2.xlf");
+
     private static Collection<ResourceString> EXPECTED_INPUT_RES_LIST;
 
     static {
         EXPECTED_INPUT_RES_LIST = new LinkedList<ResourceString>();
 
-        String key, value;
-
-        key = "key";
-        value = "value";
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString(key, value, 1));
-
+        EXPECTED_INPUT_RES_LIST.add(new ResourceString("1", "Quetzal", 1));
+        EXPECTED_INPUT_RES_LIST
+                .add(new ResourceString("3", "An application to manipulate and process XLIFF documents", 2));
+        EXPECTED_INPUT_RES_LIST.add(new ResourceString("4", "XLIFF Data Manager", 3));
     }
 
     private static Collection<ResourceString> WRITE_RES_LIST;
@@ -57,11 +60,18 @@ public class XLIFFResourceTest {
     static {
         WRITE_RES_LIST = new LinkedList<ResourceString>();
 
-        String key, value;
+        WRITE_RES_LIST.add(new ResourceString("3", "An application to manipulate and process XLIFF documents", 2));
+        WRITE_RES_LIST.add(new ResourceString("4", "XLIFF Data Manager", 3));
+        WRITE_RES_LIST.add(new ResourceString("1", "Quetzal", 1));
+    }
 
-        key = "key";
-        value = "value";
-        WRITE_RES_LIST.add(new ResourceString(key, value, 3));
+    private static Collection<ResourceString> MERGE_RES_LIST;
+
+    static {
+        MERGE_RES_LIST = new LinkedList<ResourceString>();
+        MERGE_RES_LIST.add(new ResourceString("1", "Quetzal", 1));
+        MERGE_RES_LIST.add(new ResourceString("2", "XLIFF 文書を編集、または処理 するアプリケーションです。", 2));
+        MERGE_RES_LIST.add(new ResourceString("3", "XLIFF データ・マネージャ", 3));
     }
 
     private static final XLIFFResource res = new XLIFFResource();
@@ -94,5 +104,26 @@ public class XLIFFResourceTest {
     @Ignore("not ready yet")
     @Test
     public void testMerge() throws IOException {
+        File tempFile;
+
+        tempFile = File.createTempFile(this.getClass().getSimpleName(), ".xlf");
+        tempFile.deleteOnExit();
+
+        try (OutputStream os = new FileOutputStream(tempFile);
+                InputStream is = new FileInputStream(MERGE_INPUT_1_FILE)) {
+            res.merge(is, os, "en", MERGE_RES_LIST);
+            os.flush();
+            assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_1_FILE, tempFile));
+        }
+
+        tempFile = File.createTempFile(this.getClass().getSimpleName(), ".xlf");
+        tempFile.deleteOnExit();
+
+        try (OutputStream os = new FileOutputStream(tempFile);
+                InputStream is = new FileInputStream(MERGE_INPUT_2_FILE)) {
+            res.merge(is, os, "en", MERGE_RES_LIST);
+            os.flush();
+            assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_2_FILE, tempFile));
+        }
     }
 }

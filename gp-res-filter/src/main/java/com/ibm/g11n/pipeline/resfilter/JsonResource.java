@@ -76,13 +76,15 @@ public class JsonResource implements ResourceFilter {
         for (ResourceString res : sortedResources) {
             kvmap.put(res.getKey(), res.getValue());
         }
-        try (OutputStreamWriter writer = new OutputStreamWriter(new BufferedOutputStream(outStream), StandardCharsets.UTF_8)) {
-            new GsonBuilder().setPrettyPrinting().create().toJson(kvmap, writer);
+        try (OutputStreamWriter writer = new OutputStreamWriter(new BufferedOutputStream(outStream),
+                StandardCharsets.UTF_8)) {
+            new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(kvmap, writer);
         }
     }
 
     @Override
-    public void merge(InputStream base, OutputStream outStream, String language, Collection<ResourceString> data) throws IOException{
+    public void merge(InputStream base, OutputStream outStream, String language, Collection<ResourceString> data)
+            throws IOException {
         throw new UnsupportedOperationException("Merging JSON resource is not supported.");
     }
 }
