@@ -19,7 +19,7 @@
 
 * [Overview](#TOC-Overview)
 * [Prerequisites](#TOC-Prerequisites)
-* [Commands](#TOC-Commands)
+* [Command Reference](#TOC-Command-Reference)
   * [Help Command](#TOC-Cmd-Help)
   * [Bundle Commands](#TOC-Cmd-Bundle)
   * [User Commands](#TOC-Cmd-User)
@@ -41,7 +41,7 @@ Globalization Pipeline CLI Tool is distributed in a single jar package.
 You need Java SE Runtime Environment 7 or later version to run the tool.
 
 ---
-## <a name="TOC-Commands"></a>Commands
+## <a name="TOC-Command-Reference"></a>Command Reference
 
 Most of commands takes user credentials for a Globalization Pipeline service
 instance. The common command options for specifying user credentials are
@@ -315,13 +315,13 @@ You may already have resource bundles translated from English to several
 different languages. If you want to import the already translated contents to
 a Globalization Pipeline service bundle, then you can follow the steps below.
 
-1. Create a new bundle with English as the source language. In this example,
+1\. Create a new bundle with English as the source language. In this example,
 we use *com.ibm.example.MyBundle* as the bundle ID.
 ```
 java -jar gp-cli.jar create -b com.ibm.example.MyBundle -l en -j mycreds.json
 ```
 
-2. Import the English(en) resource bundle contents to *MyBundle*. The resource bundle
+2\. Import the English(en) resource bundle contents to *MyBundle*. The resource bundle
 file in this example is a Java properties fiel - MyBundle.properties
 ```
 java -jar gp-cli.jar import -b com.ibm.example.MyBundle -l en -t JAVA -f MyBundle.properties -j mycreds.json
@@ -329,14 +329,14 @@ java -jar gp-cli.jar import -b com.ibm.example.MyBundle -l en -t JAVA -f MyBundl
 At this point, the bundle *com.ibm.example.MyBundle* in the Globalization
 Pipeline service instance contains only English resource strings.
 
-3. Import the corresponding translated version. In this example, the operation
+3\. Import the corresponding translated version. In this example, the operation
 below imports French(fr) translation from MyBundle_fr.properties.
 ```
 java -jar gp-cli.jar import -b com.ibm.example.MyBundle -l fr -t JAVA -f MyBundle_fr.properties -j mycreds.json
 ```
 This operation automatically adds French to the bundle *com.ibm.example.MyBundle*.
 
-4. Repeat step 3 above for other translated versions.
+4\. Repeat step 3 above for other translated versions.
 
 
 
