@@ -1,4 +1,4 @@
-/*  
+/*
  * Copyright IBM Corp. 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,12 +21,19 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.text.BreakIterator;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
+import java.util.TreeSet;
 
 import org.mozilla.javascript.Node;
 import org.mozilla.javascript.Parser;
@@ -40,16 +47,23 @@ import org.mozilla.javascript.ast.ObjectProperty;
 import org.mozilla.javascript.ast.ParenthesizedExpression;
 import org.mozilla.javascript.ast.StringLiteral;
 
+import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
+
 /**
  * AMD i18n JS resource filter implementation.
- * 
- * @author Yoshito Umaoka
+ *
+ * @author Yoshito Umaoka, Farhan Arshad
  */
 public class AmdJsResource implements ResourceFilter {
 
-    private static class KeyValueVisitor implements NodeVisitor {
-        Map<String, String> elements = new HashMap<String, String>();
+    private static String KEY_LINE_PATTERN = "^\\s*\".+\" *:.*";
+    private static String ENTRY_END_LINE_PATTERN = ".*[\\},]\\s*";
+    private static String CLOSE_BRACE_PATTERN = ".*}.*";
 
+    private static class KeyValueVisitor implements NodeVisitor {
+        LinkedHashMap<String, String> elements = new LinkedHashMap<String, String>();
+
+        @Override
         public boolean visit(AstNode node) {
             boolean continueProcessing = true;
             // We only need to check Object Literals
@@ -174,92 +188,232 @@ public class AmdJsResource implements ResourceFilter {
     }
 
     @Override
-    public Map<String, String> parse(InputStream inStream) throws IOException {
-        Map<String, String> resultMap = null;
+    public Collection<ResourceString> parse(InputStream inStream) throws IOException {
+        LinkedHashMap<String, String> resultMap = null;
+        Collection<ResourceString> resultCol = new LinkedList<ResourceString>();
         try (InputStreamReader reader = new InputStreamReader(new BomInputStream(inStream), "UTF-8")) {
             AstRoot root = new Parser().parse(reader, null, 1);
             KeyValueVisitor visitor = new KeyValueVisitor();
             root.visitAll(visitor);
             resultMap = visitor.elements;
+            int sequenceNum = 1;
+            for (Entry<String, String> entry : resultMap.entrySet()) {
+                resultCol.add(new ResourceString(entry.getKey(), entry.getValue(), sequenceNum++));
+            }
         } catch (Exception e) {
             throw new IllegalResourceFormatException(e);
         }
-        return resultMap;
+        return resultCol;
     }
 
     @Override
-    public void write(OutputStream outStream, String language, Map<String, String> data) throws IOException {
+    public void write(OutputStream outStream, String language, Collection<ResourceString> resStrings)
+            throws IOException {
+        TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
+        sortedResources.addAll(resStrings);
+
         try (OutputStreamWriter writer = new OutputStreamWriter(new BufferedOutputStream(outStream), "UTF-8")) {
             writer.write("define({\n");
             boolean first = true;
-            for (Entry<String, String> entry : data.entrySet()) {
+            for (ResourceString res : sortedResources) {
                 if (first) {
                     first = false;
                 } else {
                     writer.write(",\n");
                 }
-                writer.write("\"" + entry.getKey() + "\": " + "\"" + entry.getValue() + "\"");
+                writer.write("\"" + res.getKey() + "\": ");
+                writer.write("\"" + res.getValue() + "\"");
             }
             writer.write("\n});\n");
         }
     }
 
     @Override
-    public void merge(InputStream base, OutputStream outStream, String language, Map<String, String> data) throws IOException{
+    public void merge(InputStream base, OutputStream outStream, String language, Collection<ResourceString> data)
+            throws IOException {
+        Map<String, String> resMap = new HashMap<String, String>(data.size() * 4 / 3 + 1);
+        for (ResourceString res : data) {
+            resMap.put(res.getKey(), res.getValue());
+        }
+
+        // do not close the scanner because it closes the base input stream
+        @SuppressWarnings("resource")
         Scanner in = new Scanner(base, "UTF-8");
-        
-        String line = "";
-        
-        while(in.hasNextLine()){
-            line = in.nextLine() + "\n";
-            
-            if (line.indexOf(":") == -1){
-                outStream.write(line.getBytes());
-            }
-            
-            else {
-                String key = line.substring(0, line.indexOf(":")).trim().replace("\"", "");
-                final int character_offset = 80;
-                
-                BreakIterator b = BreakIterator.getWordInstance();
-                b.setText(data.get(key));
-                
-                int offset = 80;
-                int start = 0;
-                
-                boolean first = true;
-                
-                if (data.containsKey(key)){
-                    StringBuilder temp = new StringBuilder(1000);
-                    temp.append("\"").append(key).append("\"").append(":");
-                    
-                    while (start < data.get(key).length()){
-                        if (data.get(key).length() > character_offset){
-                            if (!first){
-                                temp.append(" ");
-                            }
-                            
-                            first = false;
-                            int end = b.following(offset);
-                            String str = data.get(key).substring(start,end);
-                            start = end;
-                            offset += 80;
-                            temp.append("\"").append(str).append("\"\\\n");
-                        }
-                        else {
-                            temp.append("\"").append(data.get(key)).append("\"");
-                            start = data.get(key).length();
-                        }
+        PrintWriter pw = new PrintWriter(new OutputStreamWriter(outStream, StandardCharsets.UTF_8), true);
+        String line;
+        while (in.hasNextLine()) {
+            line = in.nextLine();
+
+            if (!line.matches(KEY_LINE_PATTERN) || line.trim().endsWith("{")) {
+                pw.println(line);
+            } else {
+                String[] parts = line.split(":");
+                String left = parts[0];
+
+                String key = left.substring(left.indexOf('"') + 1, left.lastIndexOf('"')).trim();
+
+                if (resMap.containsKey(key)) {
+                    String value = resMap.get(key);
+                    String tabPrefix = extractTabPrefix(left);
+                    pw.write(formatEntry(key, value, tabPrefix, language));
+
+                    while (!line.matches(ENTRY_END_LINE_PATTERN) && !in.hasNext(CLOSE_BRACE_PATTERN)) {
+                        line = in.nextLine();
                     }
-                    temp.append(",\n");
-                    outStream.write(temp.toString().getBytes());
-                }
-                else {
-                    outStream.write(line.getBytes());
+
+                    if (!in.hasNext(CLOSE_BRACE_PATTERN)) {
+                        pw.write(',');
+                    }
+                    pw.println();
+                } else {
+                    pw.println(line);
+                    while (!line.matches(ENTRY_END_LINE_PATTERN)) {
+                        line = in.nextLine();
+                        pw.println(line);
+                    }
                 }
             }
         }
-        
-        in.close();
+    }
+
+    /**
+     * Formats the value into the format:
+     *
+     * \<tabPrefix\>"key" : "value",
+     *
+     * Entry may be split onto multiple lines in the form: "bear 1": "Brown " +
+     * "Bear"
+     */
+    private static String formatEntry(String key, String value, String tabPrefix, String localeStr) {
+        int maxLineLen = 80;
+
+        StringBuilder output = new StringBuilder();
+
+        int keyLen = key.length();
+        int valueLen = value.length();
+
+        // entry fits on one line
+        if (maxLineLen > keyLen + valueLen + tabPrefix.length() + 7) {
+            return output.append(tabPrefix).append('"').append(key).append("\" : \"").append(value).append('"')
+                    .toString();
+        }
+
+        // message needs to be split onto multiple lines
+        output.append(tabPrefix);
+
+        // word breaks differ based on the locale
+        Locale locale = localeStr == null ? Locale.getDefault() : new Locale(localeStr);
+
+        BreakIterator wordIterator = BreakIterator.getWordInstance(locale);
+
+        // the available char space once we account for the tabbing
+        // spaces and other necessary chars such as quotes
+        int available = maxLineLen - getSpacesSize(tabPrefix) - 2;
+
+        // the tab prefix for multi-lined entries
+        String tabStr = tabPrefix + getTabStr(tabPrefix);
+
+        // actual size of prefix, i.e. tabs count as 4 spaces
+        int tabStrSize = getSpacesSize(tabStr);
+
+        // process the key first
+        // splitting it into multiple lines if necessary
+        wordIterator.setText(key);
+        int start = 0;
+        int end = wordIterator.first();
+        int prevEnd = end;
+        boolean firstLine = true;
+        while (end != BreakIterator.DONE) {
+            prevEnd = end;
+            end = wordIterator.next();
+            if (end - start > available) {
+                output.append('"').append(key.substring(start, prevEnd)).append('"').append('\n').append(tabStr)
+                        .append("+ ");
+                start = prevEnd;
+
+                // after first line, indent subsequent lines with 4 additional
+                // spaces
+                if (firstLine) {
+                    available = maxLineLen - tabStrSize - 5;
+                    firstLine = false;
+                }
+            } else if (end == keyLen) {
+                output.append('"').append(key.substring(start, end)).append("\" : ");
+                available = available - 5 - (end - start);
+            }
+        }
+
+        // process the key first
+        // splitting it into multiple lines if necessary
+        wordIterator.setText(value);
+        start = 0;
+        end = wordIterator.first();
+        prevEnd = end;
+        firstLine = true;
+        while (end != BreakIterator.DONE) {
+            prevEnd = end;
+            end = wordIterator.next();
+            if (end - start > available) {
+                output.append('"').append(value.substring(start, prevEnd)).append('"').append('\n').append(tabStr)
+                        .append("+ ");
+                start = prevEnd;
+
+                // after first line, indent subsequent lines with 4 additional
+                // spaces
+                if (firstLine) {
+                    available = maxLineLen - tabStrSize - 5;
+                    firstLine = false;
+                }
+            } else if (end == valueLen) {
+                output.append('"').append(value.substring(start, end)).append('"');
+            }
+        }
+
+        return output.toString();
+    }
+
+    /**
+     * This method looks at the provided string to determine if a tab char or
+     * spaces are being used for tabbing.
+     *
+     * Defaults to spaces
+     */
+    static String getTabStr(String str) {
+        if (!str.isEmpty() && str.charAt(0) == '\t') {
+            return "\t\t";
+        } else {
+            return "        ";
+        }
+    }
+
+    /**
+     * Returns the whitespace prefix of the provided string e.g. if s =
+     * "    hello"
+     *
+     * Then the return value will be "    ".
+     */
+    private static String extractTabPrefix(String s) {
+        int i = 0;
+        while (i < s.length() && (s.charAt(i) == ' ' || s.charAt(i) == '\t')) {
+            i++;
+        }
+
+        return s.substring(0, i);
+    }
+
+    /**
+     * Gets the number of spaces the whitespace string is using. Tab chars are
+     * equal to 4 chars. i.e. a tab is considered to be of size 4.
+     */
+    static int getSpacesSize(String whitespace) {
+        int size = 0;
+        for (int i = 0; i < whitespace.length(); i++) {
+            if (whitespace.charAt(i) == '\t') {
+                size += 4;
+            } else if (whitespace.charAt(i) == ' ') {
+                size++;
+            }
+        }
+        return size;
     }
 }

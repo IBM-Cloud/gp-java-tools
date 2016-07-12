@@ -16,16 +16,21 @@
 package com.ibm.g11n.pipeline.tools.cli;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.ibm.g11n.pipeline.client.ResourceEntryData;
 import com.ibm.g11n.pipeline.client.ServiceException;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilter;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterFactory;
+import com.ibm.g11n.pipeline.resfilter.ResourceString;
 import com.ibm.g11n.pipeline.resfilter.ResourceType;
 
 /**
@@ -68,11 +73,27 @@ final class ExportCmd extends BundleCmd {
 
     @Override
     protected void _execute() {
-        Map<String, String> resStrings = null;
+        Map<String, ResourceEntryData> resEntries = null;
+        Collection<ResourceString> resStrings = new LinkedList<>();
         try {
-            resStrings =
-                    getClient().getResourceStrings(bundleId, languageId, fallback);
-
+            resEntries =
+                    getClient().getResourceEntries(bundleId, languageId);
+            for (Entry<String, ResourceEntryData> entry : resEntries.entrySet()) {
+                String key = entry.getKey();
+                ResourceEntryData data = entry.getValue();
+                String resVal = data.getValue();
+                Integer seqNum = data.getSequenceNumber();
+                if (resVal == null && fallback) {
+                    resVal = data.getSourceValue();
+                }
+                if (resVal != null) {
+                    ResourceString resString = new ResourceString(key, resVal);
+                    if (seqNum != null) {
+                        resString.setSequenceNumber(seqNum.intValue());
+                    }
+                    resStrings.add(resString);
+                }
+            }
         } catch (ServiceException e) {
             throw new RuntimeException(e);
         }

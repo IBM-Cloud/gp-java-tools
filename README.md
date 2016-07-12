@@ -39,7 +39,4 @@ information. For example, exporting a resource bundle hosted by an instance
 of Globalization Pipeline service to a specific file format, adding a new target
 language in bundle configuration, creating a new user and so on.
 
-To see available commands and options, please run the help command as below.
-
-
-`java -jar gp-cli-x.y.z[-SNAPSHOT].jar help` 
+To see available commands and options, please see [Globalization Pipeline Command Line Interface Guide](gp-cli.md)

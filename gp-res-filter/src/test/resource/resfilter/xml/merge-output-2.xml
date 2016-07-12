@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string-array name="planets_array">
+		<item>Mercury-translated</item>
+		<item>Venus-translated</item>
+		<item>Earth-translated</item>
+		<item>Mars-translated</item>
+	</string-array>
+	<string-array name="Lorem_array">
+		<item>
+			Loremのイプサムは、単に印刷と植字業界のダミーテキストです。 Loremのイプサムは、未知のプリンターがタイプのゲラを取り
+		</item>
+		<item>タイプ標本の本を作ってそれをスクランブル1500年代</item>
+		<item>以来、業界の標準ダミーテキストとなっています。それは本質的に変わらず</item>
+		<item>何世紀だけでなく</item>
+		<item>
+			電子組版に飛躍するだけでなく5を生き延びてきました。それはLoremのイプサムのバージョンを含むアルダスのPageMakerのような
+			デスクトップパブリッシングソフトウェアと、より最近Loremのイプサムの通路を含むLetrasetシートのリリースでは、1960年代に
+			普及したところ。
+		</item>
+	</string-array>
+	<plurals name="numberOfSongsAvailable">
+		<item quantity="one">Znaleziono %d piosenke.</item>
+		<item quantity="few">Znaleziono %d piosenki.</item>
+		<item quantity="other">Znaleziono %d piosenek.</item>
+	</plurals>
+	<string name="bear">Brown Bear-translated</string>
+	<string name="numbers">
+		1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 
+		7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 
+		3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 
+	</string>
+	<string name="frog">Red-eyed Tree Frog-translated</string>
+	<!-- comment -->
+	<string name="Lorem">
+		Loremのイプサムは、単に印刷と植字業界のダミーテキストです。 Loremのイプサムは、未知のプリンターがタイプのゲラを取り、タイプ標本の本を
+		作ってそれをスクランブル1500年代、以来、業界の標準ダミーテキストとなっています。それは本質的に変わらず、何世紀だけでなく、電子組版に飛躍
+		するだけでなく5を生き延びてきました。それはLoremのイプサムのバージョンを含むアルダスのPageMakerのような
+		デスクトップパブリッシングソフトウェアと、より最近Loremのイプサムの通路を含むLetrasetシートのリリースでは、1960年代に普及
+		したところ。
+	</string>
+	<string name="owl">Great Horned Owl-translated</string>
+	<string name="not-found">Not found</string>
+</resources>

@@ -1,4 +1,4 @@
-/*  
+/*
  * Copyright IBM Corp. 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,19 +18,19 @@ package com.ibm.g11n.pipeline.resfilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Map;
+import java.util.Collection;
 
 /**
  * Resource filter interface - converting input format data to key-value pairs
  * and key-value pairs to output format data.
- * 
+ *
  * @author Yoshito Umaoka
  */
 public interface ResourceFilter {
 
-    Map<String, String> parse(InputStream inStream) throws IOException;
+    Collection<ResourceString> parse(InputStream inStream) throws IOException;
 
-    void write(OutputStream outStream, String language, Map<String, String> data) throws IOException;
+    void write(OutputStream outStream, String language, Collection<ResourceString> resStrings) throws IOException;
 
-    void merge(InputStream base, OutputStream outStream, String language, Map<String, String> data) throws IOException;
+    void merge(InputStream base, OutputStream outStream, String language, Collection<ResourceString> resStrings) throws IOException;
 }

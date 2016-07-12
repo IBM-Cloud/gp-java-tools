@@ -1,4 +1,4 @@
-/*  
+/*
  * Copyright IBM Corp. 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,49 +26,93 @@ import java.text.BreakIterator;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.TreeSet;
+
+import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 
 /**
  * Java properties resource filter implementation.
- * 
+ *
  * @author Yoshito Umaoka
  */
 public class JavaPropertiesResource implements ResourceFilter {
-    @Override
-    public Map<String, String> parse(InputStream inStream) throws IOException {
-        Properties props = new Properties();
-        props.load(inStream);
-        Map<String, String> resultMap = new HashMap<String, String>(props.size());
-        for (String key : props.stringPropertyNames()) {
-            resultMap.put(key, props.getProperty(key));
+
+    // TODO:
+    // This is not a good idea. This implementation might work,
+    // but it depends on an assumption that java.util.Properties#load(InputStream)
+    // calls Properties#put(Object, Object).
+
+    @SuppressWarnings("serial")
+    public class LinkedProperties extends Properties {
+        private final HashSet<Object> keys = new LinkedHashSet<Object>();
+
+        public LinkedProperties() {
         }
-        return resultMap;
+
+        public Iterable<Object> orderedKeys() {
+            return Collections.list(keys());
+        }
+
+        @Override
+        public Enumeration<Object> keys() {
+            return Collections.<Object>enumeration(keys);
+        }
+
+        @Override
+        public Object put(Object key, Object value) {
+            keys.add(key);
+            return super.put(key, value);
+        }
     }
 
     @Override
-    public void write(OutputStream outStream, String language, Map<String, String> data) throws IOException {
-        Properties props = new Properties();
-        for (Entry<String, String> entry : data.entrySet()) {
-            props.setProperty(entry.getKey(), entry.getValue());
+    public Collection<ResourceString> parse(InputStream inStream) throws IOException {
+        LinkedProperties props = new LinkedProperties();
+        props.load(inStream);
+        Iterator<Object> i = props.orderedKeys().iterator();
+        Collection<ResourceString> resultCol = new ArrayList<ResourceString>(props.size());
+        int sequenceNum = 0;
+        while (i.hasNext()) {
+            String key = (String) i.next();
+            resultCol.add(new ResourceString(key, props.getProperty(key), ++sequenceNum));
+        }
+        return resultCol;
+    }
+
+    @Override
+    public void write(OutputStream outStream, String language, Collection<ResourceString> data) throws IOException {
+        TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
+        sortedResources.addAll(data);
+
+        LinkedProperties props = new LinkedProperties();
+        for (ResourceString res : sortedResources) {
+            props.setProperty(res.getKey(), res.getValue());
         }
         props.store(outStream, null);
     }
 
     private static final String PROPS_ENC = "ISO-8859-1";
 
-    private static class PropDef {
+    static class PropDef {
         private String key;
         private String value;
         private PropSeparator separator;
 
         public enum PropSeparator {
             EQUAL('='),
-            COLON(':');
+            COLON(':'),
+            SPACE(' ');
 
             private char sepChar;
 
@@ -91,20 +135,45 @@ public class JavaPropertiesResource implements ResourceFilter {
         };
 
         public static PropDef parseLine(String line) {
-            // Look for both '=' and ':'. Use the first one as the key-value separator
-            PropSeparator sep = PropSeparator.EQUAL;
-            int idx = line.indexOf(PropSeparator.EQUAL.getCharacter());
-            int idxCol = line.indexOf(PropSeparator.COLON.getCharacter());
-            if (idxCol > 0 && (idx < 0 || idxCol < idx)) {
-                idx = idxCol;
-                sep = PropSeparator.COLON;
+            PropSeparator sep = null;
+            int sepIdx = -1;
+
+            boolean sawSpace = false;
+            for (int i = 0; i < line.length(); i++) {
+                char iChar = line.charAt(i);
+
+                if (sawSpace) {
+                    if (iChar == PropSeparator.EQUAL.getCharacter()) {
+                        sep = PropSeparator.EQUAL;
+                    } else if (iChar == PropSeparator.COLON.getCharacter()) {
+                        sep = PropSeparator.COLON;
+                    } else {
+                        sep = PropSeparator.SPACE;
+                    }
+                } else {
+                    if (i > 0 && line.charAt(i-1) != '\\') {
+                        if (iChar == ' ') {
+                            sawSpace = true;
+                        } else if (iChar == PropSeparator.EQUAL.getCharacter()) {
+                            sep = PropSeparator.EQUAL;
+                        } else if (iChar == PropSeparator.COLON.getCharacter()) {
+                            sep = PropSeparator.COLON;
+                        }
+                    }
+                }
+
+                if (sep != null) {
+                    sepIdx = i;
+                    break;
+                }
             }
-            if (idx <= 0) {
+
+            if (sepIdx <= 0 || sep == null) {
                 return null;
             }
 
-            PropDef pl = new PropDef(line.substring(0, idx).trim(),
-                    line.substring(idx + 1).trim(), sep);
+            PropDef pl = new PropDef(line.substring(0, sepIdx).trim(),
+                    line.substring(sepIdx + 1).trim(), sep);
             return pl;
         }
 
@@ -112,7 +181,6 @@ public class JavaPropertiesResource implements ResourceFilter {
             return key;
         }
 
-        @SuppressWarnings("unused")
         public String getValue() {
             return value;
         }
@@ -127,11 +195,12 @@ public class JavaPropertiesResource implements ResourceFilter {
 
             if (len <= COLMAX) {
                 // Print this property in a single line
-                buf.append(key)
-                    .append(' ')
-                    .append(separator.getCharacter())
-                    .append(' ')
-                    .append(escapePropValue(value));
+                if (separator.getCharacter() == PropSeparator.SPACE.getCharacter()) {
+                    buf.append(key).append(separator.getCharacter());
+                } else {
+                    buf.append(key).append(' ').append(separator.getCharacter()).append(' ');
+                }
+                buf.append(escapePropValue(value));
                 pw.println(buf.toString());
                 return;
             }
@@ -139,10 +208,11 @@ public class JavaPropertiesResource implements ResourceFilter {
             // prints out in multiple lines
 
             // always prints out key and separator in a single line
-            buf.append(key)
-                .append(' ')
-                .append(separator.getCharacter())
-                .append(' ');
+            if (separator.getCharacter() == PropSeparator.SPACE.getCharacter()) {
+                buf.append(key).append(separator.getCharacter());
+            } else {
+                buf.append(key).append(' ').append(separator.getCharacter()).append(' ');
+            }
 
             if (buf.length() > COLMAX) {
                 buf.append('\\');
@@ -162,7 +232,7 @@ public class JavaPropertiesResource implements ResourceFilter {
             while (end != BreakIterator.DONE) {
                 String segment = value.substring(start, end);
                 String escSegment = escapePropValue(segment);
-                if (emitNext) {
+                if (emitNext || (buf.length() + escSegment.length() + 2 >= COLMAX)) {
                     // First character in a continuation line must be
                     // a non-space character. Otherwise, keep appending
                     // segments to the current line.
@@ -179,7 +249,7 @@ public class JavaPropertiesResource implements ResourceFilter {
                     }
                 }
                 buf.append(escSegment);
-                if (buf.length() > COLMAX) {
+                if (buf.length() + 2 >= COLMAX) {
                     // defer to emit the line after checking
                     // the next segment.
                     emitNext = true;
@@ -192,6 +262,26 @@ public class JavaPropertiesResource implements ResourceFilter {
                 pw.println(buf.toString());
             }
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj.getClass() != PropDef.class) return false;
+            PropDef p = (PropDef) obj;
+            return getKey().equals(p.getKey()) && getValue().equals(p.getValue())
+                    && getSeparator().getCharacter() == p.getSeparator().getCharacter();
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append("Key=");
+            builder.append(getKey());
+            builder.append(" Value=");
+            builder.append(getValue());
+            builder.append(" Sep=");
+            builder.append("'" + getSeparator().getCharacter() + "'");
+            return builder.toString();
+        }
     }
 
     private static String escapePropValue(String s) {
@@ -203,6 +293,10 @@ public class JavaPropertiesResource implements ResourceFilter {
             } else if (c > 0x7F) {
                 escaped.append("\\u")
                     .append(String.format("%04X", (int)c));
+            } else if (c == ':') {
+                escaped.append("\\:");
+            } else if (c == '=') {
+                escaped.append("\\:");
             } else {
                 escaped.append(c);
             }
@@ -210,8 +304,17 @@ public class JavaPropertiesResource implements ResourceFilter {
         return escaped.toString();
     }
 
+    private static String escapePropKey(String s) {
+        return s.replace(" ", "\\ ");
+    }
+
     @Override
-    public void merge(InputStream base, OutputStream outStream, String language, Map<String,String> data) throws IOException {
+    public void merge(InputStream base, OutputStream outStream, String language, Collection<ResourceString> data) throws IOException {
+        Map<String, String> resMap = new HashMap<String, String>(data.size() * 4/3 + 1);
+        for (ResourceString res : data) {
+            resMap.put(escapePropKey(res.getKey()), res.getValue());
+        }
+
         BufferedReader baseReader = new BufferedReader(new InputStreamReader(base, PROPS_ENC));
         PrintWriter outWriter = new PrintWriter(new OutputStreamWriter(outStream, PROPS_ENC));
 
@@ -261,9 +364,9 @@ public class JavaPropertiesResource implements ResourceFilter {
 
             if (logicalLine != null) {
                 PropDef pd = PropDef.parseLine(logicalLine);
-                if (pd != null && data.containsKey(pd.getKey())) {
+                if (pd != null && resMap.containsKey(pd.getKey())) {
                     String key = pd.getKey();
-                    PropDef modPd = new PropDef(key, data.get(key), pd.getSeparator());
+                    PropDef modPd = new PropDef(key, resMap.get(key), pd.getSeparator());
                     modPd.print(outWriter, language);
                 } else {
                     if (orgLines.isEmpty()) {
@@ -276,6 +379,7 @@ public class JavaPropertiesResource implements ResourceFilter {
                         }
                     }
                 }
+
                 // Clear continuation data
                 orgLines.clear();
                 logicalLineBuf.setLength(0);

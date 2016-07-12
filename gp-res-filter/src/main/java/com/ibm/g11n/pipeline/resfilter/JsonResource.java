@@ -1,4 +1,4 @@
-/*  
+/*
  * Copyright IBM Corp. 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,52 +21,70 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.util.HashMap;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.TreeSet;
 
-import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 
 /**
  * JSON resource filter implementation.
- * 
+ *
  * @author Yoshito Umaoka
  */
 public class JsonResource implements ResourceFilter {
 
     @Override
-    public Map<String, String> parse(InputStream inStream) throws IOException {
-        Map<String, String> resultMap = new HashMap<String, String>();
-        try (InputStreamReader reader = new InputStreamReader(new BomInputStream(inStream), "UTF-8")) {
+    public Collection<ResourceString> parse(InputStream inStream) throws IOException {
+        Collection<ResourceString> resultCol = new LinkedList<ResourceString>();
+        try (InputStreamReader reader = new InputStreamReader(new BomInputStream(inStream), StandardCharsets.UTF_8)) {
             JsonElement root = new JsonParser().parse(reader);
             if (!root.isJsonObject()) {
                 throw new IllegalResourceFormatException("The root JSON element is not an JSON object.");
             }
+            int sequenceNum = 0;
             for (Map.Entry<String, JsonElement> entry : root.getAsJsonObject().entrySet()) {
                 String key = entry.getKey();
                 JsonElement value = entry.getValue();
                 if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
                     throw new IllegalResourceFormatException("The value of JSON element " + key + " is not a string.");
                 }
-                resultMap.put(key, value.getAsString());
+                ResourceString res = new ResourceString(key, value.getAsString());
+                sequenceNum++;
+                res.setSequenceNumber(sequenceNum);
+                resultCol.add(res);
             }
         } catch (JsonParseException e) {
             throw new IllegalResourceFormatException("Failed to parse the specified JSON contents.", e);
         }
-        return resultMap;
+        return resultCol;
     }
 
     @Override
-    public void write(OutputStream outStream, String language, Map<String, String> data) throws IOException {
-        try (OutputStreamWriter writer = new OutputStreamWriter(new BufferedOutputStream(outStream), "UTF-8")) {
-            new Gson().toJson(data, writer);
+    public void write(OutputStream outStream, String language, Collection<ResourceString> data) throws IOException {
+        // extracts key value pairs in original sequence order
+        TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
+        sortedResources.addAll(data);
+        LinkedHashMap<String, String> kvmap = new LinkedHashMap<>(sortedResources.size());
+        for (ResourceString res : sortedResources) {
+            kvmap.put(res.getKey(), res.getValue());
+        }
+        try (OutputStreamWriter writer = new OutputStreamWriter(new BufferedOutputStream(outStream),
+                StandardCharsets.UTF_8)) {
+            new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(kvmap, writer);
         }
     }
 
     @Override
-    public void merge(InputStream base, OutputStream outStream, String language, Map<String, String> data) throws IOException{
+    public void merge(InputStream base, OutputStream outStream, String language, Collection<ResourceString> data)
+            throws IOException {
         throw new UnsupportedOperationException("Merging JSON resource is not supported.");
     }
 }

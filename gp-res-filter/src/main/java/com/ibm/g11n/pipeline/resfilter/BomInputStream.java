@@ -1,4 +1,4 @@
-/*  
+/*
  * Copyright IBM Corp. 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,8 +18,6 @@ package com.ibm.g11n.pipeline.resfilter;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
-import com.ibm.g11n.pipeline.resfilter.Bom;
 
 public class BomInputStream extends InputStream {
     private BufferedInputStream is;

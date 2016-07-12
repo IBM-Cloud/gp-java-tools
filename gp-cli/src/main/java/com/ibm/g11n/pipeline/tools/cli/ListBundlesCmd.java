@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2015
+ * Copyright IBM Corp. 2015,2016
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.ibm.g11n.pipeline.tools.cli;
 import java.util.Set;
 
 import com.beust.jcommander.Parameters;
+import com.google.gson.Gson;
 import com.ibm.g11n.pipeline.client.ServiceException;
 
 /**
@@ -26,12 +27,14 @@ import com.ibm.g11n.pipeline.client.ServiceException;
  * @author Yoshito Umaoka
  */
 @Parameters(commandDescription = "Prints out translation bundle IDs.")
-final class ListBundleCmd extends ServiceInstanceCmd {
+final class ListBundlesCmd extends BaseCmd {
     @Override
     protected void _execute() {
         try {
             Set<String> bundleIds = getClient().getBundleIds();
-            System.out.println("Bundle IDs: " + bundleIds);
+            Gson gson = new Gson();
+            String outIds = gson.toJson(bundleIds);
+            System.out.println(outIds);
         } catch (ServiceException e) {
             throw new RuntimeException(e);
         }

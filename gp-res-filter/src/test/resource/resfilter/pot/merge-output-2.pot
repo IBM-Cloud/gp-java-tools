@@ -1,0 +1,67 @@
+# French translations for PROJECT.
+# Copyright (C) 2015 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2015.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2015-11-16 16:55-0500\n"
+"PO-Revision-Date: 2015-11-16 16:56-0500\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: fr\n"
+"Language-Team: fr <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n > 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#  translator-comments
+#. extracted-comments
+#: reference…
+#, flag…
+#| msgid previous-untranslated-string
+msgid "untranslated-string"
+msgstr "ignore me"
+
+msgid ""
+"Here is an example of how one might continue a very long string\n"
+"for the common case the string represents multi-line output.\n"
+msgstr ""
+"Voici un exemple de la façon dont on pourrait continuer à une très longue "
+"chaîne\nPour le cas courant de la chaîne représente la sortie multi-ligne.\n"
+
+#: modules/user/views_handler_filter_user_name.inc:29
+msgid "Enter a comma separated list of user names."
+msgstr "Entrez une virgule liste séparée par des noms d'utilisateur."
+
+#: modules/user/views_handler_filter_user_name.inc:112
+msgid "Unable to find user: @users"
+msgid_plural "Unable to find users: @users"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid ""
+"Lorem Ipsum is simply dummy text of the printing and typesetting industry. "
+"Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, "
+"when an unknown printer took a galley of type and scrambled it to make a type "
+"specimen book. It has survived not only five centuries, but also the leap into "
+"electronic typesetting, remaining essentially unchanged. It was popularised "
+"in the 1960s with the release of Letraset sheets containing Lorem Ipsum "
+"passages, and more recently with desktop publishing software like Aldus "
+"PageMaker including versions of Lorem Ipsum."
+msgstr ""
+"Loremのイプサムは、単に印刷と植字業界のダミーテキストです。 Loremのイプサムは、未知のプリンターがタイプのゲラを取り、タイプ標本の本を作ってそれを"
+"スクランブル1500年代、以来、業界の標準ダミーテキストとなっています。それは本質的に変わらず、何世紀だけでなく、電子組版に飛躍するだけでなく5を生き延"
+"びてきました。それはLoremのイプサムのバージョンを含むアルダスのPageMakerのようなデスクトップパブリッシングソフトウェアと、より最近Loremの"
+"イプサムの通路を含むLetrasetシートのリリースでは、1960年代に普及したところ。"
+
+msgid "numbers"
+msgstr ""
+"1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 "
+"0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 "
+"9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 "
+

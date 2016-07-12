@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2015
+ * Copyright IBM Corp. 2015,2016
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,11 @@ import com.beust.jcommander.Parameters;
  * @author Yoshito Umaoka
  */
 public class GPCmd {
+    // short term workaround for TLS version issue on Java 7
+    static {
+        System.setProperty("https.protocols", "TLSv1.2");
+    };
+
     @Parameters(commandDescription = "Display command help")
     private static class HelpCmd {
     }
@@ -38,12 +43,15 @@ public class GPCmd {
 
         jc.addCommand("help", new HelpCmd());
 
-        jc.addCommand("list-bundle", new ListBundleCmd(), "list");
+        jc.addCommand("list-bundle", new ListBundlesCmd(), "list");
         jc.addCommand("show-bundle", new ShowBundleCmd(), "show");
         jc.addCommand("create-bundle", new CreateBundleCmd(), "create");
         jc.addCommand("delete-bundle", new DeleteBundleCmd(), "delete");
+        jc.addCommand("copy-bundle", new CopyBundleCmd(), "copy");
+        jc.addCommand("copy-all-bundles", new CopyAllBundlesCmd());
         jc.addCommand("export", new ExportCmd());
         jc.addCommand("import", new ImportCmd());
+        jc.addCommand("list-mt-languages", new ListMTLanguagesCmd());
 
         //users
         jc.addCommand("list-users", new ListUsersCmd());

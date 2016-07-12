@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="planets_array">
+        <item>Mercury-translated</item>
+        <item>Venus-translated</item>
+        <item>Earth-translated</item>
+        <item>Mars-translated</item>
+    </string-array>
+	<plurals name="numberOfSongsAvailable">
+        <item quantity="one">Znaleziono %d piosenke.</item>
+        <item quantity="few">Znaleziono %d piosenki.</item>
+        <item quantity="other">Znaleziono %d piosenek.</item>
+    </plurals>
+    <string name="bear">Brown Bear-translated</string>
+    <string name="frog">Red-eyed Tree Frog-translated</string>
+    <string name="owl">Great Horned Owl-translated</string>
+</resources>

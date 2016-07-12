@@ -1,4 +1,4 @@
-/*  
+/*
  * Copyright IBM Corp. 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,144 +22,163 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.text.BreakIterator;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Scanner;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.TreeSet;
+
+import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 
 /**
- * Resource filter for GetText POT files. Supports reading of POT
- * files to extract the msgid values and writing of provided entries to POT
- * files.
- * 
+ * Resource filter for GetText POT files. Supports reading of POT files to
+ * extract the msgid values and writing of provided entries to POT files.
+ *
  * @author Farhan Arshad
  *
  */
 public class POTResource implements ResourceFilter {
-    
-    protected static final int RESOURCE_KEY_MAX_SIZE = 255;
-    
-    protected static final char QUOTE_CHAR = '"';
-    protected static final char NEWLINE_CHAR = '\n';
-    protected static final char EMPTY_SPACE_CHAR = ' ';
+    static final String CHAR_SET = "UTF-8";
 
-    protected static final String CHAR_SET = "UTF-8";
-    protected static final String QUOTE_STRING = "\"";
-    
-    protected static final String UNTRANSLATED_STRING_PREFIX = "msgid ";
-    protected static final String UNTRANSLATED_PLURAL_STRING_PREFIX = 
-            "msgid_plural ";
-    protected static final String TRANSLATED_STRING_PREFIX = "msgstr ";
-    
-    // ensures that keys do not start with hyphen (-), underscore (_) or 
-    // period (.)
-    protected static final Pattern VALID_KEY_REGEX = Pattern.compile("^[-._]+");
-    
+    static final String ENTRY_PREFIX_PATTERN = "^(msgid|msgstr).*";
+
+    static final String UNTRANSLATED_STRING_PREFIX = "msgid ";
+    static final String UNTRANSLATED_PLURAL_STRING_PREFIX = "msgid_plural ";
+    static final String TRANSLATED_STRING_PREFIX = "msgstr ";
+    static final String TRANSLATED_PLURAL_STRING_PREFIX = "msgstr[";
+    static final String TRANSLATED_PLURAL_0_STRING_PREFIX = "msgstr[0] ";
+    static final String TRANSLATED_PLURAL_1_STRING_PREFIX = "msgstr[1] ";
+
+    static final String PLURAL_KEY_PREFIX = "{n} ";
+
     // placed at the beginning of po/pot files
-    protected static final String HEADER = 
-            "# Translations template for PROJECT.\n" +
-            "# Copyright (C) %s ORGANIZATION\n" +
-            "# This file is distributed under the same license as the " + 
-                "PROJECT project.\n" +
-            "# FIRST AUTHOR <EMAIL@ADDRESS>, %s.\n" +
-            "#\n" +
-            "#, fuzzy\n" +
-            "msgid \"\"\n" +
-            "msgstr \"\"\n" +
-            "Project-Id-Version: PROJECT VERSION\n" +
-            "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n" +
-            "POT-Creation-Date: %s\n" +
-            "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n" +
-            "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n" +
-            "Language-Team: LANGUAGE <LL@li.org>\n" +
-            "MIME-Version: 1.0\n" +
-            "Content-Type: text/plain; charset=%s\n" +
-            "Content-Transfer-Encoding: 8bit\n" +
-            "Generated-By: Globalization Pipeline\n";
+    static final String HEADER = "# Translations template for PROJECT.\n" + "# Copyright (C) %s ORGANIZATION\n"
+            + "# This file is distributed under the same license as the " + "PROJECT project.\n"
+            + "# FIRST AUTHOR <EMAIL@ADDRESS>, %s.\n" + "#\n" + "#, fuzzy\n" + "msgid \"\"\n" + "msgstr \"\"\n"
+            + "\"Project-Id-Version: PROJECT VERSION\\n\"\n" + "\"Report-Msgid-Bugs-To: EMAIL@ADDRESS\\n\"\n"
+            + "\"POT-Creation-Date: %s\\n\"\n" + "\"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\\n\"\n"
+            + "\"Last-Translator: FULL NAME <EMAIL@ADDRESS>\\n\"\n" + "\"Language-Team: LANGUAGE <LL@li.org>\\n\"\n"
+            + "\"MIME-Version: 1.0\\n\"\n" + "\"Content-Type: text/plain; charset=%s\\n\"\n"
+            + "\"Content-Transfer-Encoding: 8bit\\n\"\n" + "\"Generated-By: Globalization Pipeline\\n\"\n";
 
     @Override
-    public Map<String, String> parse(InputStream inStream) throws IOException {
+    public Collection<ResourceString> parse(InputStream inStream) throws IOException {
         if (inStream == null) {
-            return Collections.emptyMap();
+            return Collections.emptyList();
         }
-        
-        BufferedReader reader = new BufferedReader(
-                new InputStreamReader(inStream, CHAR_SET));
 
-        Map<String, String> map = new HashMap<String, String>();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inStream, CHAR_SET));
+
+        Collection<ResourceString> resultCol = new LinkedList<ResourceString>();
 
         String line, value;
+        int sequenceNum = 0;
         while ((line = reader.readLine()) != null) {
-            // extract msgid or msgid_plural value
-            // at this time, msgid_plural is considered a separate entry
-            if (line.startsWith(UNTRANSLATED_STRING_PREFIX) 
-                    || line.startsWith(UNTRANSLATED_PLURAL_STRING_PREFIX)) {
+            value = extractMessage(line, reader);
+            if (value == null || value.isEmpty()) {
+                continue;
+            }
 
-                value = extractMessage(line, reader);
-                if (value != null && !value.isEmpty()) {
-                    POEntry entry = new POEntry();
-                    entry.untranslatedString = value;
-                    map.put(entry.getKeyRepresentation(), 
-                            entry.untranslatedString);
-                }
+            if (line.startsWith(UNTRANSLATED_STRING_PREFIX) || line.startsWith(UNTRANSLATED_PLURAL_STRING_PREFIX)) {
+                resultCol.add(new ResourceString(value, value, ++sequenceNum));
             }
         }
 
-        return map;
+        return resultCol;
     }
 
     @Override
-    public void write(OutputStream outStream, String language, Map<String, String> data)
-            throws IOException {
+    public void write(OutputStream outStream, String language, Collection<ResourceString> data) throws IOException {
         if (data == null || outStream == null) {
             return;
         }
-        
-        BufferedWriter writer = new BufferedWriter(
-                new OutputStreamWriter(outStream, CHAR_SET));
-        
+
+        TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
+        sortedResources.addAll(data);
+
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outStream, CHAR_SET));
         // write header
         writer.write(getHeader());
-        
-        // write entries
-        for (Entry<String, String> entry: data.entrySet()) {
+
+        for (ResourceString res : sortedResources) {
+            // write entry in format:
+            // msgid "untranslated-string"
+            // msgstr ""
             writer.newLine();
-            writer.write(UNTRANSLATED_STRING_PREFIX 
-                    + formatMessage(entry.getKey()));
-            writer.newLine();
-            writer.write(TRANSLATED_STRING_PREFIX + QUOTE_CHAR + QUOTE_CHAR);
+            writer.write(formatMessage(UNTRANSLATED_STRING_PREFIX, res.getKey(), language));
+            writer.write(TRANSLATED_STRING_PREFIX);
+            writer.write("\"\"");
             writer.newLine();
         }
-        
+
         writer.flush();
     }
-    
-    public void merge(InputStream base, OutputStream outStream, String language, Map<String, String> data) throws IOException{
-        Scanner in = new Scanner(base, CHAR_SET);
-        String line = "";
-        while(in.hasNextLine()){
-            line = in.nextLine() + NEWLINE_CHAR;
 
-            if (line.indexOf(UNTRANSLATED_STRING_PREFIX) == -1) {
-                outStream.write(line.getBytes());
-            } else {
-                String key = line.split(" ")[1].replace("\"", "").replace("\n", "");
+    /**
+     * Note:
+     * {@link POTResource#merge(InputStream, OutputStream, String, Collection)}
+     * does not support plural forms in PO/POT files, they will be left as-is.
+     */
+    @Override
+    public void merge(InputStream base, OutputStream outStream, String language, Collection<ResourceString> data)
+            throws IOException {
+        // put res data into a map for easier searching
+        Map<String, String> resMap = new HashMap<String, String>(data.size() * 4 / 3 + 1);
+        for (ResourceString res : data) {
+            resMap.put(res.getKey(), res.getValue());
+        }
 
-                if (data.containsKey(key)) {
-                    String keyLine = UNTRANSLATED_STRING_PREFIX + formatMessage(key) + NEWLINE_CHAR;
-                    outStream.write(keyLine.getBytes());
+        BufferedReader reader = new BufferedReader(new InputStreamReader(base, CHAR_SET));
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outStream, CHAR_SET));
+
+        String line;
+        while ((line = reader.readLine()) != null) {
+            // if the line is a msgid, extract the value and check if the key is
+            // in the resMap
+            if (line.startsWith(UNTRANSLATED_STRING_PREFIX)) {
+                String key = extractMessage(line, reader);
+
+                // write the msgid
+                do {
+                    writer.write(line);
+                    writer.newLine();
+                } while ((line = reader.readLine()) != null && line.trim().startsWith("\""));
+
+                // write msgstr
+                if (!line.startsWith(TRANSLATED_STRING_PREFIX) || key == null || key.isEmpty()
+                        || !resMap.containsKey(key) || resMap.get(key) == null) {
+                    // key not found, write msgstr as-is
+                    do {
+                        writer.write(line);
+                        writer.newLine();
+                    } while ((line = reader.readLine()) != null && !line.isEmpty());
+
+                    if (line != null && line.isEmpty()) {
+                        writer.newLine();
+                    }
                 } else {
-                    outStream.write(line.getBytes());
+                    // key found, write new msgstr
+                    writer.write(formatMessage(TRANSLATED_STRING_PREFIX, resMap.get(key), language));
+                    writer.newLine();
+
+                    // skip the old msgstr in the input stream
+                    while ((line = reader.readLine()) != null && !line.isEmpty())
+                        ;
                 }
+            } else {
+                // write line as-is
+                writer.write(line);
+                writer.newLine();
             }
         }
-        
-        in.close();
+
+        writer.flush();
     }
 
     /**
@@ -171,78 +190,88 @@ public class POTResource implements ResourceFilter {
      * "Hello, this "<br>
      * "is a "<br>
      * "multi-line message."<br>
-     * <br> 
+     * <br>
      * the extracted message will be:<br>
      * <br>
      * Hello, this is a multi-line message.<br>
-     * 
-     * @param line first line in the message
-     * @param reader used to read additional lines in case the message is on
-     * multiple lines
+     *
+     * NOTE: This method <b> does not <b> advance the stream marker. Once the
+     * method returns, the stream can be read from where it was originally.
+     *
+     * @param firstLine
+     *            first line in the message
+     * @param reader
+     *            used to read additional lines in case the message is on
+     *            multiple lines
      * @return extracted message, or null if there is no quotes present
-     * @throws IOException if there were issues reading from the BufferedReader
+     * @throws IOException
+     *             if there were issues reading from the BufferedReader
      */
-    protected static String extractMessage(String line, BufferedReader reader) 
-            throws IOException {        
-        String message = extractMsgBetweenQuotes(line);
-        
-        if (message == null) {
-            return message;
+    static String extractMessage(String firstLine, BufferedReader reader) throws IOException {
+        String extractedMsg = extractMsgBetweenQuotes(firstLine);
+
+        if (extractedMsg == null) {
+            return null;
         }
 
-        String extractedMsg = null;
-        
-        // put marker before each line read in case the reader needs to be
-        // reset b/c an extra line is read
-        reader.mark(256);
-        while ((line = reader.readLine()) != null 
-                && line.trim().startsWith(QUOTE_STRING) 
-                && (extractedMsg = extractMsgBetweenQuotes(line)) != null) {
-            message += extractedMsg;
-            reader.mark(256);
-        }
-        
-        if (line != null) {
-            reader.reset();
+        StringBuilder message = new StringBuilder();
+        message.append(extractedMsg);
+
+        // the Scanner will read ahead, the marker must be
+        // reset to where it started
+        reader.mark(1024);
+
+        // do not close the scanner because it closes the
+        // underlying input stream
+        @SuppressWarnings("resource")
+        Scanner scanner = new Scanner(reader);
+
+        // check if the next line begins with a quote char,
+        // this indicates that the value is on multiple lines
+        while (scanner.hasNextLine() && scanner.hasNext("\\s*\".*")
+                && (extractedMsg = extractMsgBetweenQuotes(scanner.nextLine())) != null) {
+            message.append(extractedMsg);
         }
 
-        return message;
+        reader.reset();
+        return message.toString();
     }
-    
+
     /**
      * Extracts the message between quotes.<br>
      * <br>
      * e.g. given the input "hello, world", the output will be:<br>
      * hello, world<br>
-     * 
-     * @param line the string from which to extract the message.
+     *
+     * @param line
+     *            the string from which to extract the message.
      * @return the message between quotes, or null if there were any problems
      */
-    protected static String extractMsgBetweenQuotes(String line) {
-        int start = line.indexOf(QUOTE_CHAR);
-        int end = line.lastIndexOf(QUOTE_CHAR);
-        
+    static String extractMsgBetweenQuotes(String line) {
+        int start = line.indexOf('"');
+        int end = line.lastIndexOf('"');
+
         if (start == -1 || end == -1 || start == end) {
             return null;
         }
 
         // skip escaped quote, i.e. \"
         while (line.charAt(end - 1) == '\\') {
-            end = line.lastIndexOf(QUOTE_CHAR, end - 1);
-            
+            end = line.lastIndexOf('"', end - 1);
+
             if (end == -1 || start == end) {
                 return null;
             }
         }
-        
+
         return line.substring(start + 1, end);
     }
-    
+
     /**
      * Formats the input string according to pot/po entry requirements.<br>
      * <br>
-     * i.e. puts quotes around the String, and if the String is too long,
-     * splits it onto multiple lines. Max line length is 80 chars.<br>
+     * i.e. puts quotes around the String, and if the String is too long, splits
+     * it onto multiple lines. Max line length is 80 chars.<br>
      * <br>
      * e.g. assuming the input String "Hello, this is a multi-line message" is
      * too long, it will split it into multiple lines:<br>
@@ -251,123 +280,75 @@ public class POTResource implements ResourceFilter {
      * "Hello, this "<br>
      * "is a "<br>
      * "multi-line message."<br>
-     * 
-     * @param message 
+     *
+     * @param message
      * @return
      */
-    protected static String formatMessage(String message) {
-        int maxLineLen = 77;
-        
+    static String formatMessage(String prefix, String message, String localeStr) {
+        int maxLineLen = 80;
+
         int messageLen = message.length();
-        if (messageLen < maxLineLen - TRANSLATED_STRING_PREFIX.length()) {
-            return QUOTE_CHAR + message + QUOTE_CHAR;
-        }
-        
-        StringBuilder formattedMessage = new StringBuilder();
-        
-        // two quote chars indicate a multi-line message
-        formattedMessage.append(QUOTE_CHAR);
-        formattedMessage.append(QUOTE_CHAR);
-        
-        int end, emptySpaceIndex;
-        for (int start = 0; start < messageLen; start = end) {
-            formattedMessage.append(NEWLINE_CHAR);
-            end = start + maxLineLen >= messageLen ? messageLen 
-                                                   : start + maxLineLen;
-            
-            // make sure not to split words onto multiple lines
-            emptySpaceIndex = message.lastIndexOf(EMPTY_SPACE_CHAR, end);
-            if (end != messageLen && emptySpaceIndex != -1 
-                    && emptySpaceIndex + 1 < messageLen) {
-                end = emptySpaceIndex + 1;
-            }
-            
-            formattedMessage.append(QUOTE_CHAR);
-            // sanity check
-            if (end > messageLen) {
-                end = messageLen;
-            }
-            formattedMessage.append(message.substring(start, end));
-            formattedMessage.append(QUOTE_CHAR);
+
+        StringBuilder output = new StringBuilder(messageLen + (messageLen / maxLineLen) * 2 + prefix.length());
+
+        output.append(prefix);
+
+        // message fits on one line
+        if (maxLineLen > messageLen + prefix.length() + 2) {
+            return output.append('"').append(message).append("\"\n").toString();
         }
 
-        return formattedMessage.toString();
+        // message needs to be split onto multiple lines
+        output.append("\"\"\n");
+
+        // word breaks differ based on the locale
+        Locale locale;
+        if (localeStr == null) {
+            locale = Locale.getDefault();
+        } else {
+            locale = new Locale(localeStr);
+        }
+        BreakIterator wordIterator = BreakIterator.getWordInstance(locale);
+        wordIterator.setText(message);
+
+        int available = maxLineLen - 2;
+
+        // a word iterator is used to traverse the message;
+        // a reference to the previous word break is kept
+        // so that once the current reference goes beyond
+        // the available char limit, the message can be split
+        // without going over the limit
+        int start = 0;
+        int end = wordIterator.first();
+        int prevEnd = end;
+        while (end != BreakIterator.DONE) {
+            prevEnd = end;
+            end = wordIterator.next();
+            if (end - start > available) {
+                output.append('"').append(message.substring(start, prevEnd)).append("\"\n");
+                start = prevEnd;
+            } else if (end == messageLen) {
+                output.append('"').append(message.substring(start, end)).append("\"\n");
+            }
+        }
+
+        return output.toString();
     }
 
     /**
-     * Prepare the header by inserting the date, time, year, and char set
-     * in the appropriate places.
-     * 
+     * Prepare the header by inserting the date, time, year, and char set in the
+     * appropriate places.
+     *
      * @return prepared header, ready to be inserted into PO/POT file
      */
-    protected static String getHeader() {
+    static String getHeader() {
         // prepare and write header
         Date date = new Date();
 
-        String creationDate =  
-                new SimpleDateFormat("yyyy-MM-dd HH:mmZ").format(date);
+        String creationDate = new SimpleDateFormat("yyyy-MM-dd HH:mmZ").format(date);
 
-        String year =  new SimpleDateFormat("yyyy").format(date);
+        String year = new SimpleDateFormat("yyyy").format(date);
 
-        return String.format(HEADER, year, year, creationDate, 
-               CHAR_SET.toLowerCase());
-    }
-    
-    /**
-     * Represents an individual entry in a po/pot file.<br>
-     * <br>
-     * An entry can have the following format, but only msgid and msgstr
-     * are required:<br>
-     * <br>
-     * white-space<br>
-     * #  translator-comments<br>
-     * #. extracted-comments<br>
-     * #: reference…<br>
-     * #, flag…<br>
-     * #| msgctxt previous-context<br>
-     * #| msgid previous-untranslated-string<br>
-     * #| msgstr previous-translated-string<br>
-     * msgctxt context<br>
-     * msgid untranslated-string<br>
-     * msgstr translated-string<br>
-     * <br>
-     * Currently only the msgid and msgstr are stored, 
-     * but this may change in the future if metadata will also be used.<br>
-     * 
-     */
-    protected class POEntry {
-        // a-z, A-Z, 0-9, hyphen (-), underscore (_), and period (.) allowed
-        protected static final String REPLACE_REGEX = "[^a-zA-Z0-9_.-]";
-
-        protected String untranslatedString = null;
-        protected String translatedString = null;
-        
-        /**
-         * Get the key representation of the entry, currently this involves
-         * using the msgid value (up to 255 chars) and replacing invalid
-         * chars with underscores
-         * 
-         * @return a String representing the key to be used for the entry
-         */
-        protected String getKeyRepresentation() {
-            String key;
-            Matcher m = null;
-            if (untranslatedString.length() > RESOURCE_KEY_MAX_SIZE) {
-                key = untranslatedString.substring(0, RESOURCE_KEY_MAX_SIZE -1);
-            } else {
-                key = untranslatedString;
-            }
-
-            key =  key.replaceAll(REPLACE_REGEX, "_");
-
-            // if found, remove hyphens (-), underscores (_), and periods (.) 
-            // from beginning of key
-            m = VALID_KEY_REGEX.matcher(key);
-            if (m.find()) {
-                key = key.substring(m.end());
-            }
-
-            return key;
-        }
+        return String.format(HEADER, year, year, creationDate, CHAR_SET.toLowerCase());
     }
 }

@@ -1,0 +1,10 @@
+/* Insert = Element menu item */
+"Insert Element" = "Insert Element - translated";
+/* Error string used 
+    for unknown error types. */
+"ErrorString_1" = "An unknown error occurred - translated.";
+"bear 3" = "Brown Bear - translated";
+"frog 4" = "Red-eyed Tree Frog - translated";
+"owl 5" = "Great Horned Owl - translated";
+
+"not found" = "Not found";

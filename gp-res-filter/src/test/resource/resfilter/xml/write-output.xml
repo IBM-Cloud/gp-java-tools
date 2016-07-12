@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<resources>
+    <string name="otter1">Sea Otter</string>
+    <string name="crow2">American Crow</string>
+    <string name="sealion3">California Sea Lion</string>
+    <string-array name="planets_array4">
+        <item>Mercury</item>
+        <item>Venus</item>
+        <item>Earth</item>
+        <item>Mars</item>
+    </string-array>
+</resources>

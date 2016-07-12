@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2015
+ * Copyright IBM Corp. 2015,2016
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import com.ibm.g11n.pipeline.client.UserData;
  */
 
 @Parameters(commandDescription = "Resets password of a user")
-final class ResetUserPasswordCmd extends ServiceInstanceCmd {
+final class ResetUserPasswordCmd extends BaseCmd {
     @Parameter(
             names = { "-d", "--id" },
             description = "User ID to reset password for",
