@@ -44,7 +44,7 @@ To see available commands and options, please see [Globalization Pipeline Comman
 # Community
 
 * View or file GitHub [Issues](https://github.com/IBM-Bluemix/gp-java-tools/issues)
-* Connect with the open source community on [developerWorks Open](https://developer.ibm.com/open/ibm-bluemix-globalization-pipeline-service/python-sdk/)
+* Connect with the open source community on [developerWorks Open](https://developer.ibm.com/open/ibm-bluemix-globalization-pipeline-service/)
 
 # Contributing
 
