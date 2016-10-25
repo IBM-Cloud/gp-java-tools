@@ -79,7 +79,8 @@ public abstract class GPBaseMojo extends AbstractMojo {
      *   <li>A json file specified by &lt;credentialsJson&gt; in pom.xml</li>
      *   <li>A set of fields specified by &lt;credentials&gt; in pom.xml</li>
      * </ol>
-     * @return
+     * @return An instance of ServiceClient.
+     * @throws MojoFailureException on a failure.
      */
     protected ServiceClient getServiceClient() throws MojoFailureException {
         if (gpClient == null) {
