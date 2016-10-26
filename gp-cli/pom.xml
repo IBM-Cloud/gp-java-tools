@@ -3,19 +3,19 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
 	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<modelVersion>4.0.0</modelVersion>
+
 	<parent>
 		<groupId>com.ibm.g11n.pipeline</groupId>
 		<artifactId>gp-java-tools</artifactId>
-		<version>1.1-SNAPSHOT</version>
+		<version>1.1.2-SNAPSHOT</version>
 	</parent>
-	<name>Globalization Pipeline Command Line Interface</name>
+
 	<artifactId>gp-cli</artifactId>
-	<version>1.1.1-SNAPSHOT</version>
+
+	<name>Globalization Pipeline Command Line Interface</name>
 
 	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.source>1.7</maven.compiler.source>
-		<maven.compiler.target>1.7</maven.compiler.target>
+		<maven.deploy.skip>true</maven.deploy.skip>
 	</properties>
 
 	<build>
@@ -43,13 +43,6 @@
 			</plugin>
 		</plugins>
 	</build>
-
-	<repositories>
-		<repository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/content/groups/public</url>
-		</repository>
-	</repositories>
 
 	<dependencies>
 		<!-- For Globalization Pipeline command line option handling -->
