@@ -83,7 +83,7 @@ public class GPDownloadMojo extends GPBaseMojo {
             List<SourceBundleFile> sourceBundleFiles = getSourceBundleFiles(bundleSet);
             OutputContentOption outContentOpt = bundleSet.getOutputContentOption();
             BundleLayout bundleLayout = bundleSet.getBundleLayout();
-            LanguageIdSeparator langSep = bundleSet.getLanguageIdSeparator();
+            LanguageIdStyle langIdStyle = bundleSet.getLanguageIdStyle();
             Map<String, String> langMap = bundleSet.getLanguageMap();
 
             File outDir = bundleSet.getOutputDir();
@@ -122,7 +122,7 @@ public class GPDownloadMojo extends GPBaseMojo {
                 if (outputSrcLang) {
                     if (bdlLangs.contains(srcLang)) {
                         exportLanguageResource(client, bf, srcLang, outDir,
-                                outContentOpt, bundleLayout, langSep, langMap);
+                                outContentOpt, bundleLayout, langIdStyle, langMap);
                     } else {
                         getLog().warn("The specified source language (" + srcLang
                                 + ") does not exist in the bundle:" + bundleId);
@@ -132,7 +132,7 @@ public class GPDownloadMojo extends GPBaseMojo {
                 for (String tgtLang: tgtLangs) {
                     if (bdlLangs.contains(tgtLang)) {
                         exportLanguageResource(client, bf, tgtLang, outDir,
-                                outContentOpt, bundleLayout, langSep, langMap);
+                                outContentOpt, bundleLayout, langIdStyle, langMap);
                     } else {
                         getLog().warn("The specified target language (" + tgtLang
                                 + ") does not exist in the bundle:" + bundleId);
@@ -144,7 +144,7 @@ public class GPDownloadMojo extends GPBaseMojo {
 
     private void exportLanguageResource(ServiceClient client, SourceBundleFile bf, String language,
             File outBaseDir, OutputContentOption outContntOpt, BundleLayout bundleLayout,
-            LanguageIdSeparator langSep, Map<String, String> langMap)
+            LanguageIdStyle langIdStyle, Map<String, String> langMap)
             throws MojoFailureException {
         String srcFileName = bf.getFile().getName();
         String relPath = bf.getRelativePath();
@@ -157,9 +157,9 @@ public class GPDownloadMojo extends GPBaseMojo {
             int idx = srcFileName.lastIndexOf('.');
             String tgtName = null;
             if (idx < 0) {
-                tgtName = srcFileName + "_" + getLanguageId(language, langSep, langMap);
+                tgtName = srcFileName + "_" + getLanguageId(language, langIdStyle, langMap);
             } else {
-                tgtName = srcFileName.substring(0, idx) + "_" + getLanguageId(language, langSep, langMap)
+                tgtName = srcFileName.substring(0, idx) + "_" + getLanguageId(language, langIdStyle, langMap)
                     + srcFileName.substring(idx);
             }
             outputFile = new File(dir, tgtName);
@@ -167,13 +167,13 @@ public class GPDownloadMojo extends GPBaseMojo {
         }
         case LANGUAGE_SUBDIR: {
             File dir = (new File(outputDir, relPath)).getParentFile();
-            File langSubDir = new File(dir, getLanguageId(language, langSep, langMap));
+            File langSubDir = new File(dir, getLanguageId(language, langIdStyle, langMap));
             outputFile = new File(langSubDir, srcFileName);
             break;
         }
         case LANGUAGE_DIR:
             File dir = (new File(outputDir, relPath)).getParentFile().getParentFile();
-            File langDir = new File(dir, getLanguageId(language, langSep, langMap));
+            File langDir = new File(dir, getLanguageId(language, langIdStyle, langMap));
             outputFile = new File(langDir, srcFileName);
             break;
         }
@@ -202,7 +202,7 @@ public class GPDownloadMojo extends GPBaseMojo {
         }
     }
 
-    private String getLanguageId(String gpLanguageTag, LanguageIdSeparator langSep,
+    private String getLanguageId(String gpLanguageTag, LanguageIdStyle langIdStyle,
             Map<String, String> langMap) {
         String languageId = gpLanguageTag;
         if (langMap != null) {
@@ -211,11 +211,11 @@ public class GPDownloadMojo extends GPBaseMojo {
                 languageId = mappedId;
             }
         }
-        switch (langSep) {
-        case UNDERSCORE:
+        switch (langIdStyle) {
+        case BCP47_UNDERSCORE:
             languageId = languageId.replace('-', '_');
             break;
-        case HYPHEN:
+        case BCP47:
             // do nothing
             break;
         }

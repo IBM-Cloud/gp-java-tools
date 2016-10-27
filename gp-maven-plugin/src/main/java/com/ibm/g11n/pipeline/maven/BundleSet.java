@@ -49,8 +49,8 @@ public class BundleSet {
     @Parameter
     private Map<String, String> languageMap = null;
 
-    @Parameter(defaultValue = "UNDERSCORE")
-    private LanguageIdSeparator languageIdSeparator = LanguageIdSeparator.UNDERSCORE;
+    @Parameter(defaultValue = "BCP47_UNDERSCORE")
+    private LanguageIdStyle languageIdStyle = LanguageIdStyle.BCP47_UNDERSCORE;
 
     @Parameter
     private File outputDir = null;
@@ -143,17 +143,17 @@ public class BundleSet {
     }
 
     /**
-     * @return the languageIdSeparator
+     * @return the languageIdStyle
      */
-    public LanguageIdSeparator getLanguageIdSeparator() {
-        return languageIdSeparator;
+    public LanguageIdStyle getLanguageIdStyle() {
+        return languageIdStyle;
     }
 
     /**
-     * @param languageIdSeparator the languageIdSeparator to set
+     * @param languageIdStyle the languageIdStyle to set
      */
-    public void setLanguageIdSeparator(LanguageIdSeparator languageIdSeparator) {
-        this.languageIdSeparator = languageIdSeparator;
+    public void setLanguageIdStyle(LanguageIdStyle languageIdStyle) {
+        this.languageIdStyle = languageIdStyle;
     }
 
     /**

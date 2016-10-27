@@ -16,18 +16,19 @@
 package com.ibm.g11n.pipeline.maven;
 
 /**
- * Language ID separator styles.
+ * Language ID styles.
  * 
  * @author Yoshito Umaoka
  */
-public enum LanguageIdSeparator {
+public enum LanguageIdStyle {
     /**
-     * Use '_' as language ID separator, such as "pt_BR"
+     * BCP 47 language tag. For example, "pt-BR" for Brazilian Portuguese
      */
-    UNDERSCORE,
+    BCP47,
 
     /**
-     * Use '-' as language ID separator, such as "pt-BR"
+     * Modified version of BCP 47 language tag, using '_' for separating
+     * subtags instead of '-'. For example, "pt_BR".
      */
-    HYPHEN
+    BCP47_UNDERSCORE,
 }
