@@ -44,71 +44,20 @@ import com.ibm.g11n.pipeline.resfilter.ResourceString;
 import com.ibm.g11n.pipeline.resfilter.ResourceType;
 
 /**
- * GPExportMojo is a class used for exporting the translated resource bundle
- * contents from the Globalization Pipeline service instance and producing
- * translated resource bundle files in the specified format and directory.
+ * Fetches translated string resource bundles from an instance of
+ * Globalization Pipeline service and produces bundle files.
  * 
  * @author Yoshito Umaoka
  */
-@Mojo(name = "export", defaultPhase = LifecyclePhase.PROCESS_RESOURCES)
-public class GPExportMojo extends GPBaseMojo {
-
+@Mojo(name = "download", defaultPhase = LifecyclePhase.PROCESS_RESOURCES)
+public class GPDownloadMojo extends GPBaseMojo {
+    /**
+     * Base directory of the output files. When &lt;bundleSet&gt; configuration
+     * does not contain &lt;outputDir&gt; element, then this configuration
+     * is used for the bundleSet.
+     */
     @Parameter(defaultValue = "${project.build.directory}/classes")
     private File outputDir;
-
-    @Parameter(defaultValue = "false")
-    private boolean exportSourceLanguage;
-
-    @Parameter
-    private Map<String, String> languageMap;
-
-    public enum OutputContentOption {
-        // Merges translated resources into source file contents
-        // if possible. If the output resource format does not support
-        // this option, TRANSLATION_WITH_FALLBACK is used.
-        MERGE_TO_SOURCE,
-
-        // Exports translated resources. If translation is not available
-        // for a resource key, the value from the source bundle is used.
-        TRANSLATED_WITH_FALLBACK,
-
-        // Exports only translated resources.
-        TRANSLATED_ONLY
-    }
-
-    @Parameter(defaultValue = "MERGE_TO_SOURCE")
-    private OutputContentOption outputContentOption;
-
-    public enum OutputPathOption {
-        // In the same directory with the source, with extra language suffix.
-        // For example, if the source file is com/ibm/g11n/MyMessages.properties,
-        // then the French version will be com/ibm/g11n/MyMessages_fr.properties.
-        LANGUAGE_SUFFIX,
-
-        // In a language sub-directory of the director where the source file is.
-        // For example, if the source file is com/ibm/g11n/MyMessages.json,
-        // then the French version will be com/ibm/g11n/fr/MyMessages.json.
-        LANGUAGE_SUBDIR,
-
-        // In a language directory at the same level with the source file.
-        // For example, if the source file is com/ibm/g11n/en/MyMessages.properties,
-        // then the French version will be com/ibm/g11n/fr/MyMessages.properties.
-        LANGUAGE_DIR
-    };
-
-    @Parameter(defaultValue = "LANGUAGE_SUFFIX")
-    private OutputPathOption outputPathOption;
-
-    public enum LanguageIdSeparator {
-        // Use '_' as language ID separator, such as "pt_BR"
-        UNDERSCORE,
-
-        // Use '-' as language ID separator, such as "pt-BR"
-        HYPHEN
-    }
-
-    @Parameter(defaultValue = "UNDERSCORE")
-    private LanguageIdSeparator languageIdSeparator;
 
     /* (non-Javadoc)
      * @see org.apache.maven.plugin.Mojo#execute()
@@ -117,14 +66,7 @@ public class GPExportMojo extends GPBaseMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
         getLog().debug("Entering GPExportMojo#execute()");
 
-        List<BundleFile> sourceBundleFiles = getSourceBundleFiles();
         ServiceClient client = getServiceClient();
-        String srcLang = getSourceLanguage();
-        Set<String> tgtLangs = getTargetLanguages();
-
-        if (outputDir.exists()) {
-            outputDir.mkdirs();
-        }
 
         Set<String> availBundleIds = null;
         try {
@@ -133,67 +75,91 @@ public class GPExportMojo extends GPBaseMojo {
             throw new MojoFailureException("Failed to get available bundle IDs.", e);
         }
 
-        for (BundleFile bf : sourceBundleFiles) {
-            String bundleId = bf.getBundleId();
-            if (!availBundleIds.contains(bundleId)) {
-                getLog().warn("The bundle:" + bundleId + " does not exist.");
-                continue;
+        List<BundleSet> bundleSets = getBundleSets();
+        for (BundleSet bundleSet : bundleSets) {
+            String srcLang = bundleSet.getSourceLanguage();
+            Set<String> tgtLangs = resolveTargetLanguages(bundleSet);
+            boolean outputSrcLang = bundleSet.isOutputSourceLanguage();
+            List<SourceBundleFile> sourceBundleFiles = getSourceBundleFiles(bundleSet);
+            OutputContentOption outContentOpt = bundleSet.getOutputContentOption();
+            BundleLayout bundleLayout = bundleSet.getBundleLayout();
+            LanguageIdStyle langIdStyle = bundleSet.getLanguageIdStyle();
+            Map<String, String> langMap = bundleSet.getLanguageMap();
+
+            File outDir = bundleSet.getOutputDir();
+            if (outDir == null) {
+                outDir = outputDir;
+            }
+            if (outDir.exists()) {
+                outDir.mkdirs();
             }
 
-            BundleData bdlData = null;
-            try {
-                bdlData = client.getBundleInfo(bundleId);
-            } catch (ServiceException e) {
-                throw new MojoFailureException("Failed to get bundle data for " + bundleId, e);
-            }
-
-            String bdlSrcLang = bdlData.getSourceLanguage();
-            Set<String> bdlLangs = new HashSet<String>();
-            bdlLangs.add(bdlSrcLang);
-            bdlLangs.addAll(bdlData.getTargetLanguages());
-
-            if (!srcLang.equals(bdlSrcLang)) {
-                getLog().warn("The source language of the bundle:" + bundleId
-                        + " (" + bdlSrcLang + ") is different from the language specified by the configuration ("
-                        + bdlSrcLang + ")");
-            }
-
-            if (exportSourceLanguage) {
-                if (bdlLangs.contains(srcLang)) {
-                    exportLanguageResource(client, bf, srcLang);
-                } else {
-                    getLog().warn("The specified source language (" + srcLang
-                            + ") does not exist in the bundle:" + bundleId);
+            for (SourceBundleFile bf : sourceBundleFiles) {
+                String bundleId = bf.getBundleId();
+                if (!availBundleIds.contains(bundleId)) {
+                    getLog().warn("The bundle:" + bundleId + " does not exist.");
+                    continue;
                 }
-            }
 
-            for (String tgtLang: tgtLangs) {
-                if (bdlLangs.contains(tgtLang)) {
-                    exportLanguageResource(client, bf, tgtLang);
-                } else {
-                    getLog().warn("The specified target language (" + tgtLang
-                            + ") does not exist in the bundle:" + bundleId);
+                BundleData bdlData = null;
+                try {
+                    bdlData = client.getBundleInfo(bundleId);
+                } catch (ServiceException e) {
+                    throw new MojoFailureException("Failed to get bundle data for " + bundleId, e);
+                }
+
+                String bdlSrcLang = bdlData.getSourceLanguage();
+                Set<String> bdlLangs = new HashSet<String>();
+                bdlLangs.add(bdlSrcLang);
+                bdlLangs.addAll(bdlData.getTargetLanguages());
+
+                if (!srcLang.equals(bdlSrcLang)) {
+                    getLog().warn("The source language of the bundle:" + bundleId
+                            + " (" + bdlSrcLang + ") is different from the language specified by the configuration ("
+                            + bdlSrcLang + ")");
+                }
+
+                if (outputSrcLang) {
+                    if (bdlLangs.contains(srcLang)) {
+                        exportLanguageResource(client, bf, srcLang, outDir,
+                                outContentOpt, bundleLayout, langIdStyle, langMap);
+                    } else {
+                        getLog().warn("The specified source language (" + srcLang
+                                + ") does not exist in the bundle:" + bundleId);
+                    }
+                }
+
+                for (String tgtLang: tgtLangs) {
+                    if (bdlLangs.contains(tgtLang)) {
+                        exportLanguageResource(client, bf, tgtLang, outDir,
+                                outContentOpt, bundleLayout, langIdStyle, langMap);
+                    } else {
+                        getLog().warn("The specified target language (" + tgtLang
+                                + ") does not exist in the bundle:" + bundleId);
+                    }
                 }
             }
         }
     }
 
-    private void exportLanguageResource(ServiceClient client, BundleFile bf, String language)
+    private void exportLanguageResource(ServiceClient client, SourceBundleFile bf, String language,
+            File outBaseDir, OutputContentOption outContntOpt, BundleLayout bundleLayout,
+            LanguageIdStyle langIdStyle, Map<String, String> langMap)
             throws MojoFailureException {
         String srcFileName = bf.getFile().getName();
         String relPath = bf.getRelativePath();
 
         File outputFile = null;
 
-        switch (outputPathOption) {
+        switch (bundleLayout) {
         case LANGUAGE_SUFFIX: {
             File dir = (new File(outputDir, relPath)).getParentFile();
             int idx = srcFileName.lastIndexOf('.');
             String tgtName = null;
             if (idx < 0) {
-                tgtName = srcFileName + "_" + getLanguageId(language);
+                tgtName = srcFileName + "_" + getLanguageId(language, langIdStyle, langMap);
             } else {
-                tgtName = srcFileName.substring(0, idx) + "_" + getLanguageId(language)
+                tgtName = srcFileName.substring(0, idx) + "_" + getLanguageId(language, langIdStyle, langMap)
                     + srcFileName.substring(idx);
             }
             outputFile = new File(dir, tgtName);
@@ -201,15 +167,19 @@ public class GPExportMojo extends GPBaseMojo {
         }
         case LANGUAGE_SUBDIR: {
             File dir = (new File(outputDir, relPath)).getParentFile();
-            File langSubDir = new File(dir, getLanguageId(language));
+            File langSubDir = new File(dir, getLanguageId(language, langIdStyle, langMap));
             outputFile = new File(langSubDir, srcFileName);
             break;
         }
         case LANGUAGE_DIR:
             File dir = (new File(outputDir, relPath)).getParentFile().getParentFile();
-            File langDir = new File(dir, getLanguageId(language));
+            File langDir = new File(dir, getLanguageId(language, langIdStyle, langMap));
             outputFile = new File(langDir, srcFileName);
             break;
+        }
+
+        if (outputFile == null) {
+            throw new MojoFailureException("Failed to resolve output directory");
         }
 
         getLog().info("Exporting bundle:" + bf.getBundleId() + " language:" + language + " to "
@@ -219,7 +189,7 @@ public class GPExportMojo extends GPBaseMojo {
             outputFile.getParentFile().mkdirs();
         }
 
-        switch (outputContentOption) {
+        switch (outContntOpt) {
         case MERGE_TO_SOURCE:
             mergeTranslation(client, bf.getBundleId(), language, bf.getType(), bf.getFile(), outputFile);
             break;
@@ -232,13 +202,20 @@ public class GPExportMojo extends GPBaseMojo {
         }
     }
 
-    private String getLanguageId(String languageTag) {
-        String languageId = languageTag;
-        switch (languageIdSeparator) {
-        case UNDERSCORE:
-            languageId = languageTag.replace('-', '_');
+    private String getLanguageId(String gpLanguageTag, LanguageIdStyle langIdStyle,
+            Map<String, String> langMap) {
+        String languageId = gpLanguageTag;
+        if (langMap != null) {
+            String mappedId = langMap.get(gpLanguageTag);
+            if (mappedId != null) {
+                languageId = mappedId;
+            }
+        }
+        switch (langIdStyle) {
+        case BCP47_UNDERSCORE:
+            languageId = languageId.replace('-', '_');
             break;
-        case HYPHEN:
+        case BCP47:
             // do nothing
             break;
         }
