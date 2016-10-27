@@ -46,20 +46,31 @@ import com.ibm.g11n.pipeline.resfilter.ResourceType;
  * @author Yoshito Umaoka
  */
 public abstract class GPBaseMojo extends AbstractMojo {
+    /**
+     * Credentials used for accessing the instance of Globalization
+     * Pipeline service. There are 4 sub-elements required: &lt;url&gt;,
+     * &lt;instanceId&gt;, &lt;userId&gt; and &lt;password&gt;.
+     * When &lt;credentialsJson&gt; is specified, this configuration is
+     * ignored.
+     */
     @Parameter
     private Credentials credentials;
 
+    /**
+     * JSON file including credentials used for accessing the instance of
+     * Globalization Pipeline service. The JSON file must have string elements
+     * "url", "instanceId", "userId" and "password" in the top level object.
+     */
     @Parameter(defaultValue = "${gp.credentials.json}")
     private File credentialsJson;
 
+    /**
+     * Each &lt;bundleSet&gt; specifies a translation source language, a set of
+     * resource bundle files in the source language, resource type and other
+     * configurations.
+     */
     @Parameter
-    private List<SourceBundleSet> sourceBundleSets;
-
-    @Parameter
-    private String sourceLanguage;
-
-    @Parameter
-    private Set<String> targetLanguages;
+    private List<BundleSet> bundleSets;
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
@@ -119,13 +130,13 @@ public abstract class GPBaseMojo extends AbstractMojo {
         return gpClient;
     }
 
-    protected static class BundleFile {
+    protected static class SourceBundleFile {
         private ResourceType type;
         private String bundleId;
         private File file;
         private String relativePath;
 
-        private BundleFile(ResourceType type, String bundleId, File file, String relativePath) {
+        private SourceBundleFile(ResourceType type, String bundleId, File file, String relativePath) {
             this.type = type;
             this.bundleId = bundleId;
             this.file = file;
@@ -149,37 +160,33 @@ public abstract class GPBaseMojo extends AbstractMojo {
         }
     }
 
-    protected List<BundleFile> getSourceBundleFiles() {
-        List<BundleFile> bundleFiles = new LinkedList<BundleFile>();
+    protected List<SourceBundleFile> getSourceBundleFiles(BundleSet bundleSet) {
+        List<SourceBundleFile> bundleFiles = new LinkedList<SourceBundleFile>();
 
-        List<SourceBundleSet> bundleSets = getSourceBundleSets();
         FileSetManager fsm = new FileSetManager(getLog());
         File baseDir = project.getBasedir();
-        for (SourceBundleSet bset : bundleSets) {
-            ResourceType type = bset.getType();
-            FileSet fs = bset.getFiles();
-            File fsBaseDir = new File(baseDir, fs.getDirectory());
-            String[] relPathes = fsm.getIncludedFiles(fs);
-            for (String relPath : relPathes) {
-                File bundleFile = new File(fsBaseDir, relPath);
-                bundleFiles.add(
-                        new BundleFile(type, pathToBundleId(type, relPath),
-                                bundleFile, relPath));
-            }
+        ResourceType type = bundleSet.getType();
+        FileSet fs = bundleSet.getSourceFiles();
+        File fsBaseDir = new File(baseDir, fs.getDirectory());
+        String[] relPathes = fsm.getIncludedFiles(fs);
+        for (String relPath : relPathes) {
+            File bundleFile = new File(fsBaseDir, relPath);
+            bundleFiles.add(
+                    new SourceBundleFile(type, pathToBundleId(type, relPath),
+                            bundleFile, relPath));
         }
         return bundleFiles;
     }
 
-    private synchronized List<SourceBundleSet> getSourceBundleSets() {
-        if (sourceBundleSets == null) {
+    protected synchronized List<BundleSet> getBundleSets() {
+        if (bundleSets == null) {
             // default SourceBundleSet
             FileSet fs = new FileSet();
             fs.setDirectory("src/main/resources");
             fs.addInclude("**/*.properties");
-            sourceBundleSets = Collections.singletonList(
-                    new SourceBundleSet(ResourceType.JAVA, fs));
+            bundleSets = Collections.singletonList(new BundleSet(fs));
         }
-        return sourceBundleSets;
+        return bundleSets;
     }
 
     /**
@@ -210,20 +217,14 @@ public abstract class GPBaseMojo extends AbstractMojo {
         return pkgName + "-" + fileName;
     }
 
-    protected synchronized String getSourceLanguage() {
-        if (sourceLanguage == null || sourceLanguage.isEmpty()) {
-            getLog().info("The configuration parameter 'sourceLanguage' is not specified."
-                    + " Using the defualt language English (en)");
-            sourceLanguage = "en";
-        }
-        return sourceLanguage;
-    }
-
-    protected synchronized Set<String> getTargetLanguages() throws MojoFailureException {
+    protected Set<String> resolveTargetLanguages(BundleSet bundleSet) throws MojoFailureException {
+        Set<String> targetLanguages = bundleSet.getTargetLanguages();
         if (targetLanguages == null) {
             ServiceClient client = getServiceClient();
-            String srcLang = getSourceLanguage();
-
+            String srcLang = bundleSet.getSourceLanguage();
+            if (srcLang == null) {
+                srcLang = "en";
+            }
             // targetLanguages is not specified. Default to all available languages.
             try {
                 Map<String, Set<String>> activeMTLangs = client.getConfiguredMTLanguages();
