@@ -153,7 +153,7 @@ public class GPDownloadMojo extends GPBaseMojo {
 
         switch (bundleLayout) {
         case LANGUAGE_SUFFIX: {
-            File dir = (new File(outputDir, relPath)).getParentFile();
+            File dir = (new File(outBaseDir, relPath)).getParentFile();
             int idx = srcFileName.lastIndexOf('.');
             String tgtName = null;
             if (idx < 0) {
@@ -166,13 +166,13 @@ public class GPDownloadMojo extends GPBaseMojo {
             break;
         }
         case LANGUAGE_SUBDIR: {
-            File dir = (new File(outputDir, relPath)).getParentFile();
+            File dir = (new File(outBaseDir, relPath)).getParentFile();
             File langSubDir = new File(dir, getLanguageId(language, langIdStyle, langMap));
             outputFile = new File(langSubDir, srcFileName);
             break;
         }
         case LANGUAGE_DIR:
-            File dir = (new File(outputDir, relPath)).getParentFile().getParentFile();
+            File dir = (new File(outBaseDir, relPath)).getParentFile().getParentFile();
             File langDir = new File(dir, getLanguageId(language, langIdStyle, langMap));
             outputFile = new File(langDir, srcFileName);
             break;
