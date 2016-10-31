@@ -94,7 +94,7 @@ public class BundleSet {
     }
 
     /**
-     * @param files the source files to set
+     * @param sourceFiles the source files to set
      */
     public void setSourceFiles(FileSet sourceFiles) {
         this.sourceFiles = sourceFiles;
