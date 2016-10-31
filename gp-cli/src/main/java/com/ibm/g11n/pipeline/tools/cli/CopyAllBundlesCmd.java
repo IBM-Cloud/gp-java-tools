@@ -24,7 +24,7 @@ import com.ibm.g11n.pipeline.client.ServiceClient;
 import com.ibm.g11n.pipeline.client.ServiceException;
 
 @Parameters(commandDescription = "Copies all bundle data to another service instance.")
-public class CopyAllBundlesCmd extends BaseCmd {
+class CopyAllBundlesCmd extends BaseCmd {
     @Parameter(
             names = { "--dest-url"},
             description = "The destinaion service instance's URL",

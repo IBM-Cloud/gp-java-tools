@@ -31,7 +31,7 @@ import com.ibm.g11n.pipeline.client.ServiceException;
  * @author Yoshito Umaoka
  */
 @Parameters(commandDescription = "Prints out active machine translation languages.")
-public class ListMTLanguagesCmd extends BaseCmd {
+class ListMTLanguagesCmd extends BaseCmd {
 
     @Parameter(
             names = {"-f", "--fromLanguage"},

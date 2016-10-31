@@ -26,7 +26,7 @@ import com.ibm.g11n.pipeline.resfilter.ResourceType;
  * 
  * @author Yoshito Umaoka
  */
-public class ResourceTypeConverter implements IStringConverter<ResourceType>{
+class ResourceTypeConverter implements IStringConverter<ResourceType>{
 
     @Override
     public ResourceType convert(String type) {
