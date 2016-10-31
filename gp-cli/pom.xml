@@ -1,11 +1,13 @@
 <?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
 		<groupId>com.ibm.g11n.pipeline</groupId>
 		<artifactId>gp-java-tools</artifactId>
-		<version>1.1.2</version>
+		<version>1.1.2-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>gp-cli</artifactId>
@@ -33,7 +35,8 @@
 							<shadedArtifactAttached>true</shadedArtifactAttached>
 							<shadedClassifierName>with-dependencies</shadedClassifierName>
 							<transformers>
-								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 									<mainClass>com.ibm.g11n.pipeline.tools.cli.GPCmd</mainClass>
 								</transformer>
 							</transformers>
@@ -93,7 +96,7 @@
 		<dependency>
 			<groupId>com.ibm.g11n.pipeline</groupId>
 			<artifactId>gp-res-filter</artifactId>
-			<version>1.1.2</version>
+			<version>1.1.2-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 </project>
