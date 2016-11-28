@@ -23,14 +23,20 @@ import java.util.Comparator;
  */
 
 public class ResourceString {
+    private final String note;
     private final String key;
     private final String value;
     private int sequenceNumber;
 
-    public ResourceString(String key, String value, int sequenceNumber) {
+    public ResourceString(String note, String key, String value, int sequenceNumber) {
+        this.note = note;
         this.key = key;
         this.value = value;
         this.sequenceNumber = sequenceNumber;
+    }
+    
+    public ResourceString(String key, String value, int sequenceNumber) {
+        this(null, key, value, sequenceNumber);
     }
 
     public ResourceString(String key, String value) {
@@ -45,6 +51,10 @@ public class ResourceString {
         return value;
     }
 
+    public String getNote() {
+        return note;
+    }
+    
     public void setSequenceNumber(int sequenceNumber) {
         this.sequenceNumber = sequenceNumber;
     }
@@ -70,7 +80,8 @@ public class ResourceString {
         builder.append(getKey());
         builder.append(" Value=");
         builder.append(getValue());
-
+        builder.append(" Note=");
+        builder.append(getNote());
         return builder.toString();
     }
 

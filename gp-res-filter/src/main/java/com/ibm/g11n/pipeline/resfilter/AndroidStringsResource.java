@@ -25,7 +25,6 @@ import java.io.OutputStreamWriter;
 import java.text.BreakIterator;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeSet;
@@ -71,7 +70,7 @@ public class AndroidStringsResource implements ResourceFilter {
     private static final String STR_CLOSE_TAG_PTRN = ".*(\\s*</string\\s*>)$";
 
     @Override
-    public Collection<ResourceString> parse(InputStream in) throws IOException {
+    public Bundle parse(InputStream in) throws IOException {
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = null;
@@ -91,10 +90,10 @@ public class AndroidStringsResource implements ResourceFilter {
 
         Element elem = document.getDocumentElement();
         NodeList nodeList = elem.getChildNodes();
-        Collection<ResourceString> resultCol = new LinkedList<ResourceString>();
-        collectResourceStrings(nodeList, 1 /* the first sequence number */, resultCol);
+        Bundle result = new Bundle();
+        collectResourceStrings(nodeList, 1 /* the first sequence number */, result.getResourceStrings());
 
-        return resultCol;
+        return result;
     }
 
     /**
@@ -132,10 +131,10 @@ public class AndroidStringsResource implements ResourceFilter {
     }
 
     @Override
-    public void write(OutputStream os, String language, Collection<ResourceString> map) {
+    public void write(OutputStream os, String language, Bundle resource) {
 
         TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
-        sortedResources.addAll(map);
+        sortedResources.addAll(resource.getResourceStrings());
 
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = null;
@@ -222,11 +221,11 @@ public class AndroidStringsResource implements ResourceFilter {
     }
 
     @Override
-    public void merge(InputStream base, OutputStream outStream, String language, Collection<ResourceString> data)
+    public void merge(InputStream base, OutputStream outStream, String language, Bundle resource)
             throws IOException {
         // put res data into a map for easier searching
-        Map<String, String> resMap = new HashMap<String, String>(data.size() * 4 / 3 + 1);
-        for (ResourceString res : data) {
+        Map<String, String> resMap = new HashMap<String, String>(resource.getResourceStrings().size() * 4 / 3 + 1);
+        for (ResourceString res : resource.getResourceStrings()) {
             resMap.put(res.getKey(), res.getValue());
         }
 

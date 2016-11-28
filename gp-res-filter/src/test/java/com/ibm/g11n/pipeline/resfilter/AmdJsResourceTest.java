@@ -54,28 +54,28 @@ public class AmdJsResourceTest {
         EXPECTED_INPUT_RES_LIST.add(new ResourceString("owl 3", "Great Horned Owl", 3));
     }
 
-    private static Collection<ResourceString> WRITE_RES_LIST;
+    private static Bundle WRITE_BUNDLE;
 
     static {
-        WRITE_RES_LIST = new LinkedList<ResourceString>();
-        WRITE_RES_LIST.add(new ResourceString("owl 3", "Great Horned Owl - translated", 3));
-        WRITE_RES_LIST.add(new ResourceString("bear 1", "Brown Bear - translated", 1));
-        WRITE_RES_LIST.add(new ResourceString("frog 2", "Red-eyed Tree Frog - translated", 2));
+        WRITE_BUNDLE = new Bundle();
+        WRITE_BUNDLE.addResourceString("owl 3", "Great Horned Owl - translated", 3);
+        WRITE_BUNDLE.addResourceString("bear 1", "Brown Bear - translated", 1);
+        WRITE_BUNDLE.addResourceString("frog 2", "Red-eyed Tree Frog - translated", 2);
     }
 
-    private static Collection<ResourceString> MERGE_RES_LIST;
+    private static Bundle MERGE_BUNDLE;
 
     static {
-        MERGE_RES_LIST = new LinkedList<ResourceString>();
+        MERGE_BUNDLE = new Bundle();
         String value;
         value = "Great Horned Owl - translated Great Horned Owl - translated "
                 + "Great Horned Owl - translated Great Horned Owl - translated "
                 + "Great Horned Owl - translated Great Horned Owl - translated "
                 + "Great Horned Owl - translated Great Horned Owl - translated "
                 + "Great Horned Owl - translated Great Horned Owl - translated ";
-        MERGE_RES_LIST.add(new ResourceString("owl repeated", value, 3));
+        MERGE_BUNDLE.addResourceString("owl repeated", value, 3);
 
-        MERGE_RES_LIST.add(new ResourceString("owl 3", "Great Horned Owl - translated", 5));
+        MERGE_BUNDLE.addResourceString("owl 3", "Great Horned Owl - translated", 5);
 
         value = "Translated - IBM Globalization Pipeline provides machine translation and editing "
                 + "capabilities that enable you to rapidly translate your web or mobile UI"
@@ -83,22 +83,22 @@ public class AmdJsResourceTest {
                 + " your application. Access Globalization Pipeline capabilities through its "
                 + "dashboard, RESTful API, or integrate it seamlessly into your application's "
                 + "Delivery Pipeline. File types such as Java properties, JSON, AMD i18n are " + "currently supported.";
-        MERGE_RES_LIST.add(new ResourceString("bear 1", "Brown Bear - translated", 1));
-        MERGE_RES_LIST.add(new ResourceString("description", value, 4));
-        MERGE_RES_LIST.add(new ResourceString("frog 2", "Red-eyed Tree Frog - translated", 2));
-        MERGE_RES_LIST.add(new ResourceString(
+        MERGE_BUNDLE.addResourceString("bear 1", "Brown Bear - translated", 1);
+        MERGE_BUNDLE.addResourceString("description", value, 4);
+        MERGE_BUNDLE.addResourceString("frog 2", "Red-eyed Tree Frog - translated", 2);
+        MERGE_BUNDLE.addResourceString(
                 "Lorem",
                 "Loremのイプサムは、単に印刷と植字業界のダミーテキストです。 Loremのイプサムは、未知のプリンターがタイプのゲラを取り、"
                         + "タイプ標本の本を作ってそれをスクランブル1500年代、以来、業界の標準ダミーテキストとなっています。それは本質的に変わらず、"
                         + "何世紀だけでなく、電子組版に飛躍するだけでなく5を生き延びてきました。"
                         + "それはLoremのイプサムのバージョンを含むアルダスのPageMakerのようなデスクトップパブリッシングソフトウェアと、"
                         + "より最近Loremのイプサムの通路を含むLetrasetシートのリリースでは、1960年代に普及したところ。",
-                7));
-        MERGE_RES_LIST.add(new ResourceString("numbers",
+                7);
+        MERGE_BUNDLE.addResourceString("numbers",
                 "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 "
                         + "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 "
                         + "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 ",
-                6));
+                6);
     }
 
     private static final AmdJsResource res = new AmdJsResource();
@@ -108,8 +108,8 @@ public class AmdJsResourceTest {
         assertTrue("The input test file <" + INPUT_FILE + "> does not exist.", INPUT_FILE.exists());
 
         try (InputStream is = new FileInputStream(INPUT_FILE)) {
-            Collection<ResourceString> resStrs = res.parse(is);
-            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, resStrs);
+            Bundle bundle = res.parse(is);
+            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, bundle.getResourceStrings());
         }
     }
 
@@ -119,7 +119,7 @@ public class AmdJsResourceTest {
         tempFile.deleteOnExit();
 
         try (OutputStream os = new FileOutputStream(tempFile)) {
-            res.write(os, null, WRITE_RES_LIST);
+            res.write(os, null, WRITE_BUNDLE);
             os.flush();
             assertTrue(ResourceTestUtil.compareFiles(EXPECTED_WRITE_FILE, tempFile));
         }
@@ -134,7 +134,7 @@ public class AmdJsResourceTest {
 
         try (OutputStream os = new FileOutputStream(tempFile);
                 InputStream is = new FileInputStream(MERGE_INPUT_1_FILE)) {
-            res.merge(is, os, "en", MERGE_RES_LIST);
+            res.merge(is, os, "en", MERGE_BUNDLE);
             os.flush();
             assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_1_FILE, tempFile));
         }
@@ -144,7 +144,7 @@ public class AmdJsResourceTest {
 
         try (OutputStream os = new FileOutputStream(tempFile);
                 InputStream is = new FileInputStream(MERGE_INPUT_2_FILE)) {
-            res.merge(is, os, "en", MERGE_RES_LIST);
+            res.merge(is, os, "en", MERGE_BUNDLE);
             os.flush();
             assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_2_FILE, tempFile));
         }
@@ -154,7 +154,7 @@ public class AmdJsResourceTest {
 
         try (OutputStream os = new FileOutputStream(tempFile);
                 InputStream is = new FileInputStream(MERGE_INPUT_3_FILE)) {
-            res.merge(is, os, "ja", MERGE_RES_LIST);
+            res.merge(is, os, "ja", MERGE_BUNDLE);
             os.flush();
             assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_3_FILE, tempFile));
         }

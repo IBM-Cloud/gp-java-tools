@@ -55,23 +55,23 @@ public class XLIFFResourceTest {
         EXPECTED_INPUT_RES_LIST.add(new ResourceString("4", "XLIFF Data Manager", 3));
     }
 
-    private static Collection<ResourceString> WRITE_RES_LIST;
+    private static Bundle WRITE_BUNDLE;
 
     static {
-        WRITE_RES_LIST = new LinkedList<ResourceString>();
+        WRITE_BUNDLE = new Bundle();
 
-        WRITE_RES_LIST.add(new ResourceString("3", "An application to manipulate and process XLIFF documents", 2));
-        WRITE_RES_LIST.add(new ResourceString("4", "XLIFF Data Manager", 3));
-        WRITE_RES_LIST.add(new ResourceString("1", "Quetzal", 1));
+        WRITE_BUNDLE.addResourceString("3", "An application to manipulate and process XLIFF documents", 2);
+        WRITE_BUNDLE.addResourceString("4", "XLIFF Data Manager", 3);
+        WRITE_BUNDLE.addResourceString("1", "Quetzal", 1);
     }
 
-    private static Collection<ResourceString> MERGE_RES_LIST;
+    private static Bundle MERGE_BUNDLE;
 
     static {
-        MERGE_RES_LIST = new LinkedList<ResourceString>();
-        MERGE_RES_LIST.add(new ResourceString("1", "Quetzal", 1));
-        MERGE_RES_LIST.add(new ResourceString("2", "XLIFF 文書を編集、または処理 するアプリケーションです。", 2));
-        MERGE_RES_LIST.add(new ResourceString("3", "XLIFF データ・マネージャ", 3));
+        MERGE_BUNDLE = new Bundle();
+        MERGE_BUNDLE.addResourceString("1", "Quetzal", 1);
+        MERGE_BUNDLE.addResourceString("2", "XLIFF 文書を編集、または処理 するアプリケーションです。", 2);
+        MERGE_BUNDLE.addResourceString("3", "XLIFF データ・マネージャ", 3);
     }
 
     private static final XLIFFResource res = new XLIFFResource();
@@ -82,8 +82,8 @@ public class XLIFFResourceTest {
         assertTrue("The input test file <" + INPUT_FILE + "> does not exist.", INPUT_FILE.exists());
 
         try (InputStream is = new FileInputStream(INPUT_FILE)) {
-            Collection<ResourceString> resStrs = res.parse(is);
-            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, resStrs);
+            Bundle bundle = res.parse(is);
+            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, bundle.getResourceStrings());
         }
     }
 
@@ -94,7 +94,7 @@ public class XLIFFResourceTest {
         tempFile.deleteOnExit();
 
         try (OutputStream os = new FileOutputStream(tempFile)) {
-            res.write(os, null, WRITE_RES_LIST);
+            res.write(os, null, WRITE_BUNDLE);
             os.flush();
 
             assertTrue(ResourceTestUtil.compareFiles(EXPECTED_WRITE_FILE, tempFile));
@@ -111,7 +111,7 @@ public class XLIFFResourceTest {
 
         try (OutputStream os = new FileOutputStream(tempFile);
                 InputStream is = new FileInputStream(MERGE_INPUT_1_FILE)) {
-            res.merge(is, os, "en", MERGE_RES_LIST);
+            res.merge(is, os, "en", MERGE_BUNDLE);
             os.flush();
             assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_1_FILE, tempFile));
         }
@@ -121,7 +121,7 @@ public class XLIFFResourceTest {
 
         try (OutputStream os = new FileOutputStream(tempFile);
                 InputStream is = new FileInputStream(MERGE_INPUT_2_FILE)) {
-            res.merge(is, os, "en", MERGE_RES_LIST);
+            res.merge(is, os, "en", MERGE_BUNDLE);
             os.flush();
             assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_2_FILE, tempFile));
         }

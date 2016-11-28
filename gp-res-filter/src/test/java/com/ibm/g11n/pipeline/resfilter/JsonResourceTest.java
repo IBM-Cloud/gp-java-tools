@@ -49,13 +49,13 @@ public class JsonResourceTest {
         EXPECTED_INPUT_RES_LIST.add(new ResourceString("owl 3", "Great Horned Owl", 3));
     }
 
-    private static Collection<ResourceString> WRITE_RES_LIST;
+    private static Bundle WRITE_BUNDLE;
 
     static {
-        WRITE_RES_LIST = new LinkedList<ResourceString>();
-        WRITE_RES_LIST.add(new ResourceString("owl 3", "Great Horned Owl - translated", 3));
-        WRITE_RES_LIST.add(new ResourceString("bear 1", "Brown Bear - translated", 1));
-        WRITE_RES_LIST.add(new ResourceString("frog 2", "Red-eyed Tree Frog - translated", 2));
+        WRITE_BUNDLE = new Bundle();
+        WRITE_BUNDLE.addResourceString("owl 3", "Great Horned Owl - translated", 3);
+        WRITE_BUNDLE.addResourceString("bear 1", "Brown Bear - translated", 1);
+        WRITE_BUNDLE.addResourceString("frog 2", "Red-eyed Tree Frog - translated", 2);
     }
 
     private static final JsonResource res = new JsonResource();
@@ -65,8 +65,8 @@ public class JsonResourceTest {
         assertTrue("The input test file <" + INPUT_FILE + "> does not exist.", INPUT_FILE.exists());
 
         try (InputStream is = new FileInputStream(INPUT_FILE)) {
-            Collection<ResourceString> resStrs = res.parse(is);
-            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, resStrs);
+            Bundle bundle = res.parse(is);
+            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, bundle.getResourceStrings());
         }
     }
 
@@ -76,7 +76,7 @@ public class JsonResourceTest {
         tempFile.deleteOnExit();
 
         try (OutputStream os = new FileOutputStream(tempFile)) {
-            res.write(os, null, WRITE_RES_LIST);
+            res.write(os, null, WRITE_BUNDLE);
             os.flush();
             assertTrue(ResourceTestUtil.compareFiles(EXPECTED_WRITE_FILE, tempFile));
         }
@@ -88,7 +88,7 @@ public class JsonResourceTest {
         tempFile.deleteOnExit();
 
         try (OutputStream os = new FileOutputStream(tempFile); InputStream is = new FileInputStream(INPUT_FILE)) {
-            res.merge(is, os, null, WRITE_RES_LIST);
+            res.merge(is, os, null, WRITE_BUNDLE);
             os.flush();
             assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_FILE, tempFile));
         }

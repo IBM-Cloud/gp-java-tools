@@ -26,7 +26,6 @@ import java.text.BreakIterator;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -77,23 +76,23 @@ public class JavaPropertiesResource implements ResourceFilter {
     }
 
     @Override
-    public Collection<ResourceString> parse(InputStream inStream) throws IOException {
+    public Bundle parse(InputStream inStream) throws IOException {
         LinkedProperties props = new LinkedProperties();
         props.load(inStream);
         Iterator<Object> i = props.orderedKeys().iterator();
-        Collection<ResourceString> resultCol = new ArrayList<ResourceString>(props.size());
+        Bundle result = new Bundle();
         int sequenceNum = 0;
         while (i.hasNext()) {
             String key = (String) i.next();
-            resultCol.add(new ResourceString(key, props.getProperty(key), ++sequenceNum));
+            result.addResourceString(key, props.getProperty(key), ++sequenceNum);
         }
-        return resultCol;
+        return result;
     }
 
     @Override
-    public void write(OutputStream outStream, String language, Collection<ResourceString> data) throws IOException {
+    public void write(OutputStream outStream, String language, Bundle resource) throws IOException {
         TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
-        sortedResources.addAll(data);
+        sortedResources.addAll(resource.getResourceStrings());
 
         LinkedProperties props = new LinkedProperties();
         for (ResourceString res : sortedResources) {
@@ -309,9 +308,9 @@ public class JavaPropertiesResource implements ResourceFilter {
     }
 
     @Override
-    public void merge(InputStream base, OutputStream outStream, String language, Collection<ResourceString> data) throws IOException {
-        Map<String, String> resMap = new HashMap<String, String>(data.size() * 4/3 + 1);
-        for (ResourceString res : data) {
+    public void merge(InputStream base, OutputStream outStream, String language, Bundle resource) throws IOException {
+        Map<String, String> resMap = new HashMap<String, String>(resource.getResourceStrings().size() * 4/3 + 1);
+        for (ResourceString res : resource.getResourceStrings()) {
             resMap.put(escapePropKey(res.getKey()), res.getValue());
         }
 

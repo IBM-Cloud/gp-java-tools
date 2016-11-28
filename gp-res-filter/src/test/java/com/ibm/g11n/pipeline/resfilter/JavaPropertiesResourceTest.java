@@ -62,16 +62,16 @@ public class JavaPropertiesResourceTest {
         EXPECTED_INPUT_RES_LIST.add(new ResourceString("tab", "pick up the\u00A5 tab", 5));
     }
 
-    private static Collection<ResourceString> WRITE_RES_LIST;
+    private static Bundle WRITE_BUNDLE;
 
     static {
-        WRITE_RES_LIST = new LinkedList<ResourceString>();
-        WRITE_RES_LIST.add(new ResourceString("language", "Not-English", 2));
-        WRITE_RES_LIST.add(new ResourceString("key with spaces",
-                "Translated - This is the value that could be looked up with the key \"key with spaces\".", 4));
-        WRITE_RES_LIST.add(new ResourceString("website", "http://en.wikipedia.org/translated", 1));
-        WRITE_RES_LIST.add(new ResourceString("message", "Translated - Welcome to Wikipedia!", 3));
-        WRITE_RES_LIST.add(new ResourceString("tab", "Translated - pick up the\u00A5 tab", 5));
+        WRITE_BUNDLE = new Bundle();
+        WRITE_BUNDLE.addResourceString("language", "Not-English", 2);
+        WRITE_BUNDLE.addResourceString("key with spaces",
+                "Translated - This is the value that could be looked up with the key \"key with spaces\".", 4);
+        WRITE_BUNDLE.addResourceString("website", "http://en.wikipedia.org/translated", 1);
+        WRITE_BUNDLE.addResourceString("message", "Translated - Welcome to Wikipedia!", 3);
+        WRITE_BUNDLE.addResourceString("tab", "Translated - pick up the\u00A5 tab", 5);
     }
 
     private static LinkedList<PropDef> EXPECTED_PROP_DEF_LIST;
@@ -93,8 +93,8 @@ public class JavaPropertiesResourceTest {
         assertTrue("The input test file <" + INPUT_FILE + "> does not exist.", INPUT_FILE.exists());
 
         try (InputStream is = new FileInputStream(INPUT_FILE)) {
-            Collection<ResourceString> resStrs = res.parse(is);
-            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, resStrs);
+            Bundle bundle = res.parse(is);
+            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, bundle.getResourceStrings());
         }
     }
 
@@ -104,7 +104,7 @@ public class JavaPropertiesResourceTest {
         tempFile.deleteOnExit();
 
         try (OutputStream os = new FileOutputStream(tempFile)) {
-            res.write(os, null, WRITE_RES_LIST);
+            res.write(os, null, WRITE_BUNDLE);
             os.flush();
             // Properties.store() puts a comment with date and time
             // on the first line, ignore it by passing n=1 to compareFiles()
@@ -118,7 +118,7 @@ public class JavaPropertiesResourceTest {
         tempFile.deleteOnExit();
 
         try (OutputStream os = new FileOutputStream(tempFile); InputStream is = new FileInputStream(INPUT_FILE)) {
-            res.merge(is, os, "en", WRITE_RES_LIST);
+            res.merge(is, os, "en", WRITE_BUNDLE);
             os.flush();
             assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_FILE, tempFile));
         }

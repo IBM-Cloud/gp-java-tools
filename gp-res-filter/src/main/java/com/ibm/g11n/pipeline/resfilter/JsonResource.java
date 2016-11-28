@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2015
+ * Copyright IBM Corp. 2015, 2016
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.TreeSet;
 
@@ -42,8 +40,8 @@ import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 public class JsonResource implements ResourceFilter {
 
     @Override
-    public Collection<ResourceString> parse(InputStream inStream) throws IOException {
-        Collection<ResourceString> resultCol = new LinkedList<ResourceString>();
+    public Bundle parse(InputStream inStream) throws IOException {
+        Bundle bundle = new Bundle();
         try (InputStreamReader reader = new InputStreamReader(new BomInputStream(inStream), StandardCharsets.UTF_8)) {
             JsonElement root = new JsonParser().parse(reader);
             if (!root.isJsonObject()) {
@@ -56,22 +54,20 @@ public class JsonResource implements ResourceFilter {
                 if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
                     throw new IllegalResourceFormatException("The value of JSON element " + key + " is not a string.");
                 }
-                ResourceString res = new ResourceString(key, value.getAsString());
                 sequenceNum++;
-                res.setSequenceNumber(sequenceNum);
-                resultCol.add(res);
+                bundle.addResourceString(key, value.getAsString(), sequenceNum);
             }
         } catch (JsonParseException e) {
             throw new IllegalResourceFormatException("Failed to parse the specified JSON contents.", e);
         }
-        return resultCol;
+        return bundle;
     }
 
     @Override
-    public void write(OutputStream outStream, String language, Collection<ResourceString> data) throws IOException {
+    public void write(OutputStream outStream, String language, Bundle bundle) throws IOException {
         // extracts key value pairs in original sequence order
         TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
-        sortedResources.addAll(data);
+        sortedResources.addAll(bundle.getResourceStrings());
         LinkedHashMap<String, String> kvmap = new LinkedHashMap<>(sortedResources.size());
         for (ResourceString res : sortedResources) {
             kvmap.put(res.getKey(), res.getValue());
@@ -83,7 +79,7 @@ public class JsonResource implements ResourceFilter {
     }
 
     @Override
-    public void merge(InputStream base, OutputStream outStream, String language, Collection<ResourceString> data)
+    public void merge(InputStream base, OutputStream outStream, String language, Bundle bundle)
             throws IOException {
         throw new UnsupportedOperationException("Merging JSON resource is not supported.");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2015
+ * Copyright IBM Corp. 2015, 2016
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.BreakIterator;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -43,9 +42,8 @@ public class IOSStringsResource implements ResourceFilter {
     private static final String CHAR_SET = "UTF-8";
 
     @Override
-    public Collection<ResourceString> parse(InputStream in) throws IOException {
-        Collection<ResourceString> res = new LinkedList<ResourceString>();
-
+    public Bundle parse(InputStream in) throws IOException {
+        Bundle bundle = new Bundle();
         BufferedReader reader = new BufferedReader(new InputStreamReader(in, CHAR_SET));
 
         int sqNum = 0;
@@ -71,17 +69,17 @@ public class IOSStringsResource implements ResourceFilter {
                 String key = parts[0].substring(parts[0].indexOf('"') + 1).trim();
                 String value = parts[1].substring(0, parts[1].lastIndexOf('"')).trim();
 
-                res.add(new ResourceString(key, value, ++sqNum));
+                bundle.addResourceString(key, value, ++sqNum);
             }
         }
 
-        return res;
+        return bundle;
     }
 
     @Override
-    public void write(OutputStream os, String language, Collection<ResourceString> resStrings) throws IOException {
+    public void write(OutputStream os, String language, Bundle bundle) throws IOException {
         TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
-        sortedResources.addAll(resStrings);
+        sortedResources.addAll(bundle.getResourceStrings());
 
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, CHAR_SET));
 
@@ -94,11 +92,11 @@ public class IOSStringsResource implements ResourceFilter {
     }
 
     @Override
-    public void merge(InputStream base, OutputStream os, String language, Collection<ResourceString> data)
+    public void merge(InputStream base, OutputStream os, String language, Bundle bundle)
             throws IOException {
         // put res data into a map for easier searching
-        Map<String, String> resMap = new HashMap<String, String>(data.size() * 4 / 3 + 1);
-        for (ResourceString res : data) {
+        Map<String, String> resMap = new HashMap<String, String>(bundle.getResourceStrings().size() * 4 / 3 + 1);
+        for (ResourceString res : bundle.getResourceStrings()) {
             resMap.put(res.getKey(), res.getValue());
         }
 

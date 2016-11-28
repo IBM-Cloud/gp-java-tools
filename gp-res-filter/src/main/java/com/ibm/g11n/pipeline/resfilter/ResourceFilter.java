@@ -18,7 +18,6 @@ package com.ibm.g11n.pipeline.resfilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Collection;
 
 /**
  * Resource filter interface - converting input format data to key-value pairs
@@ -28,9 +27,9 @@ import java.util.Collection;
  */
 public interface ResourceFilter {
 
-    Collection<ResourceString> parse(InputStream inStream) throws IOException;
+    Bundle parse(InputStream inStream) throws IOException;
 
-    void write(OutputStream outStream, String language, Collection<ResourceString> resStrings) throws IOException;
+    void write(OutputStream outStream, String language, Bundle resource) throws IOException;
 
-    void merge(InputStream base, OutputStream outStream, String language, Collection<ResourceString> resStrings) throws IOException;
+    void merge(InputStream base, OutputStream outStream, String language, Bundle resource) throws IOException;
 }

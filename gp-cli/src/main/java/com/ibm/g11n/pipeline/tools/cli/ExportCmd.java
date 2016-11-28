@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2015
+ * Copyright IBM Corp. 2015, 2016
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -28,9 +26,9 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.ibm.g11n.pipeline.client.ResourceEntryData;
 import com.ibm.g11n.pipeline.client.ServiceException;
+import com.ibm.g11n.pipeline.resfilter.Bundle;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilter;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterFactory;
-import com.ibm.g11n.pipeline.resfilter.ResourceString;
 import com.ibm.g11n.pipeline.resfilter.ResourceType;
 
 /**
@@ -74,7 +72,7 @@ final class ExportCmd extends BundleCmd {
     @Override
     protected void _execute() {
         Map<String, ResourceEntryData> resEntries = null;
-        Collection<ResourceString> resStrings = new LinkedList<>();
+        Bundle bundle = new Bundle();
         try {
             resEntries =
                     getClient().getResourceEntries(bundleId, languageId);
@@ -87,11 +85,11 @@ final class ExportCmd extends BundleCmd {
                     resVal = data.getSourceValue();
                 }
                 if (resVal != null) {
-                    ResourceString resString = new ResourceString(key, resVal);
+                    int sequenceNumber = -1;
                     if (seqNum != null) {
-                        resString.setSequenceNumber(seqNum.intValue());
+                        sequenceNumber = seqNum.intValue();
                     }
-                    resStrings.add(resString);
+                    bundle.addResourceString(key, resVal, sequenceNumber);
                 }
             }
         } catch (ServiceException e) {
@@ -103,9 +101,9 @@ final class ExportCmd extends BundleCmd {
         try (FileOutputStream fos = new FileOutputStream(f)) {
             if (sourceFileName != null && !sourceFileName.isEmpty()) {
                 FileInputStream fis = new FileInputStream(sourceFileName);
-                filter.merge(fis, fos, languageId, resStrings);
+                filter.merge(fis, fos, languageId, bundle);
             } else {
-                filter.write(fos, languageId, resStrings);
+                filter.write(fos, languageId, bundle);
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to write the resoruce data to " + fileName + ": " + e.getMessage(), e);
