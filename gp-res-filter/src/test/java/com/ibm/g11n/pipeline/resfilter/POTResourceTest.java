@@ -67,49 +67,49 @@ public class POTResourceTest {
         EXPECTED_INPUT_RES_LIST.add(new ResourceString(key, key, 5));
     }
 
-    private static Collection<ResourceString> WRITE_RES_LIST;
+    private static Bundle WRITE_BUNDLE;
 
     static {
-        WRITE_RES_LIST = new LinkedList<ResourceString>();
+        WRITE_BUNDLE = new Bundle();
 
         String key = "Untranslated Sea Lion 3";
         String value = "TRANSLATED: California Sea Lion";
-        WRITE_RES_LIST.add(new ResourceString(key, value, 3));
+        WRITE_BUNDLE.addResourceString(key, value, 3);
 
         key = "Here is an example of how one might continue a very long string "
                 + "for the common case the string represents multi-line output 1";
         value = "TRANSLATED: Here is an example of how one might continue a very long string "
                 + "for the common case the string represents multi-line output";
-        WRITE_RES_LIST.add(new ResourceString(key, value, 1));
+        WRITE_BUNDLE.addResourceString(key, value, 1);
 
         key = "Unable to find user: @users 2";
         value = "TRANSLATED: Unable to find users: @users";
-        WRITE_RES_LIST.add(new ResourceString(key, value, 2));
+        WRITE_BUNDLE.addResourceString(key, value, 2);
     }
 
-    private static Collection<ResourceString> MERGE_RES_LIST;
+    private static Bundle MERGE_BUNDLE;
 
     static {
-        MERGE_RES_LIST = new LinkedList<ResourceString>();
+        MERGE_BUNDLE = new Bundle();
         String key, value;
 
         key = "Here is an example of how one might continue a very long string\\n"
                 + "for the common case the string represents multi-line output.\\n";
         value = "Voici un exemple de la façon dont on pourrait continuer à une très longue chaîne\\n"
                 + "Pour le cas courant de la chaîne représente la sortie multi-ligne.\\n";
-        MERGE_RES_LIST.add(new ResourceString(key, value, 1));
+        MERGE_BUNDLE.addResourceString(key, value, 1);
 
         key = "Enter a comma separated list of user names.";
         value = "Entrez une virgule liste séparée par des noms d'utilisateur.";
-        MERGE_RES_LIST.add(new ResourceString(key, value, 2));
+        MERGE_BUNDLE.addResourceString(key, value, 2);
 
         key = "Unable to find user: @users";
         value = "Impossible de trouver l'utilisateur : @users";
-        MERGE_RES_LIST.add(new ResourceString(key, value, 3));
+        MERGE_BUNDLE.addResourceString(key, value, 3);
 
         key = "Unable to find users: @users";
         value = "Impossible de trouver les utilisateurs: @users";
-        MERGE_RES_LIST.add(new ResourceString(key, value, 4));
+        MERGE_BUNDLE.addResourceString(key, value, 4);
 
         key = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. "
                 + "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, "
@@ -123,13 +123,13 @@ public class POTResourceTest {
                 + "何世紀だけでなく、電子組版に飛躍するだけでなく5を生き延びてきました。"
                 + "それはLoremのイプサムのバージョンを含むアルダスのPageMakerのようなデスクトップパブリッシングソフトウェアと、"
                 + "より最近Loremのイプサムの通路を含むLetrasetシートのリリースでは、1960年代に普及したところ。";
-        MERGE_RES_LIST.add(new ResourceString(key, value, 6));
+        MERGE_BUNDLE.addResourceString(key, value, 6);
 
         key = "numbers";
         value = "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 "
                 + "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 "
                 + "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 ";
-        MERGE_RES_LIST.add(new ResourceString(key, value, 5));
+        MERGE_BUNDLE.addResourceString(key, value, 5);
     }
 
     private static final POTResource res = new POTResource();
@@ -139,8 +139,8 @@ public class POTResourceTest {
         assertTrue("The input test file <" + INPUT_FILE + "> does not exist.", INPUT_FILE.exists());
 
         try (InputStream is = new FileInputStream(INPUT_FILE)) {
-            Collection<ResourceString> resStrs = res.parse(is);
-            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, resStrs);
+            Bundle bundle = res.parse(is);
+            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, bundle.getResourceStrings());
         }
     }
 
@@ -150,7 +150,7 @@ public class POTResourceTest {
         tempFile.deleteOnExit();
 
         try (OutputStream os = new FileOutputStream(tempFile)) {
-            res.write(os, null, WRITE_RES_LIST);
+            res.write(os, null, WRITE_BUNDLE);
             os.flush();
             // pot files contain a header, this has info which may change,
             // therefore, ignore it by setting n=19 in compareFiles()
@@ -167,7 +167,7 @@ public class POTResourceTest {
 
         try (OutputStream os = new FileOutputStream(tempFile);
                 InputStream is = new FileInputStream(MERGE_INPUT_1_FILE)) {
-            res.merge(is, os, "en", MERGE_RES_LIST);
+            res.merge(is, os, "en", MERGE_BUNDLE);
             os.flush();
             assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_1_FILE, tempFile));
         }
@@ -177,7 +177,7 @@ public class POTResourceTest {
 
         try (OutputStream os = new FileOutputStream(tempFile);
                 InputStream is = new FileInputStream(MERGE_INPUT_2_FILE)) {
-            res.merge(is, os, "ja", MERGE_RES_LIST);
+            res.merge(is, os, "ja", MERGE_BUNDLE);
             os.flush();
             assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_2_FILE, tempFile));
         }

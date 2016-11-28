@@ -53,16 +53,16 @@ public class YMLResourceTest {
 
     }
 
-    private static Collection<ResourceString> WRITE_RES_LIST;
+    private static Bundle WRITE_BUNDLE;
 
     static {
-        WRITE_RES_LIST = new LinkedList<ResourceString>();
+        WRITE_BUNDLE = new Bundle();
 
         String key, value;
 
         key = "Untranslated Sea Lion 3";
         value = "TRANSLATED: California Sea Lion";
-        WRITE_RES_LIST.add(new ResourceString(key, value, 3));
+        WRITE_BUNDLE.addResourceString(key, value, 3);
     }
 
     private static final YMLResource res = new YMLResource();
@@ -73,8 +73,8 @@ public class YMLResourceTest {
         assertTrue("The input test file <" + INPUT_FILE + "> does not exist.", INPUT_FILE.exists());
 
         try (InputStream is = new FileInputStream(INPUT_FILE)) {
-            Collection<ResourceString> resStrs = res.parse(is);
-            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, resStrs);
+            Bundle bundle = res.parse(is);
+            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, bundle.getResourceStrings());
         }
     }
 
@@ -85,7 +85,7 @@ public class YMLResourceTest {
         tempFile.deleteOnExit();
 
         try (OutputStream os = new FileOutputStream(tempFile)) {
-            res.write(os, null, WRITE_RES_LIST);
+            res.write(os, null, WRITE_BUNDLE);
             os.flush();
 
             assertTrue(ResourceTestUtil.compareFiles(EXPECTED_WRITE_FILE, tempFile));
@@ -98,7 +98,7 @@ public class YMLResourceTest {
         tempFile.deleteOnExit();
 
         try (OutputStream os = new FileOutputStream(tempFile); InputStream is = new FileInputStream(INPUT_FILE)) {
-            res.merge(is, os, null, WRITE_RES_LIST);
+            res.merge(is, os, null, WRITE_BUNDLE);
             os.flush();
             assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_FILE, tempFile));
         }

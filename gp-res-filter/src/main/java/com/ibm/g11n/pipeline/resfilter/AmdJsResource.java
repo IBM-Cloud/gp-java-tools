@@ -24,10 +24,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.text.BreakIterator;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -188,9 +186,9 @@ public class AmdJsResource implements ResourceFilter {
     }
 
     @Override
-    public Collection<ResourceString> parse(InputStream inStream) throws IOException {
+    public Bundle parse(InputStream inStream) throws IOException {
         LinkedHashMap<String, String> resultMap = null;
-        Collection<ResourceString> resultCol = new LinkedList<ResourceString>();
+        Bundle result = new Bundle();
         try (InputStreamReader reader = new InputStreamReader(new BomInputStream(inStream), "UTF-8")) {
             AstRoot root = new Parser().parse(reader, null, 1);
             KeyValueVisitor visitor = new KeyValueVisitor();
@@ -198,19 +196,19 @@ public class AmdJsResource implements ResourceFilter {
             resultMap = visitor.elements;
             int sequenceNum = 1;
             for (Entry<String, String> entry : resultMap.entrySet()) {
-                resultCol.add(new ResourceString(entry.getKey(), entry.getValue(), sequenceNum++));
+                result.addResourceString(entry.getKey(), entry.getValue(), sequenceNum++);
             }
         } catch (Exception e) {
             throw new IllegalResourceFormatException(e);
         }
-        return resultCol;
+        return result;
     }
 
     @Override
-    public void write(OutputStream outStream, String language, Collection<ResourceString> resStrings)
+    public void write(OutputStream outStream, String language, Bundle resource)
             throws IOException {
         TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
-        sortedResources.addAll(resStrings);
+        sortedResources.addAll(resource.getResourceStrings());
 
         try (OutputStreamWriter writer = new OutputStreamWriter(new BufferedOutputStream(outStream), "UTF-8")) {
             writer.write("define({\n");
@@ -229,10 +227,10 @@ public class AmdJsResource implements ResourceFilter {
     }
 
     @Override
-    public void merge(InputStream base, OutputStream outStream, String language, Collection<ResourceString> data)
+    public void merge(InputStream base, OutputStream outStream, String language, Bundle resource)
             throws IOException {
-        Map<String, String> resMap = new HashMap<String, String>(data.size() * 4 / 3 + 1);
-        for (ResourceString res : data) {
+        Map<String, String> resMap = new HashMap<String, String>(resource.getResourceStrings().size() * 4 / 3 + 1);
+        for (ResourceString res : resource.getResourceStrings()) {
             resMap.put(res.getKey(), res.getValue());
         }
 

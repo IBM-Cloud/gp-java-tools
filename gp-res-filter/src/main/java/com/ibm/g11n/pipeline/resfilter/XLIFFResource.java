@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2015
+ * Copyright IBM Corp. 2015, 2016
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.BreakIterator;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -60,7 +58,7 @@ public class XLIFFResource implements ResourceFilter {
     private static final String BODY_STRING = "body";
 
     @Override
-    public Collection<ResourceString> parse(InputStream in) throws FileNotFoundException, IOException {
+    public Bundle parse(InputStream in) throws FileNotFoundException, IOException {
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = null;
@@ -83,27 +81,25 @@ public class XLIFFResource implements ResourceFilter {
 
         int version = (int) Float.parseFloat(elem.getAttribute(VERSION_STRING));
 
-        Collection<ResourceString> resStrings = new LinkedList<ResourceString>();
-        collectResourceStrings(nodeList, 1 /* the first sequence number */, resStrings, version, "");
+        Bundle bundle = new Bundle();
+        collectResourceStrings(nodeList, 1 /* the first sequence number */, bundle, version, "");
 
-        return resStrings;
+        return bundle;
     }
 
-    private int collectResourceStrings(NodeList nodeList, int startSeqNum, Collection<ResourceString> resStrings, int version, String key) {
+    private int collectResourceStrings(NodeList nodeList, int startSeqNum, Bundle bundle, int version, String key) {
         int seqNum = startSeqNum;
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
             if (node.getNodeName().lastIndexOf(UNIT_STRING) != -1) {
                 String newkey = node.getAttributes().getNamedItem(ID_STRING).getNodeValue();
-                seqNum = collectResourceStrings(node.getChildNodes(), seqNum, resStrings, version, newkey);
+                seqNum = collectResourceStrings(node.getChildNodes(), seqNum, bundle, version, newkey);
             } else if (node.getNodeName().equals(SOURCE_STRING)) {
                 String value = node.getTextContent().replaceAll("\\s*\n\\s*", " ");
-                ResourceString res = new ResourceString(key, value);
-                res.setSequenceNumber(seqNum++);
-                resStrings.add(res);
+                bundle.addResourceString(key, value, seqNum++);
                 return seqNum;
             } else {
-                seqNum = collectResourceStrings(node.getChildNodes(), seqNum, resStrings, version, key);
+                seqNum = collectResourceStrings(node.getChildNodes(), seqNum, bundle, version, key);
             }
         }
         return seqNum;
@@ -117,7 +113,7 @@ public class XLIFFResource implements ResourceFilter {
      * (non-Javadoc)
      * @see com.ibm.g11n.pipeline.resfilter.ResourceFilter#write(java.io.OutputStream, java.lang.String, java.util.Collection)
      */
-    public void write(OutputStream os, String language, Collection<ResourceString> resStrings) {
+    public void write(OutputStream os, String language, Bundle bundle) {
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = null;
         try {
@@ -148,7 +144,7 @@ public class XLIFFResource implements ResourceFilter {
         Element body = doc.createElement(BODY_STRING);
         file.appendChild(body);
 
-        for (ResourceString key : resStrings) {
+        for (ResourceString key : bundle.getResourceStrings()) {
             Element trans_unit = doc.createElement(UNIT_STRING);
             trans_unit.setAttribute(ID_STRING, key.getKey());
             Element source = doc.createElement(SOURCE_STRING);
@@ -190,9 +186,9 @@ public class XLIFFResource implements ResourceFilter {
      * (non-Javadoc)
      * @see com.ibm.g11n.pipeline.resfilter.ResourceFilter#merge(java.io.InputStream, java.io.OutputStream, java.lang.String, java.util.Collection)
      */
-    public void merge(InputStream base, OutputStream os, String language, Collection<ResourceString> data) throws IOException {
-        Map<String, String> resMap = new HashMap<String, String>(data.size() * 4/3 + 1);
-        for (ResourceString res : data) {
+    public void merge(InputStream base, OutputStream os, String language, Bundle bundle) throws IOException {
+        Map<String, String> resMap = new HashMap<String, String>(bundle.getResourceStrings().size() * 4/3 + 1);
+        for (ResourceString res : bundle.getResourceStrings()) {
             resMap.put(res.getKey(), res.getValue());
         }
 

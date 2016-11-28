@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2015
+ * Copyright IBM Corp. 2015, 2016
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,8 @@ import java.io.OutputStreamWriter;
 import java.text.BreakIterator;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
@@ -68,14 +66,13 @@ public class POTResource implements ResourceFilter {
             + "\"Content-Transfer-Encoding: 8bit\\n\"\n" + "\"Generated-By: Globalization Pipeline\\n\"\n";
 
     @Override
-    public Collection<ResourceString> parse(InputStream inStream) throws IOException {
+    public Bundle parse(InputStream inStream) throws IOException {
+        Bundle bundle = new Bundle();
         if (inStream == null) {
-            return Collections.emptyList();
+            return bundle;
         }
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(inStream, CHAR_SET));
-
-        Collection<ResourceString> resultCol = new LinkedList<ResourceString>();
 
         String line, value;
         int sequenceNum = 0;
@@ -86,21 +83,22 @@ public class POTResource implements ResourceFilter {
             }
 
             if (line.startsWith(UNTRANSLATED_STRING_PREFIX) || line.startsWith(UNTRANSLATED_PLURAL_STRING_PREFIX)) {
-                resultCol.add(new ResourceString(value, value, ++sequenceNum));
+
+                bundle.addResourceString(value, value, ++sequenceNum);
             }
         }
 
-        return resultCol;
+        return bundle;
     }
 
     @Override
-    public void write(OutputStream outStream, String language, Collection<ResourceString> data) throws IOException {
-        if (data == null || outStream == null) {
+    public void write(OutputStream outStream, String language, Bundle bundle) throws IOException {
+        if (bundle == null || outStream == null) {
             return;
         }
 
         TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
-        sortedResources.addAll(data);
+        sortedResources.addAll(bundle.getResourceStrings());
 
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outStream, CHAR_SET));
         // write header
@@ -126,11 +124,11 @@ public class POTResource implements ResourceFilter {
      * does not support plural forms in PO/POT files, they will be left as-is.
      */
     @Override
-    public void merge(InputStream base, OutputStream outStream, String language, Collection<ResourceString> data)
+    public void merge(InputStream base, OutputStream outStream, String language, Bundle bundle)
             throws IOException {
         // put res data into a map for easier searching
-        Map<String, String> resMap = new HashMap<String, String>(data.size() * 4 / 3 + 1);
-        for (ResourceString res : data) {
+        Map<String, String> resMap = new HashMap<String, String>(bundle.getResourceStrings().size() * 4 / 3 + 1);
+        for (ResourceString res : bundle.getResourceStrings()) {
             resMap.put(res.getKey(), res.getValue());
         }
 

@@ -18,7 +18,6 @@ package com.ibm.g11n.pipeline.tools.cli;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,6 +25,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.ibm.g11n.pipeline.client.NewResourceEntryData;
 import com.ibm.g11n.pipeline.client.ServiceException;
+import com.ibm.g11n.pipeline.resfilter.Bundle;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilter;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterFactory;
 import com.ibm.g11n.pipeline.resfilter.ResourceString;
@@ -63,9 +63,9 @@ final class ImportCmd extends BundleCmd {
         ResourceFilter filter = ResourceFilterFactory.get(type);
         File f = new File(fileName);
         try (FileInputStream fis = new FileInputStream(f)) {
-            Collection<ResourceString> resStrings = filter.parse(fis);
-            resEntries = new HashMap<>(resStrings.size());
-            for (ResourceString resString : resStrings) {
+            Bundle bundle = filter.parse(fis);
+            resEntries = new HashMap<>(bundle.getResourceStrings().size());
+            for (ResourceString resString : bundle.getResourceStrings()) {
                 NewResourceEntryData resEntryData = new NewResourceEntryData(resString.getValue());
                 int seqNum = resString.getSequenceNumber();
                 if (seqNum >= 0) {
