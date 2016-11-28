@@ -120,7 +120,7 @@ public class POTResource implements ResourceFilter {
 
     /**
      * Note:
-     * {@link POTResource#merge(InputStream, OutputStream, String, Collection)}
+     * {@link POTResource#merge(InputStream, OutputStream, String, Bundle)}
      * does not support plural forms in PO/POT files, they will be left as-is.
      */
     @Override
