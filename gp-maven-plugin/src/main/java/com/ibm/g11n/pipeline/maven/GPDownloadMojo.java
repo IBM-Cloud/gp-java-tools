@@ -20,7 +20,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -60,12 +59,19 @@ public class GPDownloadMojo extends GPBaseMojo {
     @Parameter(defaultValue = "${project.build.directory}/classes")
     private File outputDir;
 
+    /**
+     * Whether this goal overwrites existing bundle file in output directory
+     * or not. The default value is true.
+     */
+    @Parameter(defaultValue = "true")
+    private boolean overwrite;
+
     /* (non-Javadoc)
      * @see org.apache.maven.plugin.Mojo#execute()
      */
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        getLog().debug("Entering GPExportMojo#execute()");
+        getLog().debug("Entering GPDownloadMojo#execute()");
 
         ServiceClient client = getServiceClient();
 
@@ -186,6 +192,18 @@ public class GPDownloadMojo extends GPBaseMojo {
         getLog().info("Exporting bundle:" + bf.getBundleId() + " language:" + language + " to "
                 + outputFile.getAbsolutePath());
 
+        if (outputFile.exists()) {
+            if (overwrite) {
+                getLog().info("The output bundle file:" + outputFile.getAbsolutePath()
+                    + " already exists - overwriting");
+            } else {
+                getLog().info("The output bundle file:" + outputFile.getAbsolutePath()
+                    + " already exists - skipping");
+                // When overwrite is false, do nothing
+                return;
+            }
+        }
+
         if (!outputFile.getParentFile().exists()) {
             outputFile.getParentFile().mkdirs();
         }
@@ -223,27 +241,8 @@ public class GPDownloadMojo extends GPBaseMojo {
         return languageId;
     }
 
-    // TODO: Some resource filter types do not support 'merge' method
-    // and throwing UnsupportedOperationException at runtime. For now,
-    // this implementation has hardcoded types that support 'merge' operation.
-    // The resource filter API should provide a method returning if the filter
-    // implementation supports the operation or not.
-    private static final EnumSet<ResourceType> MERGE_AVAIL_TYPES =
-            EnumSet.of(
-                    ResourceType.AMDJS,
-                    ResourceType.ANDROID,
-                    ResourceType.IOS,
-                    ResourceType.JAVA,
-                    ResourceType.PO,
-                    ResourceType.POT);
-
     private void mergeTranslation(ServiceClient client, String bundleId, String language,
             ResourceType type, File srcFile, File outFile) throws MojoFailureException {
-        if (!MERGE_AVAIL_TYPES.contains(type)) {
-            exportTranslation(client, bundleId, language, type, outFile, true);
-            return;
-        }
-
         Bundle resBundle = null;
         try {
             resBundle = getBundle(client, bundleId, language, false);

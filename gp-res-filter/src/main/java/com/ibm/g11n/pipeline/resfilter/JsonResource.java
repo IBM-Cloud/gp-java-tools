@@ -81,6 +81,7 @@ public class JsonResource implements ResourceFilter {
     @Override
     public void merge(InputStream base, OutputStream outStream, String language, Bundle bundle)
             throws IOException {
-        throw new UnsupportedOperationException("Merging JSON resource is not supported.");
+        //TODO: Add merge implementation here. For now, fallback to write() operation.
+        write(outStream, language, bundle);
     }
 }

@@ -41,7 +41,7 @@ import com.ibm.g11n.pipeline.client.ServiceException;
 import com.ibm.g11n.pipeline.resfilter.ResourceType;
 
 /**
- * Base class of GP import/export Mojo.
+ * Base class of GP download/upload Mojo.
  * 
  * @author Yoshito Umaoka
  */
@@ -184,6 +184,8 @@ public abstract class GPBaseMojo extends AbstractMojo {
             FileSet fs = new FileSet();
             fs.setDirectory("src/main/resources");
             fs.addInclude("**/*.properties");
+            // Note: This exclusion pattern might be too aggressive...
+            fs.addExclude("**/*_*.properties");
             bundleSets = Collections.singletonList(new BundleSet(fs));
         }
         return bundleSets;
