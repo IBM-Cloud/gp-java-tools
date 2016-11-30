@@ -26,13 +26,17 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 
 import org.junit.Test;
 
 import com.ibm.g11n.pipeline.resfilter.JavaPropertiesResource.PropDef;
 import com.ibm.g11n.pipeline.resfilter.JavaPropertiesResource.PropDef.PropSeparator;
+import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 
 /**
  * @author Farhan Arshad
@@ -50,16 +54,18 @@ public class JavaPropertiesResourceTest {
     private static final File PARSE_TEST_INPUT_FILE = new File(
             "src/test/resource/resfilter/properties/parseline-test-input.properties");
 
-    private static Collection<ResourceString> EXPECTED_INPUT_RES_LIST;
+    private static final Collection<ResourceString> EXPECTED_INPUT_RES_LIST;
 
     static {
-        EXPECTED_INPUT_RES_LIST = new LinkedList<ResourceString>();
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString("website", "http://en.wikipedia.org/", 1));
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString("language", "English", 2));
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString("message", "Welcome to Wikipedia!", 3));
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString("key with spaces",
+        List<ResourceString> lst = new LinkedList<>();
+        lst.add(new ResourceString("website", "http://en.wikipedia.org/", 1));
+        lst.add(new ResourceString("language", "English", 2));
+        lst.add(new ResourceString("message", "Welcome to Wikipedia!", 3));
+        lst.add(new ResourceString("key with spaces",
                 "This is the value that could be looked up with the key \"key with spaces\".", 4));
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString("tab", "pick up the\u00A5 tab", 5));
+        lst.add(new ResourceString("tab", "pick up the\u00A5 tab", 5));
+        Collections.sort(lst, new ResourceStringComparator());
+        EXPECTED_INPUT_RES_LIST = lst;
     }
 
     private static Bundle WRITE_BUNDLE;
@@ -94,7 +100,9 @@ public class JavaPropertiesResourceTest {
 
         try (InputStream is = new FileInputStream(INPUT_FILE)) {
             Bundle bundle = res.parse(is);
-            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, bundle.getResourceStrings());
+            List<ResourceString> resStrList = new ArrayList<>(bundle.getResourceStrings());
+            Collections.sort(resStrList, new ResourceStringComparator());
+            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, resStrList);
         }
     }
 

@@ -16,13 +16,14 @@
 package com.ibm.g11n.pipeline.resfilter;
 
 import java.util.Comparator;
+import java.util.Objects;
 
 /**
  * @author parth
  *
  */
 
-public class ResourceString {
+public final class ResourceString {
     private final String note;
     private final String key;
     private final String value;
@@ -65,10 +66,14 @@ public class ResourceString {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj.getClass() != ResourceString.class) return false;
+        if (!(obj instanceof ResourceString)) {
+            return false;
+        }
         ResourceString rs = (ResourceString) obj;
-        return getKey().equals(rs.getKey()) && getValue().equals(rs.getValue())
-                && getSequenceNumber() == rs.getSequenceNumber();
+        return Objects.equals(this.key, rs.key)
+                && Objects.equals(this.value, rs.value)
+                && Objects.equals(this.note, rs.note)
+                && this.sequenceNumber == rs.sequenceNumber;
     }
 
     @Override
@@ -121,25 +126,31 @@ public class ResourceString {
             // Either sequence values are same or both sequence value are not
             // available.
             // Use key value's natural order as tie-breaker.
-            String key1 = o1.getKey();
-            String key2 = o2.getKey();
+            int cmp = compareStrings(o1.getKey(), o2.getKey());
+            if (cmp == 0) {
+                // Use value's natural order as tie-breaker
+                cmp = compareStrings(o1.getValue(), o2.getValue());
+                if (cmp == 0) {
+                    // Note value's natural order as tie-breaker
+                    cmp = compareStrings(o1.getNote(), o2.getNote());
+                }
+            }
 
-            // Note: key must not be null for valid ResoruceString. This
-            // implementation
-            // uses null key as lowest value.
-            // Also two keys must not be same in a valid ResourceString
-            // collection.
-            if (key1 == null) {
-                if (key2 == null) {
+            return cmp;
+        }
+
+        private static int compareStrings(String s1, String s2) {
+            // null as lowest value
+            if (s1 == null) {
+                if (s2 == null) {
                     return 0;
                 } else {
                     return -1;
                 }
-            } else if (key2 == null) {
+            } else if (s2 == null) {
                 return 1;
             }
-
-            return key1.compareTo(key2);
+            return s1.compareTo(s2);
         }
     }
 }

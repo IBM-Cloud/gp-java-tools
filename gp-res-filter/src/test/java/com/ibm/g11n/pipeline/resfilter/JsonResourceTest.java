@@ -24,10 +24,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 
 import org.junit.Test;
+
+import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 
 /**
  * @author farhan
@@ -40,13 +45,16 @@ public class JsonResourceTest {
 
     private static final File EXPECTED_MERGE_FILE = new File("src/test/resource/resfilter/json/merge-output.json");
 
-    private static Collection<ResourceString> EXPECTED_INPUT_RES_LIST;
+    private static final Collection<ResourceString> EXPECTED_INPUT_RES_LIST;
 
     static {
-        EXPECTED_INPUT_RES_LIST = new LinkedList<ResourceString>();
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString("bear 1", "Brown Bear", 1));
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString("frog 2", "Red-eyed Tree Frog", 2));
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString("owl 3", "Great Horned Owl", 3));
+        List<ResourceString> lst = new LinkedList<>();
+        lst.add(new ResourceString("bear 1", "Brown Bear", 1));
+        lst.add(new ResourceString("frog 2", "Red-eyed Tree Frog", 2));
+        lst.add(new ResourceString("owl 3", "Great Horned Owl", 3));
+
+        Collections.sort(lst, new ResourceStringComparator());
+        EXPECTED_INPUT_RES_LIST = lst;
     }
 
     private static Bundle WRITE_BUNDLE;
@@ -66,7 +74,9 @@ public class JsonResourceTest {
 
         try (InputStream is = new FileInputStream(INPUT_FILE)) {
             Bundle bundle = res.parse(is);
-            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, bundle.getResourceStrings());
+            List<ResourceString> resStrList = new ArrayList<>(bundle.getResourceStrings());
+            Collections.sort(resStrList, new ResourceStringComparator());
+            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, resStrList);
         }
     }
 

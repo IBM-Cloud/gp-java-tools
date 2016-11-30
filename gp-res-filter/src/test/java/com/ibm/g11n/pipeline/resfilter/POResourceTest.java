@@ -24,10 +24,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 
 import org.junit.Test;
+
+import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 
 /**
  *
@@ -44,33 +49,37 @@ public class POResourceTest {
     private static final File EXPECTED_MERGE_1_FILE = new File("src/test/resource/resfilter/pot/merge-output-1.pot");
     private static final File EXPECTED_MERGE_2_FILE = new File("src/test/resource/resfilter/pot/merge-output-2.pot");
 
-    private static Collection<ResourceString> EXPECTED_INPUT_RES_LIST;
+    private static final Collection<ResourceString> EXPECTED_INPUT_RES_LIST;
 
     static {
-        EXPECTED_INPUT_RES_LIST = new LinkedList<ResourceString>();
+        List<ResourceString> lst = new LinkedList<>();
+
         String key, value;
 
         key = "untranslated-string";
         value = "translated-string";
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString(key, value, 1));
+        lst.add(new ResourceString(key, value, 1));
 
         key = "Here is an example of how one might continue a very long string\\n"
                 + "for the common case the string represents multi-line output.\\n";
         value = "Translated: Here is an example of how one might continue a very long string\\n"
                 + "for the common case the string represents multi-line output.\\n";
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString(key, value, 2));
+        lst.add(new ResourceString(key, value, 2));
 
         key = "Enter a comma separated list of user names.";
         value = "Eine kommagetrennte Liste von Benutzernamen.";
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString(key, value, 3));
+        lst.add(new ResourceString(key, value, 3));
 
         key = "Unable to find user: @users";
         value = "Benutzer konnte nicht gefunden werden: @users";
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString(key, value, 4));
+        lst.add(new ResourceString(key, value, 4));
 
         key = "Unable to find users: @users";
         value = "Benutzer konnten nicht gefunden werden: @users";
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString(key, value, 5));
+        lst.add(new ResourceString(key, value, 5));
+
+        Collections.sort(lst, new ResourceStringComparator());
+        EXPECTED_INPUT_RES_LIST = lst;
     }
 
     private static Bundle WRITE_BUNDLE;
@@ -146,7 +155,9 @@ public class POResourceTest {
 
         try (InputStream is = new FileInputStream(INPUT_FILE)) {
             Bundle bundle = res.parse(is);
-            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, bundle.getResourceStrings());
+            List<ResourceString> resStrList = new ArrayList<>(bundle.getResourceStrings());
+            Collections.sort(resStrList, new ResourceStringComparator());
+            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, resStrList);
         }
     }
 

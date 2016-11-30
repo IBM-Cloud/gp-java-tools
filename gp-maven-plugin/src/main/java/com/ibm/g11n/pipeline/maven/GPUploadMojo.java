@@ -33,6 +33,7 @@ import com.ibm.g11n.pipeline.client.NewBundleData;
 import com.ibm.g11n.pipeline.client.NewResourceEntryData;
 import com.ibm.g11n.pipeline.client.ServiceClient;
 import com.ibm.g11n.pipeline.client.ServiceException;
+import com.ibm.g11n.pipeline.resfilter.Bundle;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilter;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterFactory;
 import com.ibm.g11n.pipeline.resfilter.ResourceString;
@@ -94,7 +95,8 @@ public class GPUploadMojo extends GPBaseMojo {
                     Map<String, NewResourceEntryData> resEntries = new HashMap<>();
 
                     try (FileInputStream fis = new FileInputStream(bf.getFile())) {
-                        Collection<ResourceString> resStrings = filter.parse(fis);
+                        Bundle resBundle = filter.parse(fis);
+                        Collection<ResourceString> resStrings = resBundle.getResourceStrings();
                         for (ResourceString resString : resStrings) {
                             NewResourceEntryData resEntryData = new NewResourceEntryData(resString.getValue());
                             int seqNum = resString.getSequenceNumber();

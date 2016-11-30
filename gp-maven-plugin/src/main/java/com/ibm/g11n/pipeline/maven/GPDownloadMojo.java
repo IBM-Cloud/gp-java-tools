@@ -38,6 +38,7 @@ import com.ibm.g11n.pipeline.client.BundleData;
 import com.ibm.g11n.pipeline.client.ResourceEntryData;
 import com.ibm.g11n.pipeline.client.ServiceClient;
 import com.ibm.g11n.pipeline.client.ServiceException;
+import com.ibm.g11n.pipeline.resfilter.Bundle;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilter;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterFactory;
 import com.ibm.g11n.pipeline.resfilter.ResourceString;
@@ -243,9 +244,9 @@ public class GPDownloadMojo extends GPBaseMojo {
             return;
         }
 
-        Collection<ResourceString> resStrings = null;
+        Bundle resBundle = null;
         try {
-            resStrings = getResourceStrings(client, bundleId, language, false);
+            resBundle = getBundle(client, bundleId, language, false);
         } catch (ServiceException e) {
             throw new MojoFailureException("Globalization Pipeline service error", e);
         }
@@ -253,7 +254,7 @@ public class GPDownloadMojo extends GPBaseMojo {
         ResourceFilter filter = ResourceFilterFactory.get(type);
         try (FileOutputStream fos = new FileOutputStream(outFile);
                 FileInputStream fis = new FileInputStream(srcFile)) {
-            filter.merge(fis, fos, language, resStrings);
+            filter.merge(fis, fos, language, resBundle);
         } catch (IOException e) {
             throw new MojoFailureException("I/O error while merging the translated values to "
                     + outFile.getAbsolutePath(), e);
@@ -262,23 +263,23 @@ public class GPDownloadMojo extends GPBaseMojo {
 
     private void exportTranslation(ServiceClient client, String bundleId, String language,
             ResourceType type, File outFile, boolean withFallback) throws MojoFailureException {
-        Collection<ResourceString> resStrings = null;
+        Bundle resBundle = null;
         try {
-            resStrings = getResourceStrings(client, bundleId, language, withFallback);
+            resBundle = getBundle(client, bundleId, language, withFallback);
         } catch (ServiceException e) {
             throw new MojoFailureException("Globalization Pipeline service error", e);
         }
 
         ResourceFilter filter = ResourceFilterFactory.get(type);
         try (FileOutputStream fos = new FileOutputStream(outFile)) {
-            filter.write(fos, language, resStrings);
+            filter.write(fos, language, resBundle);
         } catch (IOException e) {
             throw new MojoFailureException("Failed to write the translated resoruce data to "
                     + outFile.getAbsolutePath(), e);
         }
     }
 
-    private Collection<ResourceString> getResourceStrings(ServiceClient client,
+    private Bundle getBundle(ServiceClient client,
             String bundleId, String language, boolean withFallback) throws ServiceException {
         Map<String, ResourceEntryData> resEntries = client.getResourceEntries(bundleId, language);
         Collection<ResourceString> resStrings = new LinkedList<>();
@@ -298,6 +299,6 @@ public class GPDownloadMojo extends GPBaseMojo {
                 resStrings.add(resString);
             }
         }
-        return resStrings;
+        return new Bundle(resStrings, null);
     }
 }
