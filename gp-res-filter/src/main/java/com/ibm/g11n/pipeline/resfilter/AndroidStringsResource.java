@@ -25,6 +25,8 @@ import java.io.OutputStreamWriter;
 import java.text.BreakIterator;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeSet;
@@ -90,10 +92,10 @@ public class AndroidStringsResource implements ResourceFilter {
 
         Element elem = document.getDocumentElement();
         NodeList nodeList = elem.getChildNodes();
-        Bundle result = new Bundle();
-        collectResourceStrings(nodeList, 1 /* the first sequence number */, result.getResourceStrings());
+        List<ResourceString> resStrings = new LinkedList<>();
+        collectResourceStrings(nodeList, 1 /* the first sequence number */, resStrings);
 
-        return result;
+        return new Bundle(resStrings, null);
     }
 
     /**

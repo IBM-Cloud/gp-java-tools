@@ -24,10 +24,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 
 import org.junit.Test;
+
+import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 
 /**
  * @author farhan
@@ -43,14 +48,16 @@ public class AndroidStringsResourceTest {
     private static final File EXPECTED_MERGE_1_FILE = new File("src/test/resource/resfilter/xml/merge-output-1.xml");
     private static final File EXPECTED_MERGE_2_FILE = new File("src/test/resource/resfilter/xml/merge-output-2.xml");
 
-    private static Collection<ResourceString> EXPECTED_INPUT_RES_LIST;
+    private static final Collection<ResourceString> EXPECTED_INPUT_RES_LIST;
 
     static {
-        EXPECTED_INPUT_RES_LIST = new LinkedList<ResourceString>();
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString("planets_array", "[Mercury, Venus, Earth, Mars]", 1));
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString("bear", "Brown Bear", 2));
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString("frog", "Red-eyed Tree Frog", 3));
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString("owl", "Great Horned Owl", 4));
+        List<ResourceString> lst = new LinkedList<>();
+        lst.add(new ResourceString("planets_array", "[Mercury, Venus, Earth, Mars]", 1));
+        lst.add(new ResourceString("bear", "Brown Bear", 2));
+        lst.add(new ResourceString("frog", "Red-eyed Tree Frog", 3));
+        lst.add(new ResourceString("owl", "Great Horned Owl", 4));
+        Collections.sort(lst, new ResourceStringComparator());
+        EXPECTED_INPUT_RES_LIST = lst;
     }
 
     private static Bundle WRITE_BUNDLE;
@@ -101,7 +108,9 @@ public class AndroidStringsResourceTest {
 
         try (InputStream is = new FileInputStream(INPUT_FILE)) {
             Bundle bundle = res.parse(is);
-            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, bundle.getResourceStrings());
+            List<ResourceString> resStrList = new ArrayList<>(bundle.getResourceStrings());
+            Collections.sort(resStrList, new ResourceStringComparator());
+            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, resStrList);
         }
     }
 
