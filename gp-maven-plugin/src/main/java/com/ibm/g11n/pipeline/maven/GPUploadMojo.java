@@ -51,7 +51,7 @@ public class GPUploadMojo extends GPBaseMojo {
      */
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        getLog().debug("Entering GPImportMojo#execute()");
+        getLog().debug("Entering GPUploadMojo#execute()");
 
         ServiceClient client = getServiceClient();
 
