@@ -26,11 +26,13 @@ public final class Bundle {
     private Collection<ResourceString> resStrings;
 
     public Bundle () {
+        this.notes = null;
+        this.resStrings = null;
     }
 
     public Bundle(Collection<ResourceString> resStrings, List<String> notes) {
         if (resStrings != null) {
-            this.resStrings = new ArrayList<>(resStrings);
+            this.resStrings = new LinkedList<ResourceString>(resStrings);
         }
         if (notes != null) {
             this.notes = new ArrayList<>(notes);
@@ -49,6 +51,9 @@ public final class Bundle {
     }
 
     public void addNote(String note) {
+        if (notes == null) {
+            notes = new ArrayList<>();
+        }
         notes.add(note);
     }
 
