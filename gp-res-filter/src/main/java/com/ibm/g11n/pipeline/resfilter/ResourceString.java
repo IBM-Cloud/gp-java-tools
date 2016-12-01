@@ -15,7 +15,10 @@
  */
 package com.ibm.g11n.pipeline.resfilter;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -24,18 +27,18 @@ import java.util.Objects;
  */
 
 public final class ResourceString {
-    private final String note;
+    private List<String> notes;
     private final String key;
     private final String value;
     private int sequenceNumber;
 
-    public ResourceString(String note, String key, String value, int sequenceNumber) {
-        this.note = note;
+    public ResourceString(List<String> notes, String key, String value, int sequenceNumber) {
+        this.notes = notes;
         this.key = key;
         this.value = value;
         this.sequenceNumber = sequenceNumber;
     }
-    
+
     public ResourceString(String key, String value, int sequenceNumber) {
         this(null, key, value, sequenceNumber);
     }
@@ -52,8 +55,18 @@ public final class ResourceString {
         return value;
     }
 
-    public String getNote() {
-        return note;
+    public List<String> getNotes() {
+        if (notes == null) {
+            return Collections.emptyList();
+        }
+        return Collections.unmodifiableList(notes);
+    }
+
+    public void addNote(String note) {
+        if (notes == null) {
+            notes = new ArrayList<String>();
+        }
+        notes.add(note);
     }
     
     public void setSequenceNumber(int sequenceNumber) {
@@ -70,10 +83,8 @@ public final class ResourceString {
             return false;
         }
         ResourceString rs = (ResourceString) obj;
-        return Objects.equals(this.key, rs.key)
-                && Objects.equals(this.value, rs.value)
-                && Objects.equals(this.note, rs.note)
-                && this.sequenceNumber == rs.sequenceNumber;
+        return Objects.equals(this.key, rs.key) && Objects.equals(this.value, rs.value)
+                && Objects.equals(this.notes, rs.notes) && this.sequenceNumber == rs.sequenceNumber;
     }
 
     @Override
@@ -85,8 +96,8 @@ public final class ResourceString {
         builder.append(getKey());
         builder.append(" Value=");
         builder.append(getValue());
-        builder.append(" Note=");
-        builder.append(getNote());
+        builder.append(" Notes=");
+        builder.append(getNotes().toString());
         return builder.toString();
     }
 
@@ -132,7 +143,7 @@ public final class ResourceString {
                 cmp = compareStrings(o1.getValue(), o2.getValue());
                 if (cmp == 0) {
                     // Note value's natural order as tie-breaker
-                    cmp = compareStrings(o1.getNote(), o2.getNote());
+                    cmp = compareNotes(o1.getNotes(), o2.getNotes());
                 }
             }
 
@@ -151,6 +162,33 @@ public final class ResourceString {
                 return 1;
             }
             return s1.compareTo(s2);
+        }
+
+        private static int compareNotes(List<String> n1, List<String> n2) {
+            // null as lowest value
+            if (n1 == null) {
+                if (n2 == null) {
+                    return 0;
+                } else {
+                    return -1;
+                }
+            } else if (n2 == null) {
+                return 1;
+            }
+            int cmp = 0;
+            int index = 0;
+            while (cmp == 0 && index < n1.size()) {
+                String s1 = n1.get(index);
+                String s2;
+                try {
+                    s2 = n2.get(index);
+                } catch (IndexOutOfBoundsException ex) {
+                    s2 = null;
+                }
+                cmp = compareStrings(s1, s2);
+                index++;
+            }
+            return cmp;
         }
     }
 }
