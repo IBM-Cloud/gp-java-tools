@@ -27,20 +27,20 @@ import java.util.Objects;
  */
 
 public final class ResourceString {
-    private List<String> notes;
     private final String key;
     private final String value;
     private int sequenceNumber;
+    private List<String> notes;
 
-    public ResourceString(List<String> notes, String key, String value, int sequenceNumber) {
-        this.notes = notes;
+    public ResourceString(String key, String value, int sequenceNumber, List<String> notes ) {
         this.key = key;
         this.value = value;
         this.sequenceNumber = sequenceNumber;
+        this.notes = notes == null ? null : new ArrayList<>(notes);
     }
 
     public ResourceString(String key, String value, int sequenceNumber) {
-        this(null, key, value, sequenceNumber);
+        this(key, value, sequenceNumber, null);
     }
 
     public ResourceString(String key, String value) {
@@ -64,7 +64,7 @@ public final class ResourceString {
 
     public void addNote(String note) {
         if (notes == null) {
-            notes = new ArrayList<String>();
+            notes = new ArrayList<>();
         }
         notes.add(note);
     }
@@ -179,12 +179,7 @@ public final class ResourceString {
             int index = 0;
             while (cmp == 0 && index < n1.size()) {
                 String s1 = n1.get(index);
-                String s2;
-                try {
-                    s2 = n2.get(index);
-                } catch (IndexOutOfBoundsException ex) {
-                    s2 = null;
-                }
+                String s2 = index < n2.size() ? n2.get(index) : null;
                 cmp = compareStrings(s1, s2);
                 index++;
             }

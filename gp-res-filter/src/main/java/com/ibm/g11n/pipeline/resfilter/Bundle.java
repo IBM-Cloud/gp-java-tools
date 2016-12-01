@@ -35,13 +35,13 @@ public final class Bundle {
             this.resStrings = new LinkedList<ResourceString>(resStrings);
         }
         if (notes != null) {
-            this.notes = new ArrayList<String>(notes);
+            this.notes = new ArrayList<>(notes);
         }
     }
 
     public void addResourceString(ResourceString resString) {
         if (resStrings == null) {
-            resStrings = new LinkedList<ResourceString>();
+            resStrings = new LinkedList<>();
         }
         resStrings.add(resString);
     }
@@ -52,7 +52,7 @@ public final class Bundle {
 
     public void addNote(String note) {
         if (notes == null) {
-            notes = new ArrayList<String>();
+            notes = new ArrayList<>();
         }
         notes.add(note);
     }
