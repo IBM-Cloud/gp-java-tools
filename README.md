@@ -39,7 +39,15 @@ information. For example, exporting a resource bundle hosted by an instance
 of Globalization Pipeline service to a specific file format, adding a new target
 language in bundle configuration, creating a new user and so on.
 
-To see available commands and options, please see [Globalization Pipeline Command Line Interface Guide](gp-cli.md)
+
+## Maven Plugin (gp-maven-plugin)
+
+This plugin integrates Globalization Pipeline service with Apache Maven build.
+With the plugin, you can upload source resource bundles to your own Globalization
+Pipeline service instance, and download translated resource bundles.
+
+Please see [Globalization Pipeline Maven Plugin User Guide](gp-maven-plugin.md) for further
+information.
 
 # Community
 
