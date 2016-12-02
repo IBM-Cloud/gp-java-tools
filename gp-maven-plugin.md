@@ -80,7 +80,10 @@ in pom.xml.
 ### <a name="TOC-Usage-Credentials"></a>Specifying Globalization Pipeline Service Credentials
 
 The plugin requires *service instance administrator* credentials for a Globalization
-Pipeline service instance. There are two ways to specify the service credentials.
+Pipeline service instance. Please refer [Quick Start Guide](https://github.com/IBM-Bluemix/gp-common#quick-start-guide)
+to see how to get service credentials information of your Globalization Pipeline instance.
+
+There are two ways to specify the service credentials.
 
 #### JSON file
 
@@ -219,7 +222,7 @@ and `src/nls2/resources/en`. If you want to include both sets, use the configura
         <bundleSets>
             <bundleSet>
                 <sourceFiles>
-                    <direcotry>src/nls1/resources/en</directory>
+                    <directory>src/nls1/resources/en</directory>
                     <includes>
                         <include>**/*.properties</include>
                     </includes>
@@ -227,7 +230,7 @@ and `src/nls2/resources/en`. If you want to include both sets, use the configura
             </bundleSet>
             <bundleSet>
                 <sourceFiles>
-                    <direcotry>src/nls2/resources/en</directory>
+                    <directory>src/nls2/resources/en</directory>
                     <includes>
                         <include>**/*.properties</include>
                     </includes>
@@ -249,7 +252,7 @@ as a part of output file name (or path). The following example does such mapping
         <bundleSets>
             <bundleSet>
                 <sourceFiles>
-                    <direcotry>src/resources</directory>
+                    <directory>src/resources</directory>
                     <includes>
                         <include>**/*.properties</include>
                     </includes>
@@ -287,7 +290,7 @@ versions in parallel language directories.
         <bundleSets>
             <bundleSet>
                 <sourceFiles>
-                    <direcotry>src/main/webapp</directory>
+                    <directory>src/main/webapp</directory>
                     <includes>
                         <include>**/en/*.json</include>
                     </includes>
@@ -445,11 +448,11 @@ target languages currently available in the Globalization Pipeline bundle.
 
 #### `<languageMap>`
 
-Specifies custom language mappings. Each nested element name is a BCP 47 language tag used by
-Globalization Pipeline service instance, and the element value is a language ID used for output
-resource file or path name. For example, Globalization Pipeline service uses language ID "pt-BR"
-for Brazilian Portuguese. If you want to use just "pt" for output file or path name, you can
-specify the mapping as below.
+Specifies custom language mappings. Each nested element name is a [BCP 47 language tag](https://tools.ietf.org/html/bcp47)
+used by Globalization Pipeline service instance, and the element value is a language ID used for
+output resource file or path name. For example, Globalization Pipeline service uses language ID
+"pt-BR" for Brazilian Portuguese. If you want to use just "pt" for output file or path name, you
+can specify the mapping as below.
 
 ```
     <languageMap>

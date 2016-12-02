@@ -43,7 +43,7 @@ To see available commands and options, please see [Globalization Pipeline CLI To
 
 ## Maven Plugin (gp-maven-plugin)
 
-This plugin integrates Globalization Pipeline service with Apache Maven build.
+This plugin integrates Globalization Pipeline service with an Apache Maven build.
 With the plugin, you can upload source resource bundles to your own Globalization
 Pipeline service instance, and download translated resource bundles.
 
