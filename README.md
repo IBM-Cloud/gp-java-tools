@@ -39,6 +39,7 @@ information. For example, exporting a resource bundle hosted by an instance
 of Globalization Pipeline service to a specific file format, adding a new target
 language in bundle configuration, creating a new user and so on.
 
+To see available commands and options, please see [Globalization Pipeline CLI Tool User Guide](gp-cli.md)
 
 ## Maven Plugin (gp-maven-plugin)
 
