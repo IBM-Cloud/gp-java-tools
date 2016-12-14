@@ -83,6 +83,13 @@
 			<version>2.6.3</version>
 		</dependency>
 
+                <!-- StringEscapeUtils -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.4</version>
+		</dependency>
+
 		<!-- JUnit -->
 		<dependency>
 			<groupId>junit</groupId>

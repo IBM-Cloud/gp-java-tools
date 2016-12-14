@@ -60,10 +60,18 @@ public class JavaPropertiesResourceTest {
         List<ResourceString> lst = new LinkedList<>();
         lst.add(new ResourceString("website", "http://en.wikipedia.org/", 1));
         lst.add(new ResourceString("language", "English", 2));
-        lst.add(new ResourceString("message", "Welcome to Wikipedia!", 3));
+        List<String> resourceNotes = new ArrayList<>();
+        resourceNotes.add(" The backslash below tells the application to continue reading");
+        resourceNotes.add(" the value onto the next line.");
+        lst.add(new ResourceString("message", "Welcome to Wikipedia!", 3, resourceNotes));
+        resourceNotes.clear();
+        resourceNotes.add(" Add spaces to the key");
         lst.add(new ResourceString("key with spaces",
-                "This is the value that could be looked up with the key \"key with spaces\".", 4));
-        lst.add(new ResourceString("tab", "pick up the\u00A5 tab", 5));
+                "This is the value that could be looked up with the key \"key with spaces\".", 4, resourceNotes));
+
+        ResourceString rs5 = new ResourceString("tab", "pick up the\u00A5 tab", 5);
+        rs5.addNote(" Unicode");
+        lst.add(rs5);
         Collections.sort(lst, new ResourceStringComparator());
         EXPECTED_INPUT_RES_LIST = lst;
     }
@@ -84,12 +92,12 @@ public class JavaPropertiesResourceTest {
 
     static {
         EXPECTED_PROP_DEF_LIST = new LinkedList<PropDef>();
-        EXPECTED_PROP_DEF_LIST.add(new PropDef("website", "http\\://en.wikipedia.org/", PropSeparator.EQUAL));
+        EXPECTED_PROP_DEF_LIST.add(new PropDef("website", "http://en.wikipedia.org/", PropSeparator.EQUAL));
         EXPECTED_PROP_DEF_LIST.add(new PropDef("language", "English", PropSeparator.SPACE));
         EXPECTED_PROP_DEF_LIST.add(new PropDef("message", "Welcome to Wikipedia!", PropSeparator.COLON));
-        EXPECTED_PROP_DEF_LIST.add(new PropDef("key\\ with\\ spaces",
+        EXPECTED_PROP_DEF_LIST.add(new PropDef("key with spaces",
                 "This is the value that could be looked up with the key \"key with spaces\".", PropSeparator.EQUAL));
-        EXPECTED_PROP_DEF_LIST.add(new PropDef("tab", "pick up the\\u00A5 tab", PropSeparator.COLON));
+        EXPECTED_PROP_DEF_LIST.add(new PropDef("tab", "pick up the\u00A5 tab", PropSeparator.COLON));
     }
 
     private static final JavaPropertiesResource res = new JavaPropertiesResource();

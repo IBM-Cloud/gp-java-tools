@@ -56,6 +56,12 @@ public final class Bundle {
         }
         notes.add(note);
     }
+    
+    public void addNotes(List<String> inputNotes) {
+        for (String note : inputNotes) {
+            notes.add(note);
+        }
+    }
 
     public Collection<ResourceString> getResourceStrings() {
         if (resStrings == null) {
