@@ -29,6 +29,7 @@ import com.ibm.g11n.pipeline.client.ServiceException;
 import com.ibm.g11n.pipeline.resfilter.Bundle;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilter;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterFactory;
+import com.ibm.g11n.pipeline.resfilter.ResourceString;
 import com.ibm.g11n.pipeline.resfilter.ResourceType;
 
 /**
@@ -89,7 +90,9 @@ final class ExportCmd extends BundleCmd {
                     if (seqNum != null) {
                         sequenceNumber = seqNum.intValue();
                     }
-                    bundle.addResourceString(key, resVal, sequenceNumber);
+                    ResourceString resString = new ResourceString(key, resVal,
+                            sequenceNumber, data.getNotes());
+                    bundle.addResourceString(resString);
                 }
             }
         } catch (ServiceException e) {

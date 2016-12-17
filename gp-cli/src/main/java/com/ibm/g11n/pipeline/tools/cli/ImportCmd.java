@@ -71,6 +71,7 @@ final class ImportCmd extends BundleCmd {
                 if (seqNum >= 0) {
                     resEntryData.setSequenceNumber(Integer.valueOf(seqNum));
                 }
+                resEntryData.setNotes(resString.getNotes());
                 resEntries.put(resString.getKey(), resEntryData);
             }
         } catch (IOException e) {

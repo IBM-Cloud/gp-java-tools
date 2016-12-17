@@ -59,7 +59,7 @@ public final class Bundle {
     
     public void addNotes(List<String> inputNotes) {
         for (String note : inputNotes) {
-            notes.add(note);
+            addNote(note);
         }
     }
 
