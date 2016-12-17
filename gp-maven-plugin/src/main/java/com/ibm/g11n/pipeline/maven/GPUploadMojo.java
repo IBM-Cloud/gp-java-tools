@@ -70,6 +70,7 @@ public class GPUploadMojo extends GPBaseMojo {
 
                     // Checks if the bundle already exists
                     String bundleId = bf.getBundleId();
+                    boolean createNew = false;
                     if (bundleIds.contains(bundleId)) {
                         getLog().info("Found bundle:" + bundleId);
                         // Checks if the source language matches.
@@ -82,12 +83,7 @@ public class GPUploadMojo extends GPBaseMojo {
                         }
                     } else {
                         getLog().info("bundle:" + bundleId + " does not exist, creating a new bundle.");
-                        NewBundleData newBundleData = new NewBundleData(srcLang);
-                        if (!tgtLangs.isEmpty()) {
-                            newBundleData.setTargetLanguages(new TreeSet<String>(tgtLangs));
-                        }
-                        client.createBundle(bundleId, newBundleData);
-                        getLog().info("Created bundle: " + bundleId);
+                        createNew = true;
                     }
 
                     // Parse the resource bundle file
@@ -96,6 +92,18 @@ public class GPUploadMojo extends GPBaseMojo {
 
                     try (FileInputStream fis = new FileInputStream(bf.getFile())) {
                         Bundle resBundle = filter.parse(fis);
+
+                        if (createNew) {
+                            NewBundleData newBundleData = new NewBundleData(srcLang);
+                            // set target languages
+                            if (!tgtLangs.isEmpty()) {
+                                newBundleData.setTargetLanguages(new TreeSet<String>(tgtLangs));
+                            }
+                            // set bundle notes
+                            newBundleData.setNotes(resBundle.getNotes());
+                            client.createBundle(bundleId, newBundleData);
+                            getLog().info("Created bundle: " + bundleId);
+                        }
                         Collection<ResourceString> resStrings = resBundle.getResourceStrings();
                         for (ResourceString resString : resStrings) {
                             NewResourceEntryData resEntryData = new NewResourceEntryData(resString.getValue());
@@ -103,6 +111,8 @@ public class GPUploadMojo extends GPBaseMojo {
                             if (seqNum >= 0) {
                                 resEntryData.setSequenceNumber(Integer.valueOf(seqNum));
                             }
+                            // set resource string notes
+                            resEntryData.setNotes(resString.getNotes());
                             resEntries.put(resString.getKey(), resEntryData);
                         }
                     } catch (IOException e) {
