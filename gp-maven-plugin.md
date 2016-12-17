@@ -274,9 +274,9 @@ If you have properties file `src/resources/com/ibm/example/MyStrings.properties`
 instead of `target/classes/com/ibm/example/MyStrings_pt_BR.properties`
 
 Note: The language ID separator used in the mapping should be '-' (Hyphen) for both,
-even you want expect translated file name (or path) to use '_'. So, in above example,
-do not specify `<zh-Hant>zh_TW</zh-Hant>` even you want `MyStrings_zh_TW.properties`
-as the output file name. The language suffix style is configured by `<languageIdStyle>`.
+even you want translated file name (or path) to use '_' for the language part. In the example
+above, do not specify `<zh-Hant>zh_TW</zh-Hant>` even you want `MyStrings_zh_TW.properties`
+as the output file name. The language ID style is configured by `<languageIdStyle>`.
 
 
 ### Translated JSON Files in Language Directories
