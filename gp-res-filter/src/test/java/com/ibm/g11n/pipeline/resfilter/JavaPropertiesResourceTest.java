@@ -177,4 +177,97 @@ public class JavaPropertiesResourceTest {
 
         assertEquals("PropDefs did not match.", EXPECTED_PROP_DEF_LIST, actualPropDefs);
     }
+
+    @Test
+    public void testEscapePropsKey() {
+        final String[][] testCases = {
+            {"", ""},
+            {"abc", "abc"},
+            {"a b c", "a\\ b\\ c"},
+            {" a b ", "\\ a\\ b\\ "},
+            {" \t abc \t ", "\\ \\t\\ abc\\ \\t\\ "},
+            {"\u0000\u0001", "\\u0000\\u0001"},
+            {"a=b=c", "a\\=b\\=c"},
+            {"a:b;c", "a\\:b;c"},
+            {"!#$%()*+,-./", "\\!\\#$%()*+,-./"},
+            {"' abc '", "'\\ abc\\ '"},
+            {"a \"bc\"", "a\\ \"bc\""},
+            {"\u3042\u3044", "\\u3042\\u3044"},
+        };
+
+        for (String[] testCase : testCases) {
+            String instr = testCase[0];
+            String expected = testCase[1];
+
+            String escapedKey = JavaPropertiesResource.escapePropKey(instr);
+            assertEquals("escapePropKey(" + instr + ")", expected, escapedKey);
+
+            String unescapedKey = JavaPropertiesResource.unescapePropKey(escapedKey);
+            assertEquals("unescapePropKey(" + escapedKey + ")", instr, unescapedKey);
+        }
+    }
+
+    @Test
+    public void testEscapePropsValue() {
+        final String[][] testCases = {
+                {"", ""},
+                {"abc", "abc"},
+                {"a b c", "a b c"},
+                {" a b ", "\\ a b "},
+                {" \t abc \t ", "\\ \\t\\ abc \\t "},
+                {"\u0000\u0001", "\\u0000\\u0001"},
+                {"a=b=c", "a\\=b\\=c"},
+                {"a:b;c", "a\\:b;c"},
+                {"!#$%()*+,-./", "\\!\\#$%()*+,-./"},
+                {"' abc '", "' abc '"},
+                {"a \"bc\"", "a \"bc\""},
+                {"\u3042\u3044", "\\u3042\\u3044"},
+            };
+
+            for (String[] testCase : testCases) {
+                String instr = testCase[0];
+                String expected = testCase[1];
+
+                String escapedVal = JavaPropertiesResource.escapePropValue(instr);
+                assertEquals("escapePropValue(" + instr + ")", expected, escapedVal);
+
+                String unescapedVal = JavaPropertiesResource.unescapePropValue(escapedVal);
+                assertEquals("unescapePropValue(" + escapedVal + ")", instr, unescapedVal);
+            }
+    }
+
+    private static final String[][] UNESC_TEST_CASES =
+    {
+        {"", ""},
+        {"abc", "abc"},
+        {"\\ abc\\u0020", " abc "},
+        {"a\\tb\\u0009c", "a\tb\tc"},
+        {"a\\=\\b", "a=b"},
+        {"a\\\\b", "a\\b"},
+        {"\\t\\f\\z", "\t\fz"},
+        {"\\a\\b\\c", "abc"},
+        {"\\u304A\\u304b", "\u304A\u304B"},
+    };
+
+    @Test
+    public void testUnescapePropsKey() {
+        for (String[] testCase : UNESC_TEST_CASES) {
+            String instr = testCase[0];
+            String expected = testCase[1];
+
+            String unescapedKey = JavaPropertiesResource.unescapePropKey(instr);
+            assertEquals("unescapePropKey(" + instr + ")", expected, unescapedKey);
+        }
+    }
+
+    @Test
+    public void testUnescapePropsValue() {
+        for (String[] testCase : UNESC_TEST_CASES) {
+            String instr = testCase[0];
+            String expected = testCase[1];
+
+            String unescapedVal = JavaPropertiesResource.unescapePropValue(instr);
+            assertEquals("unescapePropValue(" + instr + ")", expected, unescapedVal);
+        }
+    }
 }

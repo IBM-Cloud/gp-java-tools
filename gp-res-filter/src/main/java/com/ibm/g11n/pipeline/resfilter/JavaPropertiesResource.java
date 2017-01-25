@@ -383,8 +383,10 @@ public class JavaPropertiesResource implements ResourceFilter {
                 char c = str.charAt(idx);
                 if (c == ' ') {
                     buf.append(BACKSLASH).append(' ');
-                } else if (c == '\t' || c == '\f') {
-                    appendUnicodeEscape(buf, c);
+                } else if (c == '\t') {
+                    buf.append(BACKSLASH).append('t');
+                } else if (c == '\f') {
+                    buf.append(BACKSLASH).append('f');
                 } else {
                     break;
                 }
