@@ -23,8 +23,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.text.BreakIterator;
-import java.text.CharacterIterator;
-import java.text.StringCharacterIterator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -39,8 +37,6 @@ import java.util.Properties;
 import java.util.TreeSet;
 
 import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
-
-import org.apache.commons.lang3.StringEscapeUtils;
 
 /**
  * Java properties resource filter implementation.
@@ -88,14 +84,14 @@ public class JavaPropertiesResource implements ResourceFilter {
         boolean globalNotesAvailable = true;
         List<String> globalNotes = null;
         while ((line = inStreamReader.readLine()) != null) {
-            line = line.trim();
+            line = stripLeadingSpaces(line);
             // Comment line - Add to list of comments (notes) until we find
             // either
             // a blank line (global comment) or a key/value pair
             if (line.startsWith("#") || line.startsWith("!")) {
                 // Strip off the leading comment marker, and perform any
                 // necessary unescaping here.
-                currentNotes.add(StringEscapeUtils.unescapeJava(line.substring(1)));
+                currentNotes.add(unescape(line.substring(1)));
             } else if (line.isEmpty()) {
                 // We are following the convention that the first blank line in
                 // a properties
@@ -118,7 +114,7 @@ public class JavaPropertiesResource implements ResourceFilter {
                     sb.setLength(sb.length() - 1); // Remove the continuation
                                                    // "\"
                     if (continuationLine != null) {
-                        sb.append(continuationLine.trim());
+                        sb.append(stripLeadingSpaces(continuationLine));
                     }
                 }
                 String logicalLine = sb.toString();
@@ -241,7 +237,7 @@ public class JavaPropertiesResource implements ResourceFilter {
             }
 
             String key = unescapePropKey(line.substring(0, sepIdx).trim());
-            String value = unescapePropValue(line.substring(sepIdx + 1).trim());
+            String value = unescapePropValue(stripLeadingSpaces(line.substring(sepIdx + 1)));
 
             PropDef pl = new PropDef(key, value, sep);
             return pl;
@@ -300,14 +296,21 @@ public class JavaPropertiesResource implements ResourceFilter {
             int start = 0;
             int end = brk.next();
             boolean emitNext = false;
+            boolean firstSegment = true;
             while (end != BreakIterator.DONE) {
                 String segment = value.substring(start, end);
-                String escSegment = escapePropValue(segment);
+                String escSegment = null;
+                if (firstSegment) {
+                    escSegment = escape(segment, EscapeSpace.LEADING_ONLY);
+                    firstSegment = false;
+                } else {
+                    escSegment = escape(segment, EscapeSpace.NONE);
+                }
                 if (emitNext || (buf.length() + escSegment.length() + 2 >= COLMAX)) {
                     // First character in a continuation line must be
                     // a non-space character. Otherwise, keep appending
                     // segments to the current line.
-                    if (!Character.isSpaceChar(escSegment.codePointAt(0))) {
+                    if (!isPropsWhiteSpaceChar(escSegment.charAt(0))) {
                         // This segment is safe as the first word
                         // of a continuation line.
                         buf.append('\\');
@@ -356,56 +359,187 @@ public class JavaPropertiesResource implements ResourceFilter {
         }
     }
 
-    private static String escapePropValue(String s) {
-        StringBuilder escaped = new StringBuilder();
-        StringCharacterIterator itr = new StringCharacterIterator(s);
-        for (char c = itr.first(); c != CharacterIterator.DONE; c = itr.next()) {
-            if (c == '\\') {
-                escaped.append("\\\\");
-            } else if (c > 0x7F) {
-                escaped.append("\\u").append(String.format("%04X", (int) c));
-            } else if (c == ':') {
-                escaped.append("\\:");
-            } else if (c == '=') {
-                escaped.append("\\:");
-            } else {
-                escaped.append(c);
-            }
-        }
-        return escaped.toString();
+    private static final char BACKSLASH = '\\';
+
+    private enum EscapeSpace {
+        ALL,
+        LEADING_ONLY,
+        NONE;
     }
 
-    private static String unescapePropValue(String s) {
-        StringBuilder unescaped = new StringBuilder();
-        StringCharacterIterator itr = new StringCharacterIterator(s);
-        for (char c = itr.first(); c != CharacterIterator.DONE; c = itr.next()) {
-            if (c == '\\' && itr.getIndex() < itr.getEndIndex()) {
-                char n = itr.next();
-                if (n == '\\' || n == ':' || n == '=') {
-                    unescaped.append(n);
-                } else if (n == 'u' && itr.getIndex() + 4 <= itr.getEndIndex()) {
-                    StringBuilder unicodeEscape = new StringBuilder("\\u");
-                    for (int i = 0; i < 4; i++) {
-                        unicodeEscape.append(itr.next());
-                    }
-                    unescaped.append(StringEscapeUtils.unescapeJava(unicodeEscape.toString()));
+    private static String escape(String str, EscapeSpace escSpace) {
+        StringBuilder buf = new StringBuilder();
+        int idx = 0;
+
+        // Handle leading space characters
+        if (escSpace == EscapeSpace.ALL || escSpace == EscapeSpace.LEADING_ONLY) {
+            // Java properties specification considers the characters space (' ', '\u0020'),
+            // tab ('\t', '\u0009'), and form feed ('\f', '\u000C') to be white space. 
+            // 
+            // java.util.Properties#store() implementation escapes space characters
+            // to "\ " in key string, as well as leading spaces in value string.
+            // Other white space characters are encoded by Unicode escape sequence.
+            for (; idx < str.length(); idx++) {
+                char c = str.charAt(idx);
+                if (c == ' ') {
+                    buf.append(BACKSLASH).append(' ');
+                } else if (c == '\t' || c == '\f') {
+                    appendUnicodeEscape(buf, c);
                 } else {
-                    unescaped.append(c);
-                    unescaped.append(n);
+                    break;
+                }
+            }
+        }
+
+        for (int i = idx; i < str.length(); i++) {
+            char c = str.charAt(i);
+
+            if (c < 0x20 || c >= 0x7E) {
+                // JDK API comment for Properties#store() specifies below:
+                //
+                // Characters less than \\u0020 and characters greater than \u007E in property keys
+                // or values are written as \\uxxxx for the appropriate hexadecimal value xxxx.
+                //
+                // However, actual implementation uses "\t" for horizontal tab, "\n" for newline
+                // and so on. This implementation support the equivalent behavior.
+                switch (c) {
+                case '\t':
+                    buf.append(BACKSLASH).append('t');
+                    break;
+                case '\n':
+                    buf.append(BACKSLASH).append('n');
+                    break;
+                case '\f':
+                    buf.append(BACKSLASH).append('f');
+                    break;
+                case '\r':
+                    buf.append(BACKSLASH).append('r');
+                    break;
+                default:
+                    appendUnicodeEscape(buf, c);
+                    break;
                 }
             } else {
-                unescaped.append(c);
+                switch (c) {
+                case ' ':   // space
+                    if (escSpace == EscapeSpace.ALL) {
+                        buf.append(BACKSLASH).append(c);
+                    } else {
+                        buf.append(c);
+                    }
+                    break;
+
+                // The key and element characters #, !, =, and : are written with
+                // a preceding backslash
+                case '#':
+                case '!':
+                case '=':
+                case ':':
+                case '\\':
+                    buf.append(BACKSLASH).append(c);
+                    break;
+
+                default:
+                    buf.append(c);
+                    break;
+                }
             }
         }
-        return unescaped.toString();
+
+        return buf.toString();
     }
 
-    private static String escapePropKey(String s) {
-        return s.replace(" ", "\\ ");
+    static String escapePropKey(String str) {
+        return escape(str, EscapeSpace.ALL);
     }
 
-    private static String unescapePropKey(String s) {
-        return s.replaceAll("\\\\ ", " ");
+    static String escapePropValue(String str) {
+        return escape(str, EscapeSpace.LEADING_ONLY);
+    }
+
+    static void appendUnicodeEscape(StringBuilder buf, char codeUnit) {
+        buf.append(BACKSLASH).append('u')
+        .append(String.format("%04X", (int)codeUnit));
+    }
+
+    static String unescapePropKey(String str) {
+        return unescape(str);
+    }
+
+    static String unescapePropValue(String str) {
+        return unescape(str);
+    }
+
+    private static String unescape(String str) {
+        StringBuilder buf = new StringBuilder();
+        boolean isEscSeq = false;
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (isEscSeq) {
+                switch (c) {
+                case 't':
+                    buf.append('\t');
+                    break;
+
+                case 'n':
+                    buf.append('\n');
+                    break;
+
+                case 'f':
+                    buf.append('\f');
+                    break;
+
+                case 'r':
+                    buf.append('\r');
+                    break;
+
+                case 'u':
+                {
+                    // This implementation throws an IllegalArgumentException
+                    // when the input string contains a malformed Unicode escape
+                    // character sequence. This behavior matches java.util.Properties#load(Reader).
+                    final String errMsg = "Malformed \\uxxxx encoding.";
+                    if (i + 4 > str.length()) {
+                        throw new IllegalArgumentException(errMsg);
+                    }
+                    // Parse hex digits
+                    String hexDigits = str.substring(i + 1, i + 5);
+                    try {
+                        char codeUnit = (char)Integer.parseInt(hexDigits, 16);
+                        buf.append(Character.valueOf(codeUnit));
+                        i += 4;
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException(errMsg, e);
+                    }
+                    break;
+                }
+
+                default:
+                    // Special rules applied to Java properties format
+                    // beyond standard Java escape character sequence.
+                    //
+                    // 1. Octal escapes are not recognized
+                    // 2. \b does not represent a backspace character
+                    // 3. Backslash is dropped from unrecognized escape sequence.
+                    //    For example, "\z" is interpreted as a single character 'z'.
+
+                    buf.append(c);
+                    break;
+                }
+                isEscSeq = false;
+            } else {
+                if (c == BACKSLASH) {
+                    isEscSeq = true;
+                } else {
+                    buf.append(c);
+                }
+            }
+        }
+
+        // Note: Incomplete escape sequence should not be there.
+        // This implementation silently drop the character for the case.
+
+        return buf.toString();
     }
 
     @Override
@@ -435,7 +569,7 @@ public class JavaPropertiesResource implements ResourceFilter {
                     logicalLine = logicalLineBuf.toString();
                 }
             } else {
-                String normLine = line.trim();
+                String normLine = stripLeadingSpaces(line);
 
                 if (orgLines.isEmpty()) {
                     // No continuation marker in the previous line
@@ -467,6 +601,13 @@ public class JavaPropertiesResource implements ResourceFilter {
             if (logicalLine != null) {
                 PropDef pd = PropDef.parseLine(logicalLine);
                 if (pd != null && resMap.containsKey(pd.getKey())) {
+                    // Preserve original leading spaces
+                    String firstLine = orgLines.isEmpty() ? line : orgLines.get(0);
+                    int len = getLeadingSpacesLength(firstLine);
+                    if (len > 0) {
+                        outWriter.print(firstLine.substring(0, len));
+                    }
+                    // Write the property key and value
                     String key = pd.getKey();
                     PropDef modPd = new PropDef(key, resMap.get(key), pd.getSeparator());
                     modPd.print(outWriter, language);
@@ -489,5 +630,26 @@ public class JavaPropertiesResource implements ResourceFilter {
         } while (line != null);
 
         outWriter.flush();
+    }
+
+    private static int getLeadingSpacesLength(String s) {
+        int idx = 0;
+        for (; idx < s.length(); idx++) {
+            if (!isPropsWhiteSpaceChar(s.charAt(idx))) {
+                break;
+            }
+        }
+        return idx;
+    }
+
+    private static String stripLeadingSpaces(String s) {
+        return s.substring(getLeadingSpacesLength(s));
+    }
+
+    private static boolean isPropsWhiteSpaceChar(char c) {
+        // Java properties specification considers the characters space (' ', '\u0020'),
+        // tab ('\t', '\u0009'), and form feed ('\f', '\u000C') to be white space. 
+
+        return c == ' ' || c == '\t' || c == '\f'; 
     }
 }
