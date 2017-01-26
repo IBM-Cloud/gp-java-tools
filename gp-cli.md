@@ -322,7 +322,7 @@ java -jar gp-cli.jar create -b com.ibm.example.MyBundle -l en -j mycreds.json
 ```
 
 2\. Import the English(en) resource bundle contents to *MyBundle*. The resource bundle
-file in this example is a Java properties fiel - MyBundle.properties
+file in this example is a Java properties file - MyBundle.properties
 ```
 java -jar gp-cli.jar import -b com.ibm.example.MyBundle -l en -t JAVA -f MyBundle.properties -j mycreds.json
 ```
@@ -330,9 +330,10 @@ At this point, the bundle *com.ibm.example.MyBundle* in the Globalization
 Pipeline service instance contains only English resource strings.
 
 3\. Import the corresponding translated version. In this example, the operation
-below imports French(fr) translation from MyBundle_fr.properties.
+below imports French(fr) translation from MyBundle_fr.properties and marks
+resource strings as already reviewed (-r).
 ```
-java -jar gp-cli.jar import -b com.ibm.example.MyBundle -l fr -t JAVA -f MyBundle_fr.properties -j mycreds.json
+java -jar gp-cli.jar import -b com.ibm.example.MyBundle -l fr -t JAVA -f MyBundle_fr.properties -j mycreds.json -r
 ```
 This operation automatically adds French to the bundle *com.ibm.example.MyBundle*.
 

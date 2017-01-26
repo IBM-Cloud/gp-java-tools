@@ -57,6 +57,11 @@ final class ImportCmd extends BundleCmd {
             required = true)
     private String fileName;
 
+    @Parameter(
+            names = {"-r", "--reviewed"},
+            description = "Mark imported resource strings as reviewed")
+    private boolean asReviewed = false;
+
     @Override
     protected void _execute() {
         Map<String, NewResourceEntryData> resEntries = null;
@@ -72,6 +77,9 @@ final class ImportCmd extends BundleCmd {
                     resEntryData.setSequenceNumber(Integer.valueOf(seqNum));
                 }
                 resEntryData.setNotes(resString.getNotes());
+                if (asReviewed) {
+                    resEntryData.setReviewed(Boolean.TRUE);
+                }
                 resEntries.put(resString.getKey(), resEntryData);
             }
         } catch (IOException e) {
