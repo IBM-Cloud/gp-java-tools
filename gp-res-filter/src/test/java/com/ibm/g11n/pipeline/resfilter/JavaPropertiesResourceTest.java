@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -60,18 +61,30 @@ public class JavaPropertiesResourceTest {
         List<ResourceString> lst = new LinkedList<>();
         lst.add(new ResourceString("website", "http://en.wikipedia.org/", 1));
         lst.add(new ResourceString("language", "English", 2));
-        List<String> resourceNotes = new ArrayList<>();
-        resourceNotes.add(" The backslash below tells the application to continue reading");
-        resourceNotes.add(" the value onto the next line.");
-        lst.add(new ResourceString("message", "Welcome to Wikipedia!", 3, resourceNotes));
-        resourceNotes.clear();
-        resourceNotes.add(" Add spaces to the key");
+        lst.add(new ResourceString("message", "Welcome to Wikipedia!", 3,
+                Arrays.asList(
+                        " The backslash below tells the application to continue reading",
+                        " the value onto the next line.")));
         lst.add(new ResourceString("key with spaces",
-                "This is the value that could be looked up with the key \"key with spaces\".", 4, resourceNotes));
+                "This is the value that could be looked up with the key \"key with spaces\".", 4,
+                Arrays.asList(" Add spaces to the key")));
 
         ResourceString rs5 = new ResourceString("tab", "pick up the\u00A5 tab", 5);
         rs5.addNote(" Unicode");
         lst.add(rs5);
+
+        lst.add(new ResourceString("leadSPs", "leading SPs", 6,
+                Arrays.asList(" leading SPs")));
+
+        lst.add(new ResourceString("leadTabs", "leading tabs", 7,
+                Arrays.asList(" leading tabs")));
+
+        lst.add(new ResourceString("trailSPs", "trailing SPs  ", 8,
+                Arrays.asList(" trailing SPs")));
+
+        lst.add(new ResourceString("withTabs", "Tab1\tTab2\tTab3\t", 9,
+                Arrays.asList(" tabs")));
+
         Collections.sort(lst, new ResourceStringComparator());
         EXPECTED_INPUT_RES_LIST = lst;
     }
@@ -86,6 +99,10 @@ public class JavaPropertiesResourceTest {
         WRITE_BUNDLE.addResourceString("website", "http://en.wikipedia.org/translated", 1);
         WRITE_BUNDLE.addResourceString("message", "Translated - Welcome to Wikipedia!", 3);
         WRITE_BUNDLE.addResourceString("tab", "Translated - pick up the\u00A5 tab", 5);
+        WRITE_BUNDLE.addResourceString("leadSPs", "leading SPs", 6);
+        WRITE_BUNDLE.addResourceString("leadTabs", "localized leading tabs", 7);
+        WRITE_BUNDLE.addResourceString("trailSPs", "localized trailing SPs  ", 8);
+        WRITE_BUNDLE.addResourceString("withTabs", "localized Tab1\tTab2\tTab3\t", 9);
     }
 
     private static LinkedList<PropDef> EXPECTED_PROP_DEF_LIST;
@@ -98,6 +115,10 @@ public class JavaPropertiesResourceTest {
         EXPECTED_PROP_DEF_LIST.add(new PropDef("key with spaces",
                 "This is the value that could be looked up with the key \"key with spaces\".", PropSeparator.EQUAL));
         EXPECTED_PROP_DEF_LIST.add(new PropDef("tab", "pick up the\u00A5 tab", PropSeparator.COLON));
+        EXPECTED_PROP_DEF_LIST.add(new PropDef("leadSPs", "leading SPs", PropSeparator.EQUAL));
+        EXPECTED_PROP_DEF_LIST.add(new PropDef("leadTabs", "leading tabs", PropSeparator.EQUAL));
+        EXPECTED_PROP_DEF_LIST.add(new PropDef("trailSPs", "trailing SPs  ", PropSeparator.EQUAL));
+        EXPECTED_PROP_DEF_LIST.add(new PropDef("withTabs", "Tab1\tTab2\tTab3\t", PropSeparator.EQUAL));
     }
 
     private static final JavaPropertiesResource res = new JavaPropertiesResource();
@@ -155,5 +176,98 @@ public class JavaPropertiesResourceTest {
         }
 
         assertEquals("PropDefs did not match.", EXPECTED_PROP_DEF_LIST, actualPropDefs);
+    }
+
+    @Test
+    public void testEscapePropsKey() {
+        final String[][] testCases = {
+            {"", ""},
+            {"abc", "abc"},
+            {"a b c", "a\\ b\\ c"},
+            {" a b ", "\\ a\\ b\\ "},
+            {" \t abc \t ", "\\ \\t\\ abc\\ \\t\\ "},
+            {"\u0000\u0001", "\\u0000\\u0001"},
+            {"a=b=c", "a\\=b\\=c"},
+            {"a:b;c", "a\\:b;c"},
+            {"!#$%()*+,-./", "\\!\\#$%()*+,-./"},
+            {"' abc '", "'\\ abc\\ '"},
+            {"a \"bc\"", "a\\ \"bc\""},
+            {"\u3042\u3044", "\\u3042\\u3044"},
+        };
+
+        for (String[] testCase : testCases) {
+            String instr = testCase[0];
+            String expected = testCase[1];
+
+            String escapedKey = JavaPropertiesResource.escapePropKey(instr);
+            assertEquals("escapePropKey(" + instr + ")", expected, escapedKey);
+
+            String unescapedKey = JavaPropertiesResource.unescapePropKey(escapedKey);
+            assertEquals("unescapePropKey(" + escapedKey + ")", instr, unescapedKey);
+        }
+    }
+
+    @Test
+    public void testEscapePropsValue() {
+        final String[][] testCases = {
+                {"", ""},
+                {"abc", "abc"},
+                {"a b c", "a b c"},
+                {" a b ", "\\ a b "},
+                {" \t abc \t ", "\\ \\t\\ abc \\t "},
+                {"\u0000\u0001", "\\u0000\\u0001"},
+                {"a=b=c", "a\\=b\\=c"},
+                {"a:b;c", "a\\:b;c"},
+                {"!#$%()*+,-./", "\\!\\#$%()*+,-./"},
+                {"' abc '", "' abc '"},
+                {"a \"bc\"", "a \"bc\""},
+                {"\u3042\u3044", "\\u3042\\u3044"},
+            };
+
+            for (String[] testCase : testCases) {
+                String instr = testCase[0];
+                String expected = testCase[1];
+
+                String escapedVal = JavaPropertiesResource.escapePropValue(instr);
+                assertEquals("escapePropValue(" + instr + ")", expected, escapedVal);
+
+                String unescapedVal = JavaPropertiesResource.unescapePropValue(escapedVal);
+                assertEquals("unescapePropValue(" + escapedVal + ")", instr, unescapedVal);
+            }
+    }
+
+    private static final String[][] UNESC_TEST_CASES =
+    {
+        {"", ""},
+        {"abc", "abc"},
+        {"\\ abc\\u0020", " abc "},
+        {"a\\tb\\u0009c", "a\tb\tc"},
+        {"a\\=\\b", "a=b"},
+        {"a\\\\b", "a\\b"},
+        {"\\t\\f\\z", "\t\fz"},
+        {"\\a\\b\\c", "abc"},
+        {"\\u304A\\u304b", "\u304A\u304B"},
+    };
+
+    @Test
+    public void testUnescapePropsKey() {
+        for (String[] testCase : UNESC_TEST_CASES) {
+            String instr = testCase[0];
+            String expected = testCase[1];
+
+            String unescapedKey = JavaPropertiesResource.unescapePropKey(instr);
+            assertEquals("unescapePropKey(" + instr + ")", expected, unescapedKey);
+        }
+    }
+
+    @Test
+    public void testUnescapePropsValue() {
+        for (String[] testCase : UNESC_TEST_CASES) {
+            String instr = testCase[0];
+            String expected = testCase[1];
+
+            String unescapedVal = JavaPropertiesResource.unescapePropValue(instr);
+            assertEquals("unescapePropValue(" + instr + ")", expected, unescapedVal);
+        }
     }
 }
