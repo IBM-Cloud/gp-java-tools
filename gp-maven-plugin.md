@@ -1,7 +1,7 @@
 # Globalization Pipeline Maven Plugin User Guide
 <!--
 /*  
- * Copyright IBM Corp. 2016
+ * Copyright IBM Corp. 2016, 2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ in pom.xml.
             <plugin>
                 <groupId>com.ibm.g11n.pipeline</groupId>
                 <artifactId>gp-maven-plugin</artifactId>
-                <version>1.1.3</version>
+                <version>1.1.4</version>
             </plugin>
             [...]
         </plugins>
@@ -112,7 +112,7 @@ as below.
             <plugin>
                 <groupId>com.ibm.g11n.pipeline</groupId>
                 <artifactId>gp-maven-plugin</artifactId>
-                <version>1.1.3</version>
+                <version>1.1.4</version>
                 <configuration>
                     <credentials>
                         <url>https://gp-rest.ng.bluemix.net/translate/rest</url>
@@ -191,7 +191,7 @@ you can add `<execution>' element as below.
       <plugin>
         <groupId>com.ibm.g11n.pipeline</groupId>
         <artifactId>gp-maven-plugin</artifactId>
-        <version>1.1.3-SNAPSHOT</version>
+        <version>1.1.4</version>
         <executions>
             <execution>
                 <goals>
