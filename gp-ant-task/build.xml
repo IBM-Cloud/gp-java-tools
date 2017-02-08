@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="gp-ant-task-0.0.1-SNAPSHOT">
+	<property name="classpath" value="/Users/jugudanniesundar/Documents/opensource/gp-java-tools/gp-ant-task/target/gp-ant-task-0.0.1-SNAPSHOT-jar-with-dependencies.jar"/>
+	<property name="gp.credentials" value="src/credentials.json"/>
+	<property name="url" value="https://gp-rest.ng.bluemix.net/translate/rest"/>
+	<property name="userId" value="b9818b62e1db014edbd2bbb8fae176b4"/>
+	<property name="password" value="Tl7edWJzDdV2DRVEBTgnFTAipQdJZ6i4"/>
+	<property name="instanceId" value="1b088966b5fed337fab9940496db40ac"/>
+	<property name="download.src" value="src/main/resources"/>
+	<property name="download.dest" value="target/classes"/>
+	<property name="overwrite" value="true"/>
+	<property name="languageIdStyle" value="BCP47_UNDERSCORE"/>
+	<property name="outputDir" value="target/classes"/>
+	<property name="type" value="JAVA"/>
+	<property name="sourceLanguage" value="en"/>
+	<property name="outputContentOption" value="MERGE_TO_SOURCE"/>
+	<property name="bundleLayout" value="LANGUAGE_DIR"/>
+	<property name="outputDir" value="target/classes"/>
+	<property name="includepattern" value="**/*.properties"/>
+	<property name="excludepattern" value="**/*_*.properties"/>
+
+	<typedef name="bundleSet" classname="com.ibm.g11n.pipeline.ant.BundleSet" classpath = "${classpath}"/>
+	<target name="gp:upload">
+		<taskdef name="upload" classname="com.ibm.g11n.pipeline.ant.GPUpload" classpath="${classpath}"/>
+		<upload credentialsJson= "${gp.credentials}">
+			<credentials url="${url}" userId="${userId}" password="${password}" instanceId="${instanceId}"/>
+		</upload>
+	</target>
+	
+	<target name="gp:download">
+		<taskdef name="download" classname="com.ibm.g11n.pipeline.ant.GPDownload" classpath="${classpath}"/>
+		<download credentialsJson="${gp.credentials}" outputDir="${downlod.dest}">
+			<bundleSet 	type="${type}" 
+						sourceLanguage="${sourceLanguage}" 
+						languageIdStyle="${languageIdStyle}" 
+						outputContentOption="${outputContentOption}" 
+						bundleLayout="${bundleLayout}"
+						outputDir="${outputDir}">
+				<fileset dir="${download.src}" includes="${includepattern}" excludes="${excludepattern}"/>
+			</bundleSet>
+		</download>
+	</target>
+</project>

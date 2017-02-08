@@ -63,13 +63,13 @@ public class GPUpload extends GPBase {
 
                 // Process each bundle
                 for (SourceBundleFile bf : bundleFiles) {
-                	getProject().log(bf.getType() + " : " + bf.getBundleId() + " : " + bf.getFile().getAbsolutePath(), Project.MSG_INFO);
+                    getProject().log(bf.getType() + " : " + bf.getBundleId() + " : " + bf.getFile().getAbsolutePath(), Project.MSG_INFO);
 
                     // Checks if the bundle already exists
                     String bundleId = bf.getBundleId();
                     boolean createNew = false;
                     if (bundleIds.contains(bundleId)) {
-                    	getProject().log("Found bundle:" + bundleId, Project.MSG_INFO);
+                        getProject().log("Found bundle:" + bundleId, Project.MSG_INFO);
                         // Checks if the source language matches.
                         BundleData bundle = client.getBundleInfo(bundleId);
                         if (!srcLang.equals(bundle.getSourceLanguage())) {
@@ -79,7 +79,7 @@ public class GPUpload extends GPBase {
                                     + srcLang + ").");
                         }
                     } else {
-                    	getProject().log("bundle:" + bundleId + " does not exist, creating a new bundle.", Project.MSG_INFO);
+                        getProject().log("bundle:" + bundleId + " does not exist, creating a new bundle.", Project.MSG_INFO);
                         createNew = true;
                     }
 
@@ -118,7 +118,7 @@ public class GPUpload extends GPBase {
                     }
 
                     if (resEntries.isEmpty()) {
-                    	getProject().log("No resource entries in " + bf.getFile().getAbsolutePath(), Project.MSG_INFO);
+                        getProject().log("No resource entries in " + bf.getFile().getAbsolutePath(), Project.MSG_INFO);
                     } else {
                         // Upload the resource entries
                         client.uploadResourceEntries(bundleId, srcLang, resEntries);

@@ -23,9 +23,9 @@ package com.ibm.g11n.pipeline.ant;
  */
 public class Credentials {
     private String url;
-    
+
     private String instanceId;
-    
+
     private String userId;
 
     private String password;

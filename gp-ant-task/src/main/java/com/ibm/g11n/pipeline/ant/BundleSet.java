@@ -81,7 +81,7 @@ public class BundleSet {
      * @return the source files
      */
     public FileSet getSourceFiles() {
-    	return fileSets.get(0);
+        return fileSets.get(0);
     }
 
 
@@ -103,13 +103,13 @@ public class BundleSet {
      * @return the targetLanguages
      */
     public Set<String> getTargetLanguages() {
-    	if (targetLanguages != null)
-    		return targetLanguages;
-    	targetLanguages = new HashSet<String>();
-    	for (TargetLanguage tl : targetLangs) {
-    		targetLanguages.add(tl.getLang());
-    	}
-    	return targetLanguages;
+        if (targetLanguages != null)
+            return targetLanguages;
+        targetLanguages = new HashSet<String>();
+        for (TargetLanguage tl : targetLangs) {
+            targetLanguages.add(tl.getLang());
+        }
+        return targetLanguages;
     }
 
     /**
@@ -123,7 +123,7 @@ public class BundleSet {
      * @param languageMap the languageMaps to set
      */
     public void addLanguageMap(LanguageMap languageMap) {
-    	languageMapList.add(languageMap);
+        languageMapList.add(languageMap);
     }
 
     /**
@@ -195,7 +195,7 @@ public class BundleSet {
     public void setBundleLayout(BundleLayout bundleLayout) {
         this.bundleLayout = bundleLayout;
     }
-    
+
     /**
      * A set of TargetLanguage to supported nested elements for ant script
      */
@@ -206,13 +206,13 @@ public class BundleSet {
      * @return
      */
     public void addTargetLanguage(TargetLanguage tl) {
-    	targetLangs.add(tl);
+        targetLangs.add(tl);
     }
-    
+
     protected List<FileSet> fileSets = new ArrayList<FileSet>();
-    
+
     public void addFileset(FileSet fileSet) {
-    	fileSets.add(fileSet);
+        fileSets.add(fileSet);
     }
-    
+
 }

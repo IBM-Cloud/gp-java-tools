@@ -55,9 +55,9 @@ public class GPDownload extends GPBase {
      * is used for the bundleSet.
      */
     private File outputDir;
-    
+
     public void setOutputDir(File outputDir) {
-    	this.outputDir = outputDir;
+        this.outputDir = outputDir;
     }
 
     /**
@@ -65,9 +65,9 @@ public class GPDownload extends GPBase {
      * or not. The default value is true.
      */
     private boolean overwrite;
-    
+
     public void setOverwrite(boolean overwrite) {
-    	this.overwrite = overwrite;
+        this.overwrite = overwrite;
     }
 
     /* (non-Javadoc)
@@ -75,7 +75,7 @@ public class GPDownload extends GPBase {
      */
     @Override
     public void execute() throws BuildException {
-       getProject().log("Entering GPDownloadMojo#execute()", Project.MSG_DEBUG);
+        getProject().log("Entering GPDownloadMojo#execute()", Project.MSG_DEBUG);
 
         ServiceClient client = getServiceClient();
 
@@ -97,7 +97,7 @@ public class GPDownload extends GPBase {
             List<LanguageMap> langMapList = bundleSet.getLanguageMap();
             Map<String, String> langMap = new HashMap<String, String>();
             for (LanguageMap languageMap : langMapList) {
-            	langMap.put(languageMap.getFrom(), languageMap.getTo());
+                langMap.put(languageMap.getFrom(), languageMap.getTo());
             }
 
             File outDir = bundleSet.getOutputDir();
@@ -109,7 +109,7 @@ public class GPDownload extends GPBase {
             }
             for (SourceBundleFile bf : sourceBundleFiles) {
                 String bundleId = bf.getBundleId();
-                
+
                 if (!availBundleIds.contains(bundleId)) {
                     getProject().log("The bundle:" + bundleId + " does not exist.", Project.MSG_WARN);
                     continue;
@@ -128,7 +128,7 @@ public class GPDownload extends GPBase {
                 bdlLangs.addAll(bdlData.getTargetLanguages());
 
                 if (!srcLang.equals(bdlSrcLang)) {
-                	getProject().log("The source language of the bundle:" + bundleId
+                    getProject().log("The source language of the bundle:" + bundleId
                             + " (" + bdlSrcLang + ") is different from the language specified by the configuration ("
                             + bdlSrcLang + ")", Project.MSG_WARN);
                 }
@@ -138,7 +138,7 @@ public class GPDownload extends GPBase {
                         exportLanguageResource(client, bf, srcLang, outDir,
                                 outContentOpt, bundleLayout, langIdStyle, langMap);
                     } else {
-                    	getProject().log("The specified source language (" + srcLang
+                        getProject().log("The specified source language (" + srcLang
                                 + ") does not exist in the bundle:" + bundleId, Project.MSG_WARN);
                     }
                 }
@@ -148,7 +148,7 @@ public class GPDownload extends GPBase {
                         exportLanguageResource(client, bf, tgtLang, outDir,
                                 outContentOpt, bundleLayout, langIdStyle, langMap);
                     } else {
-                    	getProject().log("The specified target language (" + tgtLang
+                        getProject().log("The specified target language (" + tgtLang
                                 + ") does not exist in the bundle:" + bundleId, Project.MSG_WARN);
                     }
                 }
@@ -159,7 +159,7 @@ public class GPDownload extends GPBase {
     private void exportLanguageResource(ServiceClient client, SourceBundleFile bf, String language,
             File outBaseDir, OutputContentOption outContntOpt, BundleLayout bundleLayout,
             LanguageIdStyle langIdStyle, Map<String, String> langMap)
-            throws BuildException {
+                    throws BuildException {
         String srcFileName = bf.getFile().getName();
         String relPath = bf.getRelativePath();
 
@@ -174,7 +174,7 @@ public class GPDownload extends GPBase {
                 tgtName = srcFileName + "_" + getLanguageId(language, langIdStyle, langMap);
             } else {
                 tgtName = srcFileName.substring(0, idx) + "_" + getLanguageId(language, langIdStyle, langMap)
-                    + srcFileName.substring(idx);
+                + srcFileName.substring(idx);
             }
             outputFile = new File(dir, tgtName);
             break;
@@ -196,16 +196,16 @@ public class GPDownload extends GPBase {
             throw new BuildException("Failed to resolve output directory");
         }
 
-    	getProject().log("Exporting bundle:" + bf.getBundleId() + " language:" + language + " to "
+        getProject().log("Exporting bundle:" + bf.getBundleId() + " language:" + language + " to "
                 + outputFile.getAbsolutePath(), Project.MSG_INFO);
 
         if (outputFile.exists()) {
             if (overwrite) {
-            	getProject().log("The output bundle file:" + outputFile.getAbsolutePath()
-                    + " already exists - overwriting", Project.MSG_INFO);
+                getProject().log("The output bundle file:" + outputFile.getAbsolutePath()
+                + " already exists - overwriting", Project.MSG_INFO);
             } else {
-            	getProject().log("The output bundle file:" + outputFile.getAbsolutePath()
-                    + " already exists - skipping", Project.MSG_INFO);
+                getProject().log("The output bundle file:" + outputFile.getAbsolutePath()
+                + " already exists - skipping", Project.MSG_INFO);
                 // When overwrite is false, do nothing
                 return;
             }

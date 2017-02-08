@@ -55,9 +55,9 @@ public abstract class GPBase extends Task{
      * ignored.
      */
     protected Credentials credentials;
-    
+
     public void addCredentials(Credentials credentials) {
-    	this.credentials = credentials;
+        this.credentials = credentials;
     }
 
     /**
@@ -65,11 +65,11 @@ public abstract class GPBase extends Task{
      * Globalization Pipeline service. The JSON file must have string elements
      * "url", "instanceId", "userId" and "password" in the top level object.
      */
-    
+
     private File credentialsJson;
 
     public void setCredentialsJson(File credjson) {
-    	this.credentialsJson = credjson;
+        this.credentialsJson = credjson;
     }
     /**
      * Each &lt;bundleSet&gt; specifies a translation source language, a set of
@@ -79,17 +79,17 @@ public abstract class GPBase extends Task{
     private List<BundleSet> bundleSets= new ArrayList<BundleSet>();
 
     private volatile ServiceClient gpClient = null;
-    
+
     /**
      * Set of targetlanugages defined as implicit default
      */
     protected Set<TargetLanguage> targetLanguages = new HashSet<TargetLanguage>();
 
     public void addTargetLanguage(TargetLanguage tl) {
-    	targetLanguages.add(tl);
+        targetLanguages.add(tl);
     }
-    
-    
+
+
     public void execute() {
     }
 
@@ -205,11 +205,11 @@ public abstract class GPBase extends Task{
         }
         return bundleSets;
     }
-    
+
     public BundleSet createBundleSet() {
-    	BundleSet bundleSet = new BundleSet();
-    	bundleSets.add(bundleSet);
-    	return bundleSet;
+        BundleSet bundleSet = new BundleSet();
+        bundleSets.add(bundleSet);
+        return bundleSet;
     }
 
     /**
@@ -243,10 +243,10 @@ public abstract class GPBase extends Task{
     protected Set<String> resolveTargetLanguages(BundleSet bundleSet) throws BuildException {
         Set<String> targetLanguages = bundleSet.getTargetLanguages();
         if (targetLanguages == null || targetLanguages.isEmpty()) {
-        	targetLanguages = new HashSet<String>();
-        	for (TargetLanguage tl : this.targetLanguages) {
-        		targetLanguages.add(tl.getLang());
-        	}
+            targetLanguages = new HashSet<String>();
+            for (TargetLanguage tl : this.targetLanguages) {
+                targetLanguages.add(tl.getLang());
+            }
         }
         if (targetLanguages.isEmpty()) {
             ServiceClient client = getServiceClient();
@@ -264,8 +264,8 @@ public abstract class GPBase extends Task{
             }
 
             getProject().log("The configuration parameter 'targetLanguages' is not specified."
-            		+ " Using currently active target languages: " + targetLanguages, getProject().MSG_INFO);
-    	}
+                    + " Using currently active target languages: " + targetLanguages, getProject().MSG_INFO);
+        }
         return Collections.unmodifiableSet(targetLanguages);
     }  
 }
