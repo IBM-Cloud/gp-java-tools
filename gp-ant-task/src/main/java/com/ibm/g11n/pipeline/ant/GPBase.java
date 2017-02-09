@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2016
+ * Copyright IBM Corp. 2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -242,18 +242,20 @@ public abstract class GPBase extends Task{
 
     protected Set<String> resolveTargetLanguages(BundleSet bundleSet) throws BuildException {
         Set<String> targetLanguages = bundleSet.getTargetLanguages();
+        String srcLang = bundleSet.getSourceLanguage();
+        if (srcLang == null) {
+            srcLang = "en";
+        }
         if (targetLanguages == null || targetLanguages.isEmpty()) {
             targetLanguages = new HashSet<String>();
             for (TargetLanguage tl : this.targetLanguages) {
+                if (srcLang.equals(tl.getLang()))
+                    continue;
                 targetLanguages.add(tl.getLang());
             }
         }
         if (targetLanguages.isEmpty()) {
             ServiceClient client = getServiceClient();
-            String srcLang = bundleSet.getSourceLanguage();
-            if (srcLang == null) {
-                srcLang = "en";
-            }
             // targetLanguages is not specified. Default to all available languages.
             try {
                 Map<String, Set<String>> activeMTLangs = client.getConfiguredMTLanguages();
