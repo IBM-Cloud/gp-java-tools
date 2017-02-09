@@ -15,8 +15,10 @@
  */
 package com.ibm.g11n.pipeline.tools.cli;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -106,39 +108,59 @@ final class CopyBundleCmd extends BundleCmd {
 
         destClient.createBundle(destBundleId, newBundleData);
 
-        // Upload resource data for source language
+        // Upload resource data for source language and target languages
+        Set<String> remainingLangs = targetLangs == null ?
+                Collections.<String>emptySet() : new HashSet<>(targetLangs);
+
         Map<String, ResourceEntryData> srcResources = srcClient.getResourceEntries(
                 srcBundleId, srcLang);
 
-        Set<String> targetLangsAdded = new HashSet<String>();
         if (!srcResources.isEmpty()) {
             uploadResources(destClient, destBundleId, srcLang, srcResources);
 
             // Upload resource data for target languages
-            if (targetLangs != null && !targetLangs.isEmpty()) {
-                for (String lang : targetLangs) {
-                    Map<String, ResourceEntryData> resources = srcClient.getResourceEntries(srcBundleId, lang);
-                    if (!resources.isEmpty()) {
-                        uploadResources(destClient, destBundleId, lang, resources);
-                        targetLangsAdded.add(lang);
+            // Removing already processed target languages from remainingLangs
+            // while iterating through the set, so we need to use Iterator here.
+            for (Iterator<String> i = remainingLangs.iterator(); i.hasNext();) {
+                String trgLang = i.next();
+                Map<String, ResourceEntryData> resources = srcClient.getResourceEntries(srcBundleId, trgLang);
+                if (!resources.isEmpty()) {
+                    if (uploadResources(destClient, destBundleId, trgLang, resources)) {
+                        // if something has been uploaded, the language was automatically
+                        // added to the bundle's target language list. So remove the language
+                        // from the 'remaining' language list.
+                        i.remove();
                     }
                 }
             }
         }
 
-        if (!targetLangsAdded.containsAll(targetLangs)) {
+        if (!remainingLangs.isEmpty()) {
             // There are missing target languages.
             // This happens either when the source bundle is empty,
             // or target bundles does not contain any successful translated
             // contents. We want to set the set of target languages
             // to the destination bundle.
+            assert targetLangs != null;
             BundleDataChangeSet bundleDataChanges = new BundleDataChangeSet();
             bundleDataChanges.setTargetLanguages(targetLangs);
             destClient.updateBundle(destBundleId, bundleDataChanges);
         }
     }
 
-    private static void uploadResources(ServiceClient client, String bundleId,
+    /**
+     * Upload resource entries. An entry for a target language with status
+     * other than 'translated' will be excluded.
+     * 
+     * @param client    GP service client
+     * @param bundleId  Bundle ID
+     * @param language  Language ID
+     * @param resources Resource entries, originally read from another bundle
+     * @return  true if this method actually uploaded any resource entries, or false
+     *          if nothing uploaded.
+     * @throws ServiceException
+     */
+    private static boolean uploadResources(ServiceClient client, String bundleId,
             String language, Map<String, ResourceEntryData> resources) throws ServiceException {
         Map<String, NewResourceEntryData> newResources =
                 new HashMap<String, NewResourceEntryData>(resources.size());
@@ -160,6 +182,10 @@ final class CopyBundleCmd extends BundleCmd {
             newResources.put(res.getKey(), newResData);
         }
 
+        if (newResources.isEmpty()) {
+            return false;
+        }
         client.uploadResourceEntries(bundleId, language, newResources);
+        return true;
     }
 }
