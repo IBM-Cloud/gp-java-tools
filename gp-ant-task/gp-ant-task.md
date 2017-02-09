@@ -24,7 +24,6 @@
   * [Specifying Globalization Pipeline Service Credentials](#TOC-Usage-Credentials)
   * [Basic Use Case](#TOC-Usage-Basic)
   * [Advanced Use Cases](#TOC-Usage-Advanced)
-* [Configuration Parameter Reference](#TOC-ConfigParamRef)
 
 
 ---
@@ -59,8 +58,8 @@ Goals available for the ant tasks are below.
 
 To setup Globalization Pipeline ant task
 
-1. Download gp-ant-task.jar with dependencies from maven repository to a lib folder in your project
-2. Copy the build.xml(as shown in this repository folder) to your project folder
+1. Download **gp-ant-task.jar with dependencies** from maven repository to a lib folder in your project
+2. Copy the **build.xml** (as shown in this gp-ant-task folder) to your project folder
 
 ### <a name="TOC-Usage-Credentials"></a>Specifying Globalization Pipeline Service Credentials
 
@@ -156,7 +155,66 @@ The basic build.xml for ant tasks is shown below:
 	</project>
 ```
 
-#### Uploading Source Resource Bundles
+#### Properties in build.xml
+The default values of properties required for the ant tasks are shown above.
+Here we describe them
+
+
+**classpath** : the location (relative to the project folder) of gp-ant-task jar with dependencies
+
+
+**gp.credentials** : the file pathname which has the credentials in json form
+
+
+**url** : url as specified in the credentials of globalization pipeline instance
+
+
+**userId** : userId as specified in the credentials of globalization pipeline instance
+
+
+**password** : password as specified in the credentials of globalization pipeline instance
+
+
+**instanceId** : instanceId as specified in the credentials of globalization pipeline instance
+
+
+**download.src** : the project folder path containing existing resource bundle (this property is used during download task)
+
+
+**download.dest** : the project folder path where the bundles from gp instance needs to be downloaded to
+
+
+**overwrite** : Specifies a boolean value to control whether **download** task overwrites translated resource bundle files already in the output directory or not. The default value "true"
+
+
+**languageIdStyle** : Specifies keywords to configure the rule for composing language ID used for output resource bundle file or path name. Consult [maven plugin readme](https://github.com/IBM-Bluemix/gp-java-tools/blob/master/gp-maven-plugin.md)
+
+
+**outputDir** : Specifies the output base directory for a `bundleSet`. If not specified at bundleset level, then the one specified at task level is used. This property is specific for `download` task
+
+
+**type** : Specifies the resource type. Consult [maven plugin readme](https://github.com/IBM-Bluemix/gp-java-tools/blob/master/gp-maven-plugin.md)
+
+
+**sourceLanguage** :Specifies BCP 47 language tag for the language used in the source bundles. The default value is "en" (English).
+
+
+**outputContentOption** :Specifies keywords to control how download goal generates the contents of translated resource bundle files. Consult [maven plugin readme](https://github.com/IBM-Bluemix/gp-java-tools/blob/master/gp-maven-plugin.md)
+
+
+**bundleLayout** :Specifies keywords to control output file name or path in download goal. Consult [maven plugin readme](https://github.com/IBM-Bluemix/gp-java-tools/blob/master/gp-maven-plugin.md)
+
+
+
+**includepattern** : Default pattern to recognize files to be downloaded
+
+
+**excludepattern** : Default pattern to recognize files to be excluded 
+
+
+
+
+#### Uploading Source Resource Bundles (using above basic build.xml)
 ```
 $ ant gp:upload
 ```
@@ -168,7 +226,7 @@ This goal does following tasks:
 
 2. For each Java property resource bundle file, checks if corresponding Globalization
 Pipeline bundle already exists or not. If it's not available, creates a new bundle
-with all translation target languages currently configured. English is used as the
+with all translation target languages currently configured in Machine Translation. English is used as the
 translation source language.
 
 3. Extracts resource strings from each file, and uploads them to the matching
@@ -186,7 +244,7 @@ So the best practice would be invoking this goal when any changes were made in
 translatable resource bundle files, although it's not harmful to invoke the goal
 at any time.
 
-#### Downloading Translated Resource Bundles
+#### Downloading Translated Resource Bundles (using above basic build.xml)
 ```
 $ ant gp:download
 ```
@@ -208,5 +266,44 @@ target languages in the Globalization Pipeline bundle.
 
 
 ## <a name="TOC-Usage-Advanced"></a>Advanced Use Cases
+
+The bundleset in build.xml can be modified to support extra features for `download` task. Example
+```
+	<download credentialsJson="${gp.credentials}" outputDir="${downlod.dest}">
+            <bundleSet  type="${type}" 
+                        sourceLanguage="${sourceLanguage}" 
+                        languageIdStyle="${languageIdStyle}" 
+                        outputContentOption="${outputContentOption}" 
+                        bundleLayout="${bundleLayout}"
+                        outputDir="${outputDir}">
+                <fileset dir="${download.src}" includes="${includepattern}" excludes="${excludepattern}"/>
+		<targetLanguage lang="en"/>
+		<targetLanguage lang="ja"/>
+		<languageMap from="pt-BR" to="pt"/>
+            </bundleSet>
+	    <bundleSet  type="JSON" 
+                        sourceLanguage="ja" 
+                        languageIdStyle="BCP47" 
+                        outputContentOption="TRANSLATED_ONLY" 
+                        bundleLayout="LANGUAGE_DIR">
+                <fileset dir="src/main/xyz" includes="**/*.properties" excludes="**/*_*.properties/>
+		<targetLanguage lang="en"/>
+		<targetLanguage lang="ja"/>
+		<languageMap from="pt-BR" to="pt"/>
+            </bundleSet>
+	    .
+	    .
+        </download>
+```
+
+In the above snippet, the following tags are introduced within bundleSet
+
+**targetLanguage** : Specifies a list of translation target languages by BCP 47 language tags. For the above usecase, only translation files in the target languages are download for that bundle
+
+**languageMap** : Specifies custom language mappings. Each nested element name is a BCP 47 language tag used by Globalization Pipeline service instance, and the element value is a language ID used for output resource file or path name. For example, Globalization Pipeline service uses language ID "pt-BR" for Brazilian Portuguese. If you want to use just "pt" for output file or path name, you can specify the mapping as `<languageMap from="pt-BR" to="pt"/>`
+
+
+Also that the user can define multiple bundleSet tags within the download task with overridden values for the attributes associated with the bundleset
+
 
 
