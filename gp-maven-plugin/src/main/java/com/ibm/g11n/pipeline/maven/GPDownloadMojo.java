@@ -116,9 +116,12 @@ public class GPDownloadMojo extends GPBaseMojo {
                 }
 
                 String bdlSrcLang = bdlData.getSourceLanguage();
+                Set<String> bdlTrgLangs = bdlData.getTargetLanguages();
                 Set<String> bdlLangs = new HashSet<String>();
                 bdlLangs.add(bdlSrcLang);
-                bdlLangs.addAll(bdlData.getTargetLanguages());
+                if (bdlTrgLangs != null) {
+                    bdlLangs.addAll(bdlData.getTargetLanguages());
+                }
 
                 if (!srcLang.equals(bdlSrcLang)) {
                     getLog().warn("The source language of the bundle:" + bundleId
