@@ -495,6 +495,13 @@ resource strings. This option might not be implemented by some format types. In 
 When translated string value is not available, the value in the source language is used.
 * **TRANSLATED_ONLY** Emits only resource strings (with a simple header if applicable).
 When translated string value is not available, do not include the key in the output.
+* **MERGE_REVIEWED_TO_SOURCE** Duplicate the contents of the source bundle and replaces only
+translated resource strings marked as reviewed. This option might not be implemented by some
+format types. In this case, **REVIEWED_WITH_FALLBACK** is used instead.
+* **REVIEWD_WITH_FALLBACK** Emits only resource strings marked as reviewed. When transled string
+value is not available, or not marked as reviewed, the value in the source language is used.
+* **REVIEWED_ONLY** Emits only resource strings marked as reviewed. When translated string value
+is not available, or translated not marked as reviewed, do not include the key in the output.
 
 The default value is **MERGE_TO_SOURCE**.
 
