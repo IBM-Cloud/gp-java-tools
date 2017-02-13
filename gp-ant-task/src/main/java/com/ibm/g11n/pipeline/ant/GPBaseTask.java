@@ -42,11 +42,12 @@ import com.ibm.g11n.pipeline.client.ServiceException;
 import com.ibm.g11n.pipeline.resfilter.ResourceType;
 
 /**
- * Base class of GP download/upload.
+ * Base class of GP download/upload ant tasks
  * 
  * @author Yoshito Umaoka
+ * @author Jugu
  */
-public abstract class GPBase extends Task{
+public abstract class GPBaseTask extends Task{
     /**
      * Credentials used for accessing the instance of Globalization
      * Pipeline service. There are 4 sub-elements required: &lt;url&gt;,
@@ -266,7 +267,7 @@ public abstract class GPBase extends Task{
             }
 
             getProject().log("The configuration parameter 'targetLanguages' is not specified."
-                    + " Using currently active target languages: " + targetLanguages, getProject().MSG_INFO);
+                    + " Using currently active target languages: " + targetLanguages, Project.MSG_INFO);
         }
         return Collections.unmodifiableSet(targetLanguages);
     }  

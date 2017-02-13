@@ -58,8 +58,10 @@ Goals available for the ant tasks are below.
 
 To setup Globalization Pipeline ant task
 
-1. Download **gp-ant-task.jar with dependencies** from maven repository to a lib folder in your project
-2. Copy the **build.xml** (as shown in this gp-ant-task folder) to your project folder
+1. Download **gp-ant-task.jar with dependencies** from maven repository. 
+   You can also create the jar with dependencies from this repository with maven (using command **mvn assembly:assembly -DdescriptorId=jar-with-dependencies**)
+2. Store the jar in the ANT_HOME lib folder (for automatic detection else you may need to use the command: **ant -lib {location of gp-ant-task jar} ** )
+3. Copy the **build.xml** (as shown in this gp-ant-task repository folder) to your project folder
 
 ### <a name="TOC-Usage-Credentials"></a>Specifying Globalization Pipeline Service Credentials
 

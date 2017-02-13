@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<project name="gp-ant-task-0.0.1-SNAPSHOT" default="none">
-    <property name="classpath" value="lib/gp-ant-task-0.0.1-SNAPSHOT-jar-with-dependencies.jar"/>
+<project name="gp-ant-task-1.1.5-SNAPSHOT" default="none">
+	<taskdef resource="com/ibm/g11n/pipeline/ant/antlib.xml"/>
+	
     <property name="gp.credentials" value="src/credentials.json"/>
     <property name="url" value="https://gp-rest.ng.bluemix.net/translate/rest"/>
     <property name="userId" value="b9818b62e1db014edbd2bbb8fae176b4"/>
@@ -15,28 +16,24 @@
     <property name="sourceLanguage" value="en"/>
     <property name="outputContentOption" value="MERGE_TO_SOURCE"/>
     <property name="bundleLayout" value="LANGUAGE_DIR"/>
-    <property name="outputDir" value="target/classes"/>
     <property name="includepattern" value="**/*.properties"/>
     <property name="excludepattern" value="**/*_*.properties"/>
-    <typedef name="bundleSet" classname="com.ibm.g11n.pipeline.ant.BundleSet" classpath = "${classpath}"/>
-	
 	<target name="none"><echoproperties></echoproperties></target>
+	
     <target name="gp:upload">
-        <taskdef name="upload" classname="com.ibm.g11n.pipeline.ant.GPUpload" classpath="${classpath}"/>
         <upload credentialsJson= "${gp.credentials}">
             <credentials url="${url}" userId="${userId}" password="${password}" instanceId="${instanceId}"/>
         </upload>
     </target>
     
     <target name="gp:download">
-        <taskdef name="download" classname="com.ibm.g11n.pipeline.ant.GPDownload" classpath="${classpath}"/>
-        <download credentialsJson="${gp.credentials}" outputDir="${downlod.dest}">
+        <download credentialsJson="${gp.credentials}" outputDir="${outputDir}">
             <bundleSet     type="${type}" 
                         sourceLanguage="${sourceLanguage}" 
                         languageIdStyle="${languageIdStyle}" 
                         outputContentOption="${outputContentOption}" 
                         bundleLayout="${bundleLayout}"
-                        outputDir="${outputDir}">
+                        outputDir="${download.dest}">
                 <fileset dir="${download.src}" includes="${includepattern}" excludes="${excludepattern}"/>
             </bundleSet>
         </download>

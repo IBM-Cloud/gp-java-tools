@@ -19,6 +19,7 @@ package com.ibm.g11n.pipeline.ant;
  * This class is used within BundleSet as nested element for ant. 
  * This specifies the modifications to be made to the folder/file names 
  * when downloading translation files from the globalization pipeline instance
+ * 
  * @author jugudanniesundar
  *
  */

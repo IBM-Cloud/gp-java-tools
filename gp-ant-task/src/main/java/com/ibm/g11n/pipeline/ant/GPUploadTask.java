@@ -43,13 +43,11 @@ import com.ibm.g11n.pipeline.resfilter.ResourceString;
  * 
  * @author Yoshito Umaoka
  */
-public class GPUpload extends GPBase {
-    /* (non-Javadoc)
-     * @see org.apache.maven.plugin.Mojo#execute()
-     */
+public class GPUploadTask extends GPBaseTask {
+
     @Override
     public void execute() throws BuildException {
-        getProject().log("Entering GPUploadMojo#execute()", Project.MSG_DEBUG);
+        getProject().log("Entering GPUploadTask#execute()", Project.MSG_DEBUG);
         ServiceClient client = getServiceClient();
 
         try {

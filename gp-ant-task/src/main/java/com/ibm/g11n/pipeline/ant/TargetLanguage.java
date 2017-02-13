@@ -17,13 +17,14 @@ package com.ibm.g11n.pipeline.ant;
 
 /**
  * This class is used within BundleSet as nested element.
- * This class is also used in GPUpload/GPDownload as nested element
+ * This class is also used in GPUploadTask/GPDownloadTask as nested element
  * 
  * When used within BundleSet, then the languages specified using TargetLanguages
  * are used to upload/download files specifically in that language in that bundle
  * 
  * If the targetLanguages are not defined within the BundleSet, then the targetLanguages
- * defined in GPUpload/GPDownload is used for uploading/downloading files in those language(s)
+ * defined in GPUploadTask/GPDownloadTask is used for uploading/downloading files in those language(s)
+ * 
  * @author jugudanniesundar
  *
  */

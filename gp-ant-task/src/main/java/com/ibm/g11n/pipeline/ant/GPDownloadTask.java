@@ -47,8 +47,7 @@ import com.ibm.g11n.pipeline.resfilter.ResourceType;
  * 
  * @author Yoshito Umaoka
  */
-// @Mojo(name = "download", defaultPhase = LifecyclePhase.PROCESS_RESOURCES)
-public class GPDownload extends GPBase {
+public class GPDownloadTask extends GPBaseTask {
     /**
      * Base directory of the output files. When &lt;bundleSet&gt; configuration
      * does not contain &lt;outputDir&gt; element, then this configuration
@@ -70,12 +69,13 @@ public class GPDownload extends GPBase {
         this.overwrite = overwrite;
     }
 
-    /* (non-Javadoc)
-     * @see org.apache.maven.plugin.Mojo#execute()
+    /**
+     * The execution task - downloading bundle(s) from the globalization
+     * pipeline service instance 
      */
     @Override
     public void execute() throws BuildException {
-        getProject().log("Entering GPDownloadMojo#execute()", Project.MSG_DEBUG);
+        getProject().log("Entering GPDownloadTask#execute()", Project.MSG_DEBUG);
 
         ServiceClient client = getServiceClient();
 
@@ -156,6 +156,18 @@ public class GPDownload extends GPBase {
         }
     }
 
+    /**
+     * This function defines various ways in which the downloadable bundle files can be organized
+     * @param client
+     * @param bf
+     * @param language
+     * @param outBaseDir
+     * @param outContntOpt
+     * @param bundleLayout
+     * @param langIdStyle
+     * @param langMap
+     * @throws BuildException
+     */
     private void exportLanguageResource(ServiceClient client, SourceBundleFile bf, String language,
             File outBaseDir, OutputContentOption outContntOpt, BundleLayout bundleLayout,
             LanguageIdStyle langIdStyle, Map<String, String> langMap)
