@@ -42,7 +42,7 @@ public enum OutputContentOption {
     /**
      * Merges translated resources marked as reviewed into source
      * file contents if possible. If the output resource format
-     * does not support this option, {@link #REVIEWD_WITH_FALLBACK}
+     * does not support this option, {@link #REVIEWED_WITH_FALLBACK}
      * is used.
      */
     MERGE_REVIEWED_TO_SOURCE,
