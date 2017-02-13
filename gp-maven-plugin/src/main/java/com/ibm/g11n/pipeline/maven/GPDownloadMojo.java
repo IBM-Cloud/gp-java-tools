@@ -234,7 +234,7 @@ public class GPDownloadMojo extends GPBaseMojo {
             mergeTranslation(bundle, language, bf.getType(), bf.getFile(), outputFile);
             break;
 
-        case REVIEWD_WITH_FALLBACK:
+        case REVIEWED_WITH_FALLBACK:
             bundle = getBundle(client, bf.getBundleId(), language, true, true);
             exportTranslation(bundle, language, bf.getType(), outputFile);
             break;

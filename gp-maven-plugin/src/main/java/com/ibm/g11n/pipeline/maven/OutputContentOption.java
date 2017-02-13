@@ -52,7 +52,7 @@ public enum OutputContentOption {
      * is not available or, not marked as reviewed, the value from the
      * source bundle is used.
      */
-    REVIEWD_WITH_FALLBACK,
+    REVIEWED_WITH_FALLBACK,
 
     /**
      * Exports only translated resources marked as reviewed.
