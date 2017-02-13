@@ -112,57 +112,52 @@ as below.
 The basic build.xml for ant tasks is shown below:
 ```
 	<?xml version="1.0" encoding="utf-8"?>
-	<project name="gp-ant-task-0.0.1-SNAPSHOT" default="none">
-	    <property name="classpath" value="lib/gp-ant-task-0.0.1-SNAPSHOT-jar-with-dependencies.jar"/>
-	    <property name="gp.credentials" value="src/gpcreds.json"/>
-	    <property name="url" value="https://gp-rest.ng.bluemix.net/translate/rest"/>
-	    <property name="userId" value="b9818b62e1db014edb42bbb8fae176b4"/>
-	    <property name="password" value="Tl7edWJzDdV2DRVE5TgnFTAipQdJZ6i4"/>
-	    <property name="instanceId" value="1b088966b5fed3A7fab9940496db40ac"/>
-	    <property name="download.src" value="src/main/resources"/>
-	    <property name="download.dest" value="target/classes"/>
-	    <property name="overwrite" value="true"/>
-	    <property name="languageIdStyle" value="BCP47_UNDERSCORE"/>
-	    <property name="outputDir" value="target/classes"/>
-	    <property name="type" value="JAVA"/>
-	    <property name="sourceLanguage" value="en"/>
-	    <property name="outputContentOption" value="MERGE_TO_SOURCE"/>
-	    <property name="bundleLayout" value="LANGUAGE_DIR"/>
-	    <property name="outputDir" value="target/classes"/>
-	    <property name="includepattern" value="**/*.properties"/>
-	    <property name="excludepattern" value="**/*_*.properties"/>
-	    <typedef name="bundleSet" classname="com.ibm.g11n.pipeline.ant.BundleSet" classpath = "${classpath}"/>
-		
-		<target name="none"><echoproperties></echoproperties></target>
-	    <target name="gp:upload">
-	        <taskdef name="upload" classname="com.ibm.g11n.pipeline.ant.GPUpload" classpath="${classpath}"/>
-	        <upload credentialsJson= "${gp.credentials}">
-	            <credentials url="${url}" userId="${userId}" password="${password}" instanceId="${instanceId}"/>
-	        </upload>
-	    </target>
-	    
-	    <target name="gp:download">
-	        <taskdef name="download" classname="com.ibm.g11n.pipeline.ant.GPDownload" classpath="${classpath}"/>
-	        <download credentialsJson="${gp.credentials}" outputDir="${downlod.dest}">
-	            <bundleSet  type="${type}" 
-	                        sourceLanguage="${sourceLanguage}" 
-	                        languageIdStyle="${languageIdStyle}" 
-	                        outputContentOption="${outputContentOption}" 
-	                        bundleLayout="${bundleLayout}"
-	                        outputDir="${outputDir}">
-	                <fileset dir="${download.src}" includes="${includepattern}" excludes="${excludepattern}"/>
-	            </bundleSet>
-	        </download>
-	    </target>
-	</project>
+<project name="gp-ant-task-1.1.5-SNAPSHOT" default="none">
+	<taskdef resource="com/ibm/g11n/pipeline/ant/antlib.xml"/>
+	
+    <property name="gp.credentials" value="src/credentials.json"/>
+    <property name="url" value="https://gp-rest.ng.bluemix.net/translate/rest"/>
+    <property name="userId" value="b9818b62e1db014edbd2bbb8fae176b4"/>
+    <property name="password" value="Tl7edWJzDdV2DRVEBTgnFTAipQdJZ6i4"/>
+    <property name="instanceId" value="1b088966b5fed337fab9940496db40ac"/>
+    <property name="download.src" value="src/main/resources"/>
+    <property name="download.dest" value="target/classes"/>
+    <property name="overwrite" value="true"/>
+    <property name="languageIdStyle" value="BCP47_UNDERSCORE"/>
+    <property name="outputDir" value="target/classes"/>
+    <property name="type" value="JAVA"/>
+    <property name="sourceLanguage" value="en"/>
+    <property name="outputContentOption" value="MERGE_TO_SOURCE"/>
+    <property name="bundleLayout" value="LANGUAGE_DIR"/>
+    <property name="includepattern" value="**/*.properties"/>
+    <property name="excludepattern" value="**/*_*.properties"/>
+	<target name="none"><echoproperties></echoproperties></target>
+	
+    <target name="gp:upload">
+        <upload credentialsJson= "${gp.credentials}">
+            <credentials url="${url}" userId="${userId}" password="${password}" instanceId="${instanceId}"/>
+        </upload>
+    </target>
+    
+    <target name="gp:download">
+        <download credentialsJson="${gp.credentials}" outputDir="${outputDir}">
+            <bundleSet     type="${type}" 
+                        sourceLanguage="${sourceLanguage}" 
+                        languageIdStyle="${languageIdStyle}" 
+                        outputContentOption="${outputContentOption}" 
+                        bundleLayout="${bundleLayout}"
+                        outputDir="${download.dest}">
+                <fileset dir="${download.src}" includes="${includepattern}" excludes="${excludepattern}"/>
+            </bundleSet>
+        </download>
+    </target>
+</project>
+
 ```
 
 #### Properties in build.xml
 The default values of properties required for the ant tasks are shown above.
 Here we describe them
-
-
-**classpath** : the location (relative to the project folder) of gp-ant-task jar with dependencies
 
 
 **gp.credentials** : the file pathname which has the credentials in json form
