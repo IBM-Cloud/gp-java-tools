@@ -17,6 +17,7 @@ package com.ibm.g11n.pipeline.ant;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -72,6 +73,16 @@ public abstract class GPBaseTask extends Task{
     public void setCredentialsJson(File credjson) {
         this.credentialsJson = credjson;
     }
+    
+    /**
+     * Source directory of the translation files.(Mandatory)
+     */
+    private File sourceDir;
+    
+    public void setSourceDir(File sourceDir) {
+        this.sourceDir = sourceDir;
+    }
+    
     /**
      * Each &lt;bundleSet&gt; specifies a translation source language, a set of
      * resource bundle files in the source language, resource type and other
@@ -193,11 +204,11 @@ public abstract class GPBaseTask extends Task{
         return bundleFiles;
     }
 
-    protected synchronized List<BundleSet> getBundleSets() {
+    protected synchronized List<BundleSet> getBundleSets() throws FileNotFoundException {
         if (bundleSets.isEmpty()) {
             // default SourceBundleSet
             FileSet fs = new FileSet();
-            fs.setDir(new File("src/main/resources"));
+            fs.setDir(sourceDir);
             fs.setIncludes("**/*.properties");
             // Note: This exclusion pattern might be too aggressive...
             fs.setExcludes("**/*_*.properties");

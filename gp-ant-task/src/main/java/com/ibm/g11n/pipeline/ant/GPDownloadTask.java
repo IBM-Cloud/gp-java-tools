@@ -17,6 +17,7 @@ package com.ibm.g11n.pipeline.ant;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collection;
@@ -85,7 +86,12 @@ public class GPDownloadTask extends GPBaseTask {
         } catch (ServiceException e) {
             throw new BuildException("Failed to get available bundle IDs.", e);
         }
-        List<BundleSet> bundleSets = getBundleSets();
+        List<BundleSet> bundleSets = null;
+        try {
+            bundleSets = getBundleSets();
+        } catch (FileNotFoundException e) {
+            throw new BuildException("Source directory not found/specified!", e);
+        }
         for (BundleSet bundleSet : bundleSets) {
             String srcLang = bundleSet.getSourceLanguage();
             Set<String> tgtLangs = resolveTargetLanguages(bundleSet);
@@ -102,6 +108,9 @@ public class GPDownloadTask extends GPBaseTask {
 
             File outDir = bundleSet.getOutputDir();
             if (outDir == null) {
+                if (outputDir == null) {
+                    throw new BuildException("Output Directory not found/specified!");
+                }
                 outDir = outputDir;
             }
             if (outDir.exists()) {

@@ -18,6 +18,7 @@
       <groupId>org.apache.ant</groupId>
       <artifactId>ant</artifactId>
       <version>1.9.9</version>
+      <scope>provided</scope>
     </dependency>
 	<dependency>
 		<groupId>com.google.code.gson</groupId>
@@ -36,13 +37,24 @@
 	</dependency>	
   </dependencies>
   <build>
-  <resources>
-      <resource>
-        <directory>src/main/java</directory>
-        <includes>
-          <include>**/*.xml</include>
-         </includes>
-     </resource>
-  </resources>
-  </build>
+	<plugins>
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-shade-plugin</artifactId>
+			<version>2.4.2</version>
+			<executions>
+				<execution>
+					<phase>package</phase>
+					<goals>
+						<goal>shade</goal>
+					</goals>
+					<configuration>
+						<shadedArtifactAttached>true</shadedArtifactAttached>
+						<shadedClassifierName>with-dependencies</shadedClassifierName>
+					</configuration>
+				</execution>
+			</executions>
+		</plugin>
+	</plugins>
+	</build>
 </project>

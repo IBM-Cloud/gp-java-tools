@@ -16,6 +16,7 @@
 package com.ibm.g11n.pipeline.ant;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -52,7 +53,12 @@ public class GPUploadTask extends GPBaseTask {
 
         try {
             Set<String> bundleIds = client.getBundleIds();
-            List<BundleSet> bundleSets = getBundleSets();
+            List<BundleSet> bundleSets = null;
+            try {
+                bundleSets = getBundleSets();
+            } catch (FileNotFoundException e) {
+                throw new BuildException("Source directory not found/specified!", e);
+            }
 
             for (BundleSet bundleSet : bundleSets) {
                 String srcLang = bundleSet.getSourceLanguage();
