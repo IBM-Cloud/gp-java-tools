@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="gp-ant-task-1.1.5-SNAPSHOT" default="download-translations" 
+	xmlns:gp="antlib:com.ibm.g11n.pipeline.ant">
+	
+	<taskdef  uri="antlib:com.ibm.g11n.pipeline.ant" resource="com/ibm/g11n/pipeline/ant/antlib.xml">
+		<!-- If the gp-ant-task jar is not added to ANT_HOME/lib folder, 
+			then you may include the classpath for the jar like in the comment below-->
+		<!--<classpath path="lib/gp-ant-task-1.1.5-SNAPSHOT-with-dependencies.jar"/>-->
+	</taskdef>
+	
+	<!--Specify the location of the credentials json file-->
+	<property name="gp.credentials" value="src/credentials.json"/>
+	
+	<!-- basic usecase for uploading resources(this uploads java .properties files by default)-->
+    <target name="upload-resources">
+        <gp:upload credentialsJson= "${gp.credentials}" sourceDir="src/main/resources">
+        </gp:upload>
+    </target>
+	
+	<target name="upload-resources-adv">
+	        <gp:upload credentialsJson= "${gp.credentials}" sourceDir="src/main/resources">
+	        	<targetLanguage lang="fr"/>
+	        	<targetLanguage lang="ko"/>
+	        	<targetLanguage lang="pt-BR"/>
+	        	<targetLanguage lang="es"/>
+	        	<bundleSet  type="JSON">
+	        		<fileset dir="src/main/resources" includes="**/*.json"/>
+	        	</bundleSet>
+	        </gp:upload>
+	    </target>
+    
+    <!-- basic use case for downloading resources (this downloads the java .properties files to the target/classes folder of the project) -->
+    <target name="download-translations">
+        <gp:download credentialsJson="${gp.credentials}" sourceDir="src/main/resources" outputDir="target/classes">
+        </gp:download>
+    </target>
+        	
+    <!-- advanced use case for downloading resources. This downloads java properties files and json properties files and organizes them differently -->
+    <target name="download-translations-adv">
+    	<property name="url" value="https://gp-rest.ng.bluemix.net/translate/rest"/>
+    	<property name="userId" value="b9818b62e1db014edbd2bbb8fae176b4"/>
+  	    <property name="password" value="Tl7edWJzDdV2DRVEBTgnFTAipQdJZ6i4"/>
+    	<property name="instanceId" value="1b088966b5fed337fab9940496db40ac"/>
+    	<property name="upload.src" value="src/main/resources"/>
+    	<property name="download.src" value="src/main/resources"/>
+    	<property name="download.dest" value="target/classes"/>
+    	<property name="overwrite" value="true"/>
+    	<property name="languageIdStyle" value="BCP47_UNDERSCORE"/>
+    	<property name="outputDir" value="target/classes"/>
+    	<property name="type" value="JSON"/>
+    	<property name="sourceLanguage" value="en"/>
+    	<property name="outputContentOption" value="MERGE_TO_SOURCE"/>
+    	<property name="bundleLayout" value="LANGUAGE_DIR"/>
+    	<property name="includepattern" value="**/*.json"/>
+    	<property name="excludepattern" value="**/*_*.json"/>
+    	<gp:download>
+        	<credentials url="${url}" userId="${userId}" password="${password}" instanceId="${instanceId}"/>
+    		<targetLanguage lang="es"/>
+    		<targetLanguage lang="pt-BR"/>
+			<bundleSet  type="${type}" 
+						sourceLanguage="${sourceLanguage}" 
+        	            languageIdStyle="${languageIdStyle}" 
+        	            outputContentOption="${outputContentOption}" 
+        	            bundleLayout="${bundleLayout}"
+        	            outputDir="${download.dest}">
+				<targetLanguage lang="ja"/>
+				<targetLanguage lang="fr"/>
+				<targetLanguage lang="ko"/>
+				<targetLanguage lang="pt-BR"/>
+				<languageMap from="pt-BR" to="pt"/>
+        		<fileset dir="${download.src}" includes="${includepattern}" excludes="${excludepattern}"/>
+       		</bundleSet>
+    		<bundleSet  type="JAVA" 
+    		    		sourceLanguage="en" 
+    		    	    languageIdStyle="BCP47" 
+						outputDir="${download.dest}">
+				<fileset dir="${download.src}" includes="**/*.properties"/>
+			</bundleSet>
+		</gp:download>
+    </target>
+</project>
