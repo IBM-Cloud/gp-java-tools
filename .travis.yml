@@ -1,0 +1,33 @@
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "AQ5hXZbWbr5xwUTCMWt2U9Hzqcmw6uOgok2jE+X8yl1+QxTywHauLOOuqNMc4+qia6yqVFg7yKWzuAkbd4krJ+2iBDhKdm09xGQFoTS+S5lGaEHPzWFgUvpG58sWsxTxzjemQs1RcxOeu4l/myGu3bdBcP+w9V1x8QTBKsfP8jX+ztz3EBSXxTGNbFpW/O5rnoXTosCmoOIwQjATf+fvsuxvoucewimZQrbTVkQBsUp3oByEW+UY66BXgmzNxD4GkZXtD6OSJZm+ggAXgJhQFUuuTlVWhl5rJK1Xtc7awVdtgFQObfdenaa9AA0zbU3tAwVC36FsUg3ouWTuRAPnkgJ9z36UgJf8HPwSsM69rs0lGvhFR52i7tFVw3JirTLsKH3e6iUPYoRlHHwrCAq8uXLzjJCkq1tlBYArUuvz3Yw5vNKjQXwVyJl5aaroNAXuoAoR+f/RlD1pSrKhdwZpeNpg3+WQqALKUcPvmLwzp/wbAvHez7W1uM7TYcNXq/k9LdQoIcmHa3jhYYeI+8vYkdVIQ7VS5upnBgr83/qk+lnD/JOkHyLzZYBfiKOnuv/ElpIMa0yi/xB2awW9LlEJof7hUuZCJsyWRf4y1KZFCYiPxPWgyA+OPFtPXDPHKv95YXqBeF4cqW2zaUXMVYPRj7O9+9kcOvEd62cNhCxm23Q="
+
+language: java
+
+sudo: required
+
+jdk:
+  - oraclejdk7
+  - oraclejdk8
+
+before_install:
+      - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+
+after_success:
+  - mvn clean cobertura:cobertura org.eluder.coveralls:coveralls-maven-plugin:report
+
+addons:
+  coverity_scan:
+    project:
+      name: "IBM-Bluemix/gp-java-tools"
+      description: "Java Tools for Globalization Pipeline"
+    notification_email: srloomis@us.ibm.com
+    build_command_prepend: "mvn clean"
+    build_command:   "mvn -DskipTests=true compile"
+    branch_pattern: coverity_scan
+
+cache:
+  directories:
+  - $HOME/.m2
