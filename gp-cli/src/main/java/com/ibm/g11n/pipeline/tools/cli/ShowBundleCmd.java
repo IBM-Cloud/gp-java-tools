@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2015,2016
+ * Copyright IBM Corp. 2015,2016,2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.ibm.g11n.pipeline.tools.cli;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 import com.beust.jcommander.Parameters;
@@ -36,6 +37,7 @@ final class ShowBundleCmd extends BundleCmd {
     static class BundleDataJson {
         String sourceLanguage;
         Set<String> targetLanguages;
+        List<String> notes;
         boolean readOnly;
         String updatedBy;
         Date updatedAt;
@@ -50,6 +52,7 @@ final class ShowBundleCmd extends BundleCmd {
 
             outJson.sourceLanguage = bundleData.getSourceLanguage();
             outJson.targetLanguages = bundleData.getTargetLanguages();
+            outJson.notes = bundleData.getNotes();
             outJson.readOnly = bundleData.isReadOnly();
             outJson.updatedBy = bundleData.getUpdatedBy();
             outJson.updatedAt = bundleData.getUpdatedAt();
