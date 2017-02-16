@@ -192,5 +192,6 @@
 		<module>gp-res-filter</module>
 		<module>gp-cli</module>
 		<module>gp-maven-plugin</module>
+		<module>gp-ant-task</module>
 	</modules>
 </project>

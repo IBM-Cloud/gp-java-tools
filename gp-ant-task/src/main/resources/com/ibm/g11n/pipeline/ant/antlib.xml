@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<antlib>
+  <taskdef name="download" classname="com.ibm.g11n.pipeline.ant.GPDownloadTask"/>
+  <taskdef name="upload" classname="com.ibm.g11n.pipeline.ant.GPUploadTask"/>
+</antlib>
