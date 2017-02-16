@@ -24,6 +24,7 @@
   * [Specifying Globalization Pipeline Service Credentials](#TOC-Usage-Credentials)
   * [Basic Use Case](#TOC-Usage-Basic)
   * [Advanced Use Cases](#TOC-Usage-Advanced)
+  * [Example](#Example)
 
 
 ---
@@ -102,7 +103,7 @@ as below.
 ```
     <target name="upload-resources">
         <gp:upload credentialsJson= "${gp.credentials}" sourceDir="src/main/resources">
-        	<credentials url="${url}" userId="${userId}" password="${password}" instanceId="${instanceId}"/>
+        	<credentials url="${gp.url}" userId="${gp.userId}" password="${gp.password}" instanceId="${gp.instanceId}"/>
         </gp:upload>
     </target>
 ```
@@ -145,7 +146,7 @@ $ ant upload-resources
 ```
 This target does following tasks:
 
-1. Scans files under `src/main/resources` and locates files with `.properties` extension
+1. Scans files under `src/main/resources` (*sourceDir* attribute) and locates files with `.properties` extension
 (but excluding files with '_'(underscore) character in its file name, such as
 `Messages_fr.properties`).
 
@@ -175,7 +176,7 @@ $ ant download-translations
 ```
 This target does following tasks:
 
-1. Scans files under `src/main/resources` and locates Java property resource bundle
+1. Scans files under `src/main/resources`(*sourceDir* attribute) and locates Java property resource bundle
 files. This is same as in the upload goal.
 
 2. For each Java property resource bundle file, check if look up corresponding
@@ -185,28 +186,29 @@ Globalization Pipeline bundle in the instance of Globalization Pipeline service.
 source bundle file in local system, extracts resource strings from the Globalization
 Pipeline bundle, then replaces resource string values with ones extracted
 from the Globalization Pipeline bundle. The result file is generated under the
-standard build output directory (`target/classes`) with language suffix, such
+standard build output directory (`target/classes`) (*outputDir* attribute)  with language suffix, such
 as `Messages_fr.properties` for French. This operation is done for all available
 target languages in the Globalization Pipeline bundle.
 
 
-#### Properties in build.xml
-The definitions and default values of properties for the ant targets are described below:
+#### Properties/Attributes in build.xml
+The definitions and default values of properties/attributes for the ant targets are described below.
+These properties/attributes can be seen in example/build.xml:
 
 
 **gp.credentials** : the file pathname which has the credentials in json form
 
 
-**url** : url as specified in the credentials of globalization pipeline instance
+**gp.url** : url as specified in the credentials of globalization pipeline instance
 
 
-**userId** : userId as specified in the credentials of globalization pipeline instance
+**gp.userId** : userId as specified in the credentials of globalization pipeline instance
 
 
-**password** : password as specified in the credentials of globalization pipeline instance
+**gp.password** : password as specified in the credentials of globalization pipeline instance
 
 
-**instanceId** : instanceId as specified in the credentials of globalization pipeline instance
+**gp.instanceId** : instanceId as specified in the credentials of globalization pipeline instance
 
 
 **outputDir** : Specifies the output base directory for a `bundleSet`. If not specified at bundleset level, then the one specified at task level is used. This property is specific for `download` task. This is mandatory to be defined at task level if not defined at bundleset level
@@ -215,84 +217,85 @@ The definitions and default values of properties for the ant targets are describ
 **sourceDir** : Specifies the default directory to be scanned when uploading/downloading resource files. This is mandatory for targets involving uploads and is also mandatory for targets involving downloads if the source directory(download.src property) is not defined at bundleset level 
 
 
-**download.src** : the project folder path containing existing resource bundle (this property is used during download task)
+**gp.download.src** : the project folder path containing existing resource bundle (this property is used during download task)
 
 
-**download.dest** : the project folder path where the bundles from gp instance needs to be downloaded to
+**gp.download.dest** : the project folder path where the bundles from gp instance needs to be downloaded to
 
 
-**overwrite** : Specifies a boolean value to control whether **download** task overwrites translated resource bundle files already in the output directory or not. The default value "true"
+**gp.overwrite** : Specifies a boolean value to control whether **download** task overwrites translated resource bundle files already in the output directory or not. The default value "true"
 
 
-**languageIdStyle** : Specifies keywords to configure the rule for composing language ID used for output resource bundle file or path name. Consult [maven plugin readme](https://github.com/IBM-Bluemix/gp-java-tools/blob/master/gp-maven-plugin.md)
+**gp.languageIdStyle** : Specifies keywords to configure the rule for composing language ID used for output resource bundle file or path name. Consult [maven plugin readme](https://github.com/IBM-Bluemix/gp-java-tools/blob/master/gp-maven-plugin.md)
 
 
-**type** : Specifies the resource type. Consult [maven plugin readme](https://github.com/IBM-Bluemix/gp-java-tools/blob/master/gp-maven-plugin.md)
+**gp.type** : Specifies the resource type. Consult [maven plugin readme](https://github.com/IBM-Bluemix/gp-java-tools/blob/master/gp-maven-plugin.md)
 
 
-**sourceLanguage** :Specifies BCP 47 language tag for the language used in the source bundles. The default value is "en" (English).
+**gp.sourceLanguage** :Specifies BCP 47 language tag for the language used in the source bundles. The default value is "en" (English).
 
 
-**outputContentOption** :Specifies keywords to control how download goal generates the contents of translated resource bundle files. Consult [maven plugin readme](https://github.com/IBM-Bluemix/gp-java-tools/blob/master/gp-maven-plugin.md)
+**gp.outputContentOption** :Specifies keywords to control how download goal generates the contents of translated resource bundle files. Consult [maven plugin readme](https://github.com/IBM-Bluemix/gp-java-tools/blob/master/gp-maven-plugin.md)
 
 
-**bundleLayout** :Specifies keywords to control output file name or path in download goal. Consult [maven plugin readme](https://github.com/IBM-Bluemix/gp-java-tools/blob/master/gp-maven-plugin.md)
+**gp.bundleLayout** :Specifies keywords to control output file name or path in download goal. Consult [maven plugin readme](https://github.com/IBM-Bluemix/gp-java-tools/blob/master/gp-maven-plugin.md)
 
 
 
-**includepattern** : Default pattern to recognize files to be downloaded
+**gp.includepattern** : Default pattern to recognize files to be downloaded
 
 
-**excludepattern** : Default pattern to recognize files to be excluded 
+**gp.excludepattern** : Default pattern to recognize files to be excluded 
 
 
 ## <a name="TOC-Usage-Advanced"></a>Advanced Use Cases
 
 The bundleset in build.xml can be modified to support extra features for `download` task. Example
 ```
-	    <!-- advanced use case for downloading resources. This downloads java properties files and json properties files and organizes them differently -->
-    <target name="download-translations-adv">
-    	<property name="url" value="https://gp-rest.ng.bluemix.net/translate/rest"/>
-    	<property name="userId" value="b9818b62e1db014edbd2bbb8fae176b4"/>
-  	    <property name="password" value="Tl7edWJzDdV2DRVEBTgnFTAipQdJZ6i4"/>
-    	<property name="instanceId" value="1b088966b5fed337fab9940496db40ac"/>
-    	<property name="upload.src" value="src/main/resources"/>
-    	<property name="download.src" value="src/main/resources"/>
-    	<property name="download.dest" value="target/classes"/>
-    	<property name="overwrite" value="true"/>
-    	<property name="languageIdStyle" value="BCP47_UNDERSCORE"/>
-    	<property name="outputDir" value="target/classes"/>
-    	<property name="type" value="JSON"/>
-    	<property name="sourceLanguage" value="en"/>
-    	<property name="outputContentOption" value="MERGE_TO_SOURCE"/>
-    	<property name="bundleLayout" value="LANGUAGE_DIR"/>
-    	<property name="includepattern" value="**/*.json"/>
-    	<property name="excludepattern" value="**/*_*.json"/>
-    	<gp:download>
-        	<credentials url="${url}" userId="${userId}" password="${password}" instanceId="${instanceId}"/>
-    		<targetLanguage lang="es"/>
-    		<targetLanguage lang="pt-BR"/>
-			<bundleSet  type="${type}" 
-						sourceLanguage="${sourceLanguage}" 
-        	            languageIdStyle="${languageIdStyle}" 
-        	            outputContentOption="${outputContentOption}" 
-        	            bundleLayout="${bundleLayout}"
-        	            outputDir="${download.dest}">
+	<!-- advanced use case for downloading resources. This downloads java properties files and json properties files and organizes them differently -->
+	<target name="download-translations-adv">
+		<property name="gp.url" value="https://gp-rest.ng.bluemix.net/translate/rest"/>
+		<property name="gp.userId" value="b9818b62e1db014dedb2bbb8eaf176b4"/>
+		<property name="gp.password" value="Tl7edjvzdwd2Rqjpztdbitagfendv6i4"/>
+		<property name="gp.instanceId" value="1b088966b5fed337baf9940496db40ac"/>
+		<property name="gp.download.src" value="resources"/>
+		<property name="gp.download.dest" value="target"/>
+		<property name="gp.overwrite" value="true"/>
+		<property name="gp.languageIdStyle" value="BCP47_UNDERSCORE"/>
+		<property name="gp.outputDir" value="target"/>
+		<property name="gp.type" value="JSON"/>
+		<property name="gp.sourceLanguage" value="en"/>
+		<property name="gp.outputContentOption" value="MERGE_TO_SOURCE"/>
+		<property name="gp.bundleLayout" value="LANGUAGE_DIR"/>
+		<property name="gp.includepattern" value="**/*.json"/>
+		<property name="gp.excludepattern" value="**/*_*.json"/>
+		<gp:download>
+			<credentials url="${gp.url}" userId="${gp.userId}" password="${gp.password}" instanceId="${gp.instanceId}"/>
+			<targetLanguage lang="es"/>
+			<targetLanguage lang="pt-BR"/>
+			<bundleSet
+				type="${gp.type}" 
+				sourceLanguage="${gp.sourceLanguage}" 
+				languageIdStyle="${gp.languageIdStyle}" 
+				outputContentOption="${gp.outputContentOption}" 
+				bundleLayout="${gp.bundleLayout}"
+				outputDir="${gp.download.dest}">
 				<targetLanguage lang="ja"/>
 				<targetLanguage lang="fr"/>
 				<targetLanguage lang="ko"/>
 				<targetLanguage lang="pt-BR"/>
 				<languageMap from="pt-BR" to="pt"/>
-        		<fileset dir="${download.src}" includes="${includepattern}" excludes="${excludepattern}"/>
-       		</bundleSet>
-    		<bundleSet  type="JAVA" 
-    		    		sourceLanguage="en" 
-    		    	    languageIdStyle="BCP47" 
-						outputDir="${download.dest}">
-				<fileset dir="${download.src}" includes="**/*.properties"/>
+				<fileset dir="${gp.download.src}" includes="${gp.includepattern}" excludes="${gp.excludepattern}"/>
+			</bundleSet>
+			<bundleSet
+				type="JAVA" 
+				sourceLanguage="en" 
+				languageIdStyle="BCP47" 
+				outputDir="${gp.download.dest}">
+				<fileset dir="${gp.download.src}" includes="**/*.properties"/>
 			</bundleSet>
 		</gp:download>
-    </target>
+	</target>
 ```
 
 In the above snippet, the following tags are introduced within bundleSet
@@ -304,12 +307,24 @@ In the above snippet, the following tags are introduced within bundleSet
 
 Also that the user can define multiple bundleSet tags within the download task with overridden values for the attributes associated with the bundleset
 
-#### Executing the advanced case
-When the above target is triggered using ant then 
-	1. The translated json files are downloaded from the globalization pipeline instance in the target languages of japanese, french, korean, and portuguese (provided they are present in those languages in the instance. Target languages for which the json doesn't exist are not downloaded).The translated files are organised into directories (based on the target language) because of **LANGUAGE_DIR** setting for bundlelayout
+## <a name="Example"></a>Example
+To demo the functionality of ant tasks, please follow the steps:
+1. In the *example* directory of this repository, open file credentials.json and edit the userId, password, instanceId. These credentials should be of a 
+   valid globalization pipeline instance when no bundlesets present.
+2. Make sure that latest gp-ant-task.jar is present with all dependencies in the example folder.
+3. Verify that the targets upload-resources, download-translations, upload-resources-adv, and download-translations-adv are defined in the example/build.xml file.
+4. Run the target ** ant upload-resources ** with the base directory of *example*
+5. When the **upload-resources** target is run, then the JAVA .properties files nested under `resources` folder (under `com` directory) are uploaded to the 
+   globalization instance in the default target languages as configured for Machine Translation
+6. Now, run the target ** ant download-translations **. This command should download the bundle com.test and place the .properties files in target/com folder 
+   with translated files in the format like test_es.properties, test_ja.properties ....
+7. Now, run the target ** ant upload-resources-adv **. This will upload the source json file (resources/com/test.json) to the globalization pipeline instance. 
+   The desired translations are specified using the targetLanguage tags. 
+8. Now run the target ** ant download-resources-adv **. When the target is triggered using ant then 
+	1. The translated json files are downloaded from the globalization pipeline instance in the target languages of japanese, french, korean, and portuguese (provided they are present in those languages in the instance. Target languages for which the json doesn't exist are not downloaded).The translated files are organized into directories (based on the target language) because of **LANGUAGE_DIR** setting for bundlelayout
 	 For example, if the instance contains json files in all target languages, then after download, following files are created
-	 target/classes/fr/test.json, target/classes/ko/test.json, target/classes/pt/test.json (because pt-BR should be renamed to pt as per **languageMap** property), target/classes/ja/test.json
-	 2. The translated java properties files are downloaded in the targetlanguages of es, and pt-BR (specified at the parent level) as no target languages are specified at bundleset level. So if the com/test.properties is present in the instance (along with the versions in the target languages), then following files are downloaded target/classes/test_es.properties and target/classes/test_pt_BR.properties.
+	 target/fr/test.json, target/ko/test.json, target/pt/test.json (because pt-BR should be renamed to pt as per **languageMap** property), target/ja/test.json
+	 2. The translated java properties files are downloaded in the targetlanguages of es, and pt-BR (specified at the parent level) as no target languages are specified at bundleset level. So if the com/test.properties is present in the instance (along with the versions in the target languages), then following files are downloaded target/test_es.properties and target/test_pt_BR.properties.
 	 
 	 
 The developer can create his/her own targets using the above examples as references.
