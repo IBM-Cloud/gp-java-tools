@@ -309,22 +309,28 @@ Also that the user can define multiple bundleSet tags within the download task w
 
 ## <a name="Example"></a>Example
 To demo the functionality of ant tasks, please follow the steps:
-1. In the *example* directory of this repository, open file credentials.json and edit the userId, password, instanceId. These credentials should be of a 
-   valid globalization pipeline instance when no bundlesets present.
+
+1. In the *example* directory of this repository, open file credentials.json and edit the userId, password, instanceId. These credentials should be of a valid globalization pipeline instance when no bundlesets present.
+
 2. Make sure that latest gp-ant-task.jar is present with all dependencies in the example folder.
+
 3. Verify that the targets upload-resources, download-translations, upload-resources-adv, and download-translations-adv are defined in the example/build.xml file.
-4. Run the target ** ant upload-resources ** with the base directory of *example*
-5. When the **upload-resources** target is run, then the JAVA .properties files nested under `resources` folder (under `com` directory) are uploaded to the 
-   globalization instance in the default target languages as configured for Machine Translation
-6. Now, run the target ** ant download-translations **. This command should download the bundle com.test and place the .properties files in target/com folder 
-   with translated files in the format like test_es.properties, test_ja.properties ....
-7. Now, run the target ** ant upload-resources-adv **. This will upload the source json file (resources/com/test.json) to the globalization pipeline instance. 
-   The desired translations are specified using the targetLanguage tags. 
-8. Now run the target ** ant download-resources-adv **. When the target is triggered using ant then 
+
+4. Run the target **ant upload-resources** with the base directory of *example*
+
+5. When the **upload-resources** target is run, then the JAVA .properties files nested under `resources` folder (under `com` directory) are uploaded to the globalization instance in the default target languages as configured for Machine Translation
+
+6. Now, run the target **ant download-translations**. This command should download the bundle com.test and place the .properties files in target/com folder with translated files in the format like test_es.properties, test_ja.properties ....
+
+7. Now, run the target **ant upload-resources-adv**. This will upload the source json file (resources/com/test.json) to the globalization pipeline instance. The desired translations are specified using the targetLanguage tags. 
+
+8. Now run the target **ant download-translations-adv**. When the target is triggered using ant then 
+
 	1. The translated json files are downloaded from the globalization pipeline instance in the target languages of japanese, french, korean, and portuguese (provided they are present in those languages in the instance. Target languages for which the json doesn't exist are not downloaded).The translated files are organized into directories (based on the target language) because of **LANGUAGE_DIR** setting for bundlelayout
 	 For example, if the instance contains json files in all target languages, then after download, following files are created
 	 target/fr/test.json, target/ko/test.json, target/pt/test.json (because pt-BR should be renamed to pt as per **languageMap** property), target/ja/test.json
-	 2. The translated java properties files are downloaded in the targetlanguages of es, and pt-BR (specified at the parent level) as no target languages are specified at bundleset level. So if the com/test.properties is present in the instance (along with the versions in the target languages), then following files are downloaded target/test_es.properties and target/test_pt_BR.properties.
+	 
+	2. The translated java properties files are downloaded in the targetlanguages of es, and pt-BR (specified at the parent level) as no target languages are specified at bundleset level. So if the com/test.properties is present in the instance (along with the versions in the target languages), then following files are downloaded target/test_es.properties and target/test_pt_BR.properties.
 	 
 	 
 The developer can create his/her own targets using the above examples as references.
