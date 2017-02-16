@@ -64,7 +64,7 @@ public class GPDownloadTask extends GPBaseTask {
      * Whether this goal overwrites existing bundle file in output directory
      * or not. The default value is true.
      */
-    private boolean overwrite;
+    private boolean overwrite = true;
 
     public void setOverwrite(boolean overwrite) {
         this.overwrite = overwrite;
