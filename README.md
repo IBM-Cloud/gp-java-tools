@@ -23,6 +23,12 @@ Java Client Tools for Globalization Pipeline on IBM Bluemix
 This repository contains Java tools for
 [Globalization Pipeline on IBM Bluemix](https://www.ng.bluemix.net/docs/services/GlobalizationPipeline/index.html).
 
+[![Build Status](https://travis-ci.org/IBM-Bluemix/gp-java-tools.svg?branch=master)](https://travis-ci.org/IBM-Bluemix/gp-java-tools)
+[![Coverage Status](https://coveralls.io/repos/github/IBM-Bluemix/gp-java-tools/badge.svg?branch=master)](https://coveralls.io/github/IBM-Bluemix/gp-java-tools?branch=master)
+[![Coverity Scan](https://img.shields.io/coverity/scan/9398.svg)](https://scan.coverity.com/projects/ibm-bluemix-gp-java-tools)
+
+[![gp-java-tools](https://img.shields.io/maven-central/v/com.ibm.g11n.pipeline/gp-java-tools.svg)](#)
+
 
 # Getting started
 
@@ -41,6 +47,9 @@ language in bundle configuration, creating a new user and so on.
 
 To see available commands and options, please see [Globalization Pipeline CLI Tool User Guide](gp-cli.md)
 
+[![gp-cli](https://img.shields.io/maven-central/v/com.ibm.g11n.pipeline/gp-cli.svg)](#)
+
+
 ## Maven Plugin (gp-maven-plugin)
 
 This plugin integrates Globalization Pipeline service with an Apache Maven build.
@@ -49,6 +58,8 @@ Pipeline service instance, and download translated resource bundles.
 
 Please see [Globalization Pipeline Maven Plugin User Guide](gp-maven-plugin.md) for further
 information.
+
+[![gp-maven-plugin](https://img.shields.io/maven-central/v/com.ibm.g11n.pipeline/gp-maven-plugin.svg)](#)
 
 # Community
 
