@@ -139,6 +139,17 @@ are the translation target languages.
 java -jar gp-cli.jar create -b MyNewBundle -l en,fr,de -j mycreds.json
 ```
 
+#### update (update-bundle)
+
+Updates an existing bundle's configuration.
+
+The following example sets French (fr), German (de) and Italian (it)
+as target languages and the translation instruction note "These are
+Java MessageFormat ...".
+```
+java -jar gp-cli.jar update -b MyBundle -l fr,de,it -n "These are Java MessageFormat pattern strings"
+```
+
 #### import
 
 Imports resource data to a bundle. This command takes an input language.
