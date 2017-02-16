@@ -10,6 +10,10 @@
 	<name>Globalization Pipeline Tools</name>
 	<description>Java client tools for Globalization Pipeline on IBM Bluemix.</description>
 
+        <properties>
+          <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        </properties>
+
 	<url>https://github.com/IBM-Bluemix/gp-java-tools</url>
 
 	<licenses>
@@ -94,6 +98,22 @@
 						</execution>
 					</executions>
 				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>cobertura-maven-plugin</artifactId>
+					<version>2.7</version>
+					<configuration>
+						<format>xml</format>
+						<maxmem>256m</maxmem>
+						<!-- aggregated reports for multi-module projects -->
+						<aggregate>true</aggregate>
+						<instrumentation>
+							<excludes>
+								<exclude>com/ibm/g11n/pipeline/maven/HelpMojo.class</exclude>
+							</excludes>
+						</instrumentation>
+					</configuration>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
@@ -172,6 +192,6 @@
 		<module>gp-res-filter</module>
 		<module>gp-cli</module>
 		<module>gp-maven-plugin</module>
-    <module>gp-ant-task</module>
-  </modules>
+		<module>gp-ant-task</module>
+	</modules>
 </project>

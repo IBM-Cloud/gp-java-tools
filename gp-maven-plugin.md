@@ -308,7 +308,7 @@ versions in parallel language directories.
 localized version will use the same file name with source, but placed in a directory
 for the language. `<languageIdStyle>` specifies the style of language ID used for
 file/path name. **BCP47** specifies the BCP 47 language tag. In this case, '-' (Hyphen)
-is used for subtag separtors, such as 'zh-Hans'.
+is used for subtag separators, such as 'zh-Hans'.
 
 With this example, if you have English JSON resource file at `src/main/webapp/res/en/MyStrings.json`,
 French version is generated at `target/MyApp/res/fr/MyStrings.json`, and Simplified Chinese
@@ -495,6 +495,13 @@ resource strings. This option might not be implemented by some format types. In 
 When translated string value is not available, the value in the source language is used.
 * **TRANSLATED_ONLY** Emits only resource strings (with a simple header if applicable).
 When translated string value is not available, do not include the key in the output.
+* **MERGE_REVIEWED_TO_SOURCE** Duplicate the contents of the source bundle and replaces only
+translated resource strings marked as reviewed. This option might not be implemented by some
+format types. In this case, **REVIEWED_WITH_FALLBACK** is used instead.
+* **REVIEWED_WITH_FALLBACK** Emits only resource strings marked as reviewed. When translated string
+value is not available, or not marked as reviewed, the value in the source language is used.
+* **REVIEWED_ONLY** Emits only resource strings marked as reviewed. When translated string value
+is not available, or translated not marked as reviewed, do not include the key in the output.
 
 The default value is **MERGE_TO_SOURCE**.
 
