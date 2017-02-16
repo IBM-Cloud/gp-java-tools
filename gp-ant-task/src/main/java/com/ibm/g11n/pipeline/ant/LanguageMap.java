@@ -31,41 +31,35 @@ public class LanguageMap {
     private String from;
 
     /**
-     * The language name which should be used when downloading files in "from" languange
+     * The language name which should be used when downloading files in "from" language
      */
     private String to;
 
     /**
-     * 
-     * @return from
+     * @return from     A language mapped from
      */
     public String getFrom() {
         return from;
     }
 
     /**
-     * 
-     * @param from
+     * @param from  A language mapped from
      */
     public void setFrom(String from) {
         this.from = from;
     }
 
     /**
-     * 
-     * @return to
+     * @return to   A language mapped to
      */
     public String getTo() {
         return to;
     }
 
     /**
-     * 
-     * @param to
+     * @param to    A language mapped to
      */
     public void setTo(String to) {
         this.to = to;
     }
-
-
 }

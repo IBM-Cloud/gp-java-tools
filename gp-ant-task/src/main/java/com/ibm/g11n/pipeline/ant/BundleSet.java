@@ -202,7 +202,7 @@ public class BundleSet {
 
     /**
      * Supporting code for nested element of targetLanguage as required for custom ant build script
-     * @return
+     * @param tl    A {#@link TargetLanguage}
      */
     public void addTargetLanguage(TargetLanguage tl) {
         targetLangs.add(tl);
