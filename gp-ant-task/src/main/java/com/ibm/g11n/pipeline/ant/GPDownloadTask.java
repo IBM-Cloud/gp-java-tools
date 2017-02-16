@@ -236,15 +236,37 @@ public class GPDownloadTask extends GPBaseTask {
             outputFile.getParentFile().mkdirs();
         }
 
+        Bundle bundle;
+
         switch (outContntOpt) {
         case MERGE_TO_SOURCE:
-            mergeTranslation(client, bf.getBundleId(), language, bf.getType(), bf.getFile(), outputFile);
+            bundle = getBundle(client, bf.getBundleId(), language, false, true);
+            mergeTranslation(bundle, language, bf.getType(), bf.getFile(), outputFile);
             break;
+
         case TRANSLATED_WITH_FALLBACK:
-            exportTranslation(client, bf.getBundleId(), language, bf.getType(), outputFile, true);
+            bundle = getBundle(client, bf.getBundleId(), language, false, true);
+            exportTranslation(bundle, language, bf.getType(), outputFile);
             break;
+
         case TRANSLATED_ONLY:
-            exportTranslation(client, bf.getBundleId(), language, bf.getType(), outputFile, false);
+            bundle = getBundle(client, bf.getBundleId(), language, false, false);
+            exportTranslation(bundle, language, bf.getType(), outputFile);
+            break;
+
+        case MERGE_REVIEWED_TO_SOURCE:
+            bundle = getBundle(client, bf.getBundleId(), language, true, true);
+            mergeTranslation(bundle, language, bf.getType(), bf.getFile(), outputFile);
+            break;
+
+        case REVIEWED_WITH_FALLBACK:
+            bundle = getBundle(client, bf.getBundleId(), language, true, true);
+            exportTranslation(bundle, language, bf.getType(), outputFile);
+            break;
+
+        case REVIEWED_ONLY:
+            bundle = getBundle(client, bf.getBundleId(), language, true, false);
+            exportTranslation(bundle, language, bf.getType(), outputFile);
             break;
         }
     }
@@ -269,63 +291,61 @@ public class GPDownloadTask extends GPBaseTask {
         return languageId;
     }
 
-    private void mergeTranslation(ServiceClient client, String bundleId, String language,
-            ResourceType type, File srcFile, File outFile) throws BuildException {
-        Bundle resBundle = null;
-        try {
-            resBundle = getBundle(client, bundleId, language, false);
-        } catch (ServiceException e) {
-            throw new BuildException("Globalization Pipeline service error", e);
-        }
-
+    private void mergeTranslation(Bundle bundle, String language, ResourceType type,
+            File srcFile, File outFile) throws BuildException {
         ResourceFilter filter = ResourceFilterFactory.get(type);
         try (FileOutputStream fos = new FileOutputStream(outFile);
                 FileInputStream fis = new FileInputStream(srcFile)) {
-            filter.merge(fis, fos, language, resBundle);
+            filter.merge(fis, fos, language, bundle);
         } catch (IOException e) {
             throw new BuildException("I/O error while merging the translated values to "
                     + outFile.getAbsolutePath(), e);
         }
     }
 
-    private void exportTranslation(ServiceClient client, String bundleId, String language,
-            ResourceType type, File outFile, boolean withFallback) throws BuildException {
-        Bundle resBundle = null;
-        try {
-            resBundle = getBundle(client, bundleId, language, withFallback);
-        } catch (ServiceException e) {
-            throw new BuildException("Globalization Pipeline service error", e);
-        }
-
+    private void exportTranslation(Bundle bundle, String language, ResourceType type,
+            File outFile) throws BuildException {
         ResourceFilter filter = ResourceFilterFactory.get(type);
         try (FileOutputStream fos = new FileOutputStream(outFile)) {
-            filter.write(fos, language, resBundle);
+            filter.write(fos, language, bundle);
         } catch (IOException e) {
             throw new BuildException("Failed to write the translated resoruce data to "
                     + outFile.getAbsolutePath(), e);
         }
     }
 
-    private Bundle getBundle(ServiceClient client,
-            String bundleId, String language, boolean withFallback) throws ServiceException {
-        Map<String, ResourceEntryData> resEntries = client.getResourceEntries(bundleId, language);
-        Collection<ResourceString> resStrings = new LinkedList<>();
-        for (Entry<String, ResourceEntryData> entry : resEntries.entrySet()) {
-            String key = entry.getKey();
-            ResourceEntryData data = entry.getValue();
-            String resVal = data.getValue();
-            Integer seqNum = data.getSequenceNumber();
-            if (resVal == null && withFallback) {
-                resVal = data.getSourceValue();
-            }
-            if (resVal != null) {
-                ResourceString resString = new ResourceString(key, resVal);
-                if (seqNum != null) {
-                    resString.setSequenceNumber(seqNum.intValue());
+    private Bundle getBundle(ServiceClient client, String bundleId, String language,
+            boolean reviewedOnly, boolean withFallback) throws BuildException {
+        try {
+            Map<String, ResourceEntryData> resEntries = client.getResourceEntries(bundleId, language);
+            Collection<ResourceString> resStrings = new LinkedList<>();
+            for (Entry<String, ResourceEntryData> entry : resEntries.entrySet()) {
+                String key = entry.getKey();
+                ResourceEntryData data = entry.getValue();
+                String resVal = data.getValue();
+                Integer seqNum = data.getSequenceNumber();
+
+                if (reviewedOnly) {
+                    if (!data.isReviewed()) {
+                        resVal = null;
+                    }
                 }
-                resStrings.add(resString);
+
+                if (resVal == null && withFallback) {
+                    resVal = data.getSourceValue();
+                }
+
+                if (resVal != null) {
+                    ResourceString resString = new ResourceString(key, resVal);
+                    if (seqNum != null) {
+                        resString.setSequenceNumber(seqNum.intValue());
+                    }
+                    resStrings.add(resString);
+                }
             }
+            return new Bundle(resStrings, null);
+        } catch (ServiceException e) {
+            throw new BuildException("Globalization Pipeline service error", e);
         }
-        return new Bundle(resStrings, null);
     }
 }
