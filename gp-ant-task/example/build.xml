@@ -50,7 +50,7 @@
 		<property name="gp.bundleLayout" value="LANGUAGE_DIR"/>
 		<property name="gp.includepattern" value="**/*.json"/>
 		<property name="gp.excludepattern" value="**/*_*.json"/>
-		<gp:download>
+		<gp:download overwrite="${gp.overwrite}">
 			<credentials url="${gp.url}" userId="${gp.userId}" password="${gp.password}" instanceId="${gp.instanceId}"/>
 			<targetLanguage lang="es"/>
 			<targetLanguage lang="pt-BR"/>
