@@ -17,6 +17,7 @@ package com.ibm.g11n.pipeline.tools.cli;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.beust.jcommander.Parameter;
@@ -34,13 +35,20 @@ public class UpdateBundleCmd extends BundleCmd {
 
     @Parameter(
             names = {"-l", "--languages"},
-            description = "List of bundle's target language ID(s) separted by comma.")
+            description = "List of bundle's target language ID(s) separted by comma. "
+                        + "Empty list \"\" will remove all existing target languages.")
     private String languageIdsListStr;
 
     @Parameter(
             names = {"-n", "--note"},
-            description = "Translation instruction note")
+            description = "Translation instruction note. "
+                        + "Empty note \"\" will remove existing instruction note.")
     private String note;
+
+    @Parameter(
+            names = {"-r", "--readOnly"},
+            description = "true to set the bundle read only.")
+    private String readOnlyStr;
 
     @Override
     protected void _execute() {
@@ -49,11 +57,36 @@ public class UpdateBundleCmd extends BundleCmd {
             String[] langs = languageIdsListStr.split(",");
             trgLangs = new HashSet<>(langs.length);
             for (String lang : langs) {
+                if (lang.isEmpty()) {
+                    continue;
+                }
                 trgLangs.add(lang);
             }
         }
 
-        if (languageIdsListStr == null && note == null) {
+        List<String> notes = null;
+        if (note != null) {
+            if (note.isEmpty()) {
+                // Empty note will delete the existing note
+                notes = Collections.emptyList();
+            } else {
+                notes = Collections.singletonList(note);
+            }
+        }
+
+        Boolean readOnly = null;
+        if (readOnlyStr != null) {
+            if (readOnlyStr.equalsIgnoreCase("true")) {
+                readOnly = Boolean.TRUE;
+            } else if (readOnlyStr.equalsIgnoreCase("false")) {
+                readOnly = Boolean.FALSE;
+            } else {
+                System.out.println("Bad -r (--readOnly) argument value: " + readOnlyStr
+                        + ". The command argument will be ignored.");
+            }
+        }
+
+        if (languageIdsListStr == null && notes == null && readOnlyStr == null) {
             System.out.println("Nothing to update.");
             return;
         }
@@ -61,7 +94,8 @@ public class UpdateBundleCmd extends BundleCmd {
         BundleDataChangeSet changes = new BundleDataChangeSet();
         changes
             .setTargetLanguages(trgLangs)
-            .setNotes(Collections.singletonList(note));
+            .setNotes(notes)
+            .setReadOnly(readOnly);
 
         try {
             getClient().updateBundle(bundleId, changes);
@@ -71,10 +105,15 @@ public class UpdateBundleCmd extends BundleCmd {
 
         System.out.println("Bundle " + bundleId + " was successfully updated.");
         if (trgLangs != null) {
-            System.out.println("- Target languages: " + trgLangs);
+            String newTrgLangs = trgLangs.isEmpty() ? "<removed>" : trgLangs.toString();
+            System.out.println("- Target languages: " + newTrgLangs);
         }
-        if (note != null) {
-            System.out.println("- Translation instruction note: " + note);
+        if (notes != null) {
+            String newNote = notes.isEmpty() ? "<removed>" : notes.get(0);
+            System.out.println("- Translation instruction note: " + newNote);
+        }
+        if (readOnly != null) {
+            System.out.println("- Read only: " + readOnly);
         }
     }
 }
