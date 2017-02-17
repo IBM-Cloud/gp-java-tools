@@ -45,7 +45,7 @@ information. For example, exporting a resource bundle hosted by an instance
 of Globalization Pipeline service to a specific file format, adding a new target
 language in bundle configuration, creating a new user and so on.
 
-To see available commands and options, please see [Globalization Pipeline CLI Tool User Guide](gp-cli.md)
+To see available commands and options, please see [Globalization Pipeline CLI Tool User Guide](gp-cli/README.md)
 
 [![gp-cli](https://img.shields.io/maven-central/v/com.ibm.g11n.pipeline/gp-cli.svg)](#)
 
@@ -56,10 +56,24 @@ This plugin integrates Globalization Pipeline service with an Apache Maven build
 With the plugin, you can upload source resource bundles to your own Globalization
 Pipeline service instance, and download translated resource bundles.
 
-Please see [Globalization Pipeline Maven Plugin User Guide](gp-maven-plugin.md) for further
+Please see [Globalization Pipeline Maven Plugin User Guide](gp-maven-plugin/README.md) for further
 information.
 
 [![gp-maven-plugin](https://img.shields.io/maven-central/v/com.ibm.g11n.pipeline/gp-maven-plugin.svg)](#)
+
+
+## Ant Task (gp-ant-task)
+
+This custom task library integrates Globalization Pipeline service with an Apache
+Ant build. With the custom tasks provided in this library, you can upload source resource
+bundles to your own Globalization Pipeline service instance, and download translated
+resource bundles.
+
+Please see [Globalization Pipeline Ant Task User Guide](gp-ant-task/README.md) for further
+information.
+
+[![gp-ant-task](https://img.shields.io/maven-central/v/com.ibm.g11n.pipeline/gp-ant-task.svg)](#)
+
 
 # Community
 
