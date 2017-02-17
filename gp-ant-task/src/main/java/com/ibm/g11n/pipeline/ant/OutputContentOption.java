@@ -21,15 +21,41 @@ package com.ibm.g11n.pipeline.ant;
  * @author Yoshito Umaoka
  */
 public enum OutputContentOption {
-    // Merges translated resources into source file contents
-    // if possible. If the output resource format does not support
-    // this option, TRANSLATION_WITH_FALLBACK is used.
+    /**
+     * Merges translated resources into source file contents
+     * if possible. If the output resource format does not support
+     * this option, {@link #TRANSLATED_WITH_FALLBACK} is used.
+     */
     MERGE_TO_SOURCE,
 
-    // Exports translated resources. If translation is not available
-    // for a resource key, the value from the source bundle is used.
+    /**
+     * Exports translated resources. If translation is not available
+     * for a resource key, the value from the source bundle is used.
+     */
     TRANSLATED_WITH_FALLBACK,
 
-    // Exports only translated resources.
-    TRANSLATED_ONLY
+    /**
+     * Exports only translated resources.
+     */
+    TRANSLATED_ONLY,
+
+    /**
+     * Merges translated resources marked as reviewed into source
+     * file contents if possible. If the output resource format
+     * does not support this option, {@link #REVIEWED_WITH_FALLBACK}
+     * is used.
+     */
+    MERGE_REVIEWED_TO_SOURCE,
+
+    /**
+     * Exports translated resources marked as reviewed. If translation
+     * is not available or, not marked as reviewed, the value from the
+     * source bundle is used.
+     */
+    REVIEWED_WITH_FALLBACK,
+
+    /**
+     * Exports only translated resources marked as reviewed.
+     */
+    REVIEWED_ONLY
 }
