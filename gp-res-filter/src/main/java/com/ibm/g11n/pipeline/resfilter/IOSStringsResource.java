@@ -62,14 +62,14 @@ public class IOSStringsResource implements ResourceFilter {
                 String comment = line.substring(line.indexOf(COMMENT_BEGIN)+2);
                 Boolean commentEndProcessed = false;
                 while (!commentEndProcessed && line != null) {
-                    if (comment.endsWith(COMMENT_END)) {
-                        comment = comment.substring(0, comment.length()-2);
+                    if (comment.trim().endsWith(COMMENT_END)) {
+                        comment = comment.substring(0, comment.lastIndexOf(COMMENT_END));
                         commentEndProcessed = true;
                     }
                     notes.add(comment);
                     if (!commentEndProcessed) {
                         line = reader.readLine();
-                        comment = line.trim();
+                        comment = line;
                     }
                 }
             } else if (commentIsGlobal && line.isEmpty()) {
