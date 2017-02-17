@@ -69,7 +69,7 @@ public class IOSStringsResource implements ResourceFilter {
                     notes.add(comment);
                     if (!commentEndProcessed) {
                         line = reader.readLine();
-                        comment = line;
+                        comment = line.trim();
                     }
                 }
             } else if (commentIsGlobal && line.isEmpty()) {
