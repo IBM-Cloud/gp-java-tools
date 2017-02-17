@@ -537,7 +537,7 @@ pom.xml
                         <include>**/*.properties</include>
                     </includes>
                     <excludes>
-                        <exclude>**/*_*.properties<exclude>
+                        <exclude>**/*_*.properties</exclude>
                     </excludes>
                 </sourceFiles>
                 <type>JAVA</type>
