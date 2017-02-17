@@ -3,6 +3,10 @@
 /* Error string used 
     for unknown error types. */
 "ErrorString_1" = "An unknown error occurred - translated.";
+/* Brown Bear has multiple comments */
+/* Mama Bear */
+/* Papa Bear */
+/* Baby Bear */
 "bear 3" = "Brown Bear - translated";
 "frog 4" = "Red-eyed Tree Frog - translated";
 "owl 5" = "Great Horned Owl - translated";
