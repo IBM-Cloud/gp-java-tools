@@ -119,7 +119,7 @@ public abstract class GPBaseTask extends Task{
      *   <li>A set of fields specified by &lt;credentials&gt; in pom.xml</li>
      * </ol>
      * @return An instance of ServiceClient.
-     * @throws BuildExcpetion on a failure.
+     * @throws BuildException on a failure.
      */
     protected ServiceClient getServiceClient() {
         if (gpClient == null) {

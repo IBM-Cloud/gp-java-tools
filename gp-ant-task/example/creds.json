@@ -1,0 +1,6 @@
+{
+  "url": "<Globalization Pipeline service URL>",
+  "userId": "<User ID>",
+  "password": "<Password>",
+  "instanceId": "<Globalization Pipeline service instance ID>"
+}
