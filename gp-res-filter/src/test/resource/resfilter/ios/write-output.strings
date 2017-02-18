@@ -1,5 +1,11 @@
+/* This is the first global comment... */
+/* This is the 2nd global comment... */
+
+/* The sea otter swims a lot. */
 "otter 1" = "Sea Otter";
 "crow 2" = "American Crow";
+/* This is a brilliant comment
+  about California Sea Lions! */
 "sealion 3" = "California Sea Lion";
 "numbers" = "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4
      5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2

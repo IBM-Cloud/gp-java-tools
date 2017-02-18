@@ -50,6 +50,10 @@ public final class Bundle {
         addResourceString(new ResourceString(key, value, sequenceNumber));
     }
 
+    public void addResourceString(String key, String value, int sequenceNumber, List<String> notes) {
+        addResourceString(new ResourceString(key, value, sequenceNumber, notes));
+    }
+
     public void addNote(String note) {
         if (notes == null) {
             notes = new ArrayList<>();
