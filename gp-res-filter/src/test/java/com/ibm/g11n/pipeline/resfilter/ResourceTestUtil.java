@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2016
+ * Copyright IBM Corp. 2016, 2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 /**
- * @author farhan
+ * @author farhan, JCEmmons
  *
  */
 public class ResourceTestUtil {
@@ -72,6 +72,34 @@ public class ResourceTestUtil {
                         + "> contains extra lines. \nExpected content: \n" + fileToString(expected)
                         + "\nActual content:\n" + fileToString(actual) + "\n");
             }
+        }
+
+        return true;
+    }
+    /**
+     * Returns true if the two files match exactly up to the number of lines
+     * specified in n 
+     */
+    public static boolean compareFilesUpTo(File expected, File actual, int n) throws FileNotFoundException, IOException {
+        try (BufferedReader expectedRdr = new BufferedReader(new FileReader(expected));
+                BufferedReader actualRdr = new BufferedReader(new FileReader(actual))) {
+
+            String expectedLine;
+            String actualLine;
+            int lineNum = 0;
+            while ((expectedLine = expectedRdr.readLine()) != null && lineNum < n) {
+                actualLine = actualRdr.readLine();
+
+                lineNum++;
+
+                if (!expectedLine.equals(actualLine)) {
+                    fail("Comparing file <" + actual.getAbsolutePath() + "> with file <" + expected.getAbsolutePath()
+                            + "> ..." + "\nContent differs on line " + lineNum + "\nExpected content: \n"
+                            + fileToString(expected) + "\nActual content:\n" + fileToString(actual) + "\n");
+                    return false;
+                }
+            }
+
         }
 
         return true;
