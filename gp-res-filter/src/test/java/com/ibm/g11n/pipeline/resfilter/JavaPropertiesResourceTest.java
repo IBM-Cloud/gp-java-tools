@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2016
+ * Copyright IBM Corp. 2016, 2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import com.ibm.g11n.pipeline.resfilter.JavaPropertiesResource.PropDef.PropSepara
 import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 
 /**
- * @author Farhan Arshad
+ * @author Farhan Arshad, JCEmmons
  *
  */
 public class JavaPropertiesResourceTest {
@@ -95,14 +95,28 @@ public class JavaPropertiesResourceTest {
         WRITE_BUNDLE = new Bundle();
         WRITE_BUNDLE.addResourceString("language", "Not-English", 2);
         WRITE_BUNDLE.addResourceString("key with spaces",
-                "Translated - This is the value that could be looked up with the key \"key with spaces\".", 4);
+                "Translated - This is the value that could be looked up with the key \"key with spaces\".", 4,
+                Arrays.asList(" Add spaces to the key"));
         WRITE_BUNDLE.addResourceString("website", "http://en.wikipedia.org/translated", 1);
-        WRITE_BUNDLE.addResourceString("message", "Translated - Welcome to Wikipedia!", 3);
-        WRITE_BUNDLE.addResourceString("tab", "Translated - pick up the\u00A5 tab", 5);
-        WRITE_BUNDLE.addResourceString("leadSPs", "leading SPs", 6);
-        WRITE_BUNDLE.addResourceString("leadTabs", "localized leading tabs", 7);
-        WRITE_BUNDLE.addResourceString("trailSPs", "localized trailing SPs  ", 8);
-        WRITE_BUNDLE.addResourceString("withTabs", "localized Tab1\tTab2\tTab3\t", 9);
+        WRITE_BUNDLE.addResourceString("message", "Translated - Welcome to Wikipedia!", 3,
+                Arrays.asList(" The backslash below tells the application to continue reading",
+                        " the value onto the next line."));
+        WRITE_BUNDLE.addResourceString("tab", "Translated - pick up the\u00A5 tab", 5,
+                Arrays.asList(" Unicode"));
+        WRITE_BUNDLE.addResourceString("leadSPs", "leading SPs", 6,
+                Arrays.asList(" leading SPs"));
+        WRITE_BUNDLE.addResourceString("leadTabs", "localized leading tabs", 7,
+                Arrays.asList(" leading tabs"));
+        WRITE_BUNDLE.addResourceString("trailSPs", "localized trailing SPs  ", 8,
+                Arrays.asList(" trailing SPs"));
+        WRITE_BUNDLE.addResourceString("withTabs", "localized Tab1\tTab2\tTab3\t", 9,
+                Arrays.asList(" tabs"));
+        WRITE_BUNDLE.addNotes(Arrays.asList(
+                " You are reading the \".properties\" entry.",
+                " The exclamation mark can also mark text as comments.",
+                " The key and element characters #, !, =, and : are written with",
+                " a preceding backslash to ensure that they are properly loaded."));
+
     }
 
     private static LinkedList<PropDef> EXPECTED_PROP_DEF_LIST;
@@ -145,7 +159,8 @@ public class JavaPropertiesResourceTest {
             os.flush();
             // Properties.store() puts a comment with date and time
             // on the first line, ignore it by passing n=1 to compareFiles()
-            assertTrue(ResourceTestUtil.compareFiles(EXPECTED_WRITE_FILE, tempFile, 1));
+            assertTrue(ResourceTestUtil.compareFilesUpTo(EXPECTED_WRITE_FILE, tempFile, 5));
+            assertTrue(ResourceTestUtil.compareFiles(EXPECTED_WRITE_FILE, tempFile, 6));
         }
     }
 

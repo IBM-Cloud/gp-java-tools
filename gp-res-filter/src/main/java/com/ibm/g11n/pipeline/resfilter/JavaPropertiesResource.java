@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2015, 2016
+ * Copyright IBM Corp. 2015, 2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.io.PrintWriter;
 import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,7 +42,7 @@ import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 /**
  * Java properties resource filter implementation.
  *
- * @author Yoshito Umaoka
+ * @author Yoshito Umaoka, JCEmmons
  */
 public class JavaPropertiesResource implements ResourceFilter {
 
@@ -161,11 +162,19 @@ public class JavaPropertiesResource implements ResourceFilter {
         TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
         sortedResources.addAll(resource.getResourceStrings());
 
-        LinkedProperties props = new LinkedProperties();
-        for (ResourceString res : sortedResources) {
-            props.setProperty(res.getKey(), res.getValue());
+        PrintWriter pw = new PrintWriter(new OutputStreamWriter(outStream, PROPS_ENC));
+        for (String note : resource.getNotes()) {
+            pw.println("#"+note);
         }
-        props.store(outStream, null);
+        if (!resource.getNotes().isEmpty()) {
+            pw.println();
+        }
+        pw.println("#"+new Date().toString());
+        for (ResourceString res : sortedResources) {
+            PropDef pd = new PropDef(res.getKey(),res.getValue(),PropDef.PropSeparator.EQUAL,res.getNotes());
+            pd.print(pw, language);
+        }
+        pw.close();
     }
 
     private static final String PROPS_ENC = "ISO-8859-1";
@@ -174,7 +183,8 @@ public class JavaPropertiesResource implements ResourceFilter {
         private String key;
         private String value;
         private PropSeparator separator;
-
+        private List<String> notes;
+        
         public enum PropSeparator {
             EQUAL('='), COLON(':'), SPACE(' ');
 
@@ -192,10 +202,23 @@ public class JavaPropertiesResource implements ResourceFilter {
         private static final String INDENT = "    ";
         private static final int COLMAX = 80;
 
+        public PropDef(String key, String value, PropSeparator separator, List<String> notes) {
+            this.key = key;
+            this.value = value;
+            this.separator = separator;
+            if (notes != null) {
+                this.notes = new ArrayList<>();
+                this.notes.addAll(notes);
+            } else {
+                this.notes = null;
+            }
+        };
+        
         public PropDef(String key, String value, PropSeparator separator) {
             this.key = key;
             this.value = value;
             this.separator = separator;
+            this.notes = null;
         };
 
         public static PropDef parseLine(String line) {
@@ -239,7 +262,7 @@ public class JavaPropertiesResource implements ResourceFilter {
             String key = unescapePropKey(line.substring(0, sepIdx).trim());
             String value = unescapePropValue(stripLeadingSpaces(line.substring(sepIdx + 1)));
 
-            PropDef pl = new PropDef(key, value, sep);
+            PropDef pl = new PropDef(key, value, sep, null);
             return pl;
         }
 
@@ -255,11 +278,22 @@ public class JavaPropertiesResource implements ResourceFilter {
             return separator;
         }
 
+        public List<String> getNotes() {
+            return Collections.unmodifiableList(notes);
+        }
+        
         public void print(PrintWriter pw, String language) throws IOException {
             StringBuilder buf = new StringBuilder(100);
             int len = key.length() + value.length()
                     + 3; /* 3 - length of separator plus two SPs */
 
+            // Write out any notes (comments) associated with this resource.
+            if (notes != null) {
+                for (String note : notes) {
+                    pw.println("#" + note);
+                }
+            }
+            
             if (len <= COLMAX) {
                 // Print this property in a single line
                 if (separator.getCharacter() == PropSeparator.SPACE.getCharacter()) {
@@ -290,7 +324,9 @@ public class JavaPropertiesResource implements ResourceFilter {
                 buf.append(INDENT);
             }
 
-            BreakIterator brk = BreakIterator.getWordInstance(Locale.forLanguageTag(language));
+            
+            BreakIterator brk = BreakIterator.getWordInstance(
+                    language == null ? Locale.getDefault() : Locale.forLanguageTag(language));
             brk.setText(value);
 
             int start = 0;
@@ -355,6 +391,8 @@ public class JavaPropertiesResource implements ResourceFilter {
             builder.append(getValue());
             builder.append(" Sep=");
             builder.append("'" + getSeparator().getCharacter() + "'");
+            builder.append(" Notes=");
+            builder.append(getNotes().toString());
             return builder.toString();
         }
     }
@@ -611,7 +649,7 @@ public class JavaPropertiesResource implements ResourceFilter {
                     }
                     // Write the property key and value
                     String key = pd.getKey();
-                    PropDef modPd = new PropDef(key, resMap.get(key), pd.getSeparator());
+                    PropDef modPd = new PropDef(key, resMap.get(key), pd.getSeparator(), null);
                     modPd.print(outWriter, language);
                 } else {
                     if (orgLines.isEmpty()) {
