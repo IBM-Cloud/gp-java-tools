@@ -13,7 +13,6 @@
 	<name>gp-maven-plugin Basic Download Fail Test</name>
 	<build>
 		<plugins>
-			<!-- START SNIPPET: start -->
 			<plugin>
 				<groupId>@project.groupId@</groupId>
 				<artifactId>@project.artifactId@</artifactId>
@@ -39,6 +38,5 @@
 				</configuration>
 			</plugin>
 		</plugins>
-    	<!-- END SNIPPET: start -->
  	</build>
 </project>
