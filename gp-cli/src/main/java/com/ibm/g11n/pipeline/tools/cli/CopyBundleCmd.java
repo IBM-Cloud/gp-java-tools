@@ -101,6 +101,7 @@ final class CopyBundleCmd extends BundleCmd {
         Set<String> targetLangs = srcBundleInfo.getTargetLanguages();
 
         NewBundleData newBundleData = new NewBundleData(srcLang);
+        newBundleData.setNotes(srcBundleInfo.getNotes());
         newBundleData.setMetadata(srcBundleInfo.getMetadata());
         newBundleData.setPartner(srcBundleInfo.getPartner());
         newBundleData.setNoTranslationPattern(srcBundleInfo.getNoTranslationPattern());
@@ -173,6 +174,7 @@ final class CopyBundleCmd extends BundleCmd {
                 continue;
             }
             NewResourceEntryData newResData = new NewResourceEntryData(resdata.getValue());
+            newResData.setNotes(resdata.getNotes());
             newResData.setSequenceNumber(resdata.getSequenceNumber());
             newResData.setMetadata(resdata.getMetadata());
             if (resdata.isReviewed()) {
