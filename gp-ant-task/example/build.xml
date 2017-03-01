@@ -1,80 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
-<project name="Example Project" default="upload-resources" 
+<project name="Example Project"
 		xmlns:gp="antlib:com.ibm.g11n.pipeline.ant">
 
-	<taskdef  uri="antlib:com.ibm.g11n.pipeline.ant" resource="com/ibm/g11n/pipeline/ant/antlib.xml">
-	<!-- If the gp-ant-task jar is not added to ANT_HOME/lib folder, 
-	then you may include the classpath for the jar like shown below-->
-	<classpath path="gp-ant-task.jar"/>
+	<taskdef uri="antlib:com.ibm.g11n.pipeline.ant"
+		resource="com/ibm/g11n/pipeline/ant/antlib.xml">
+		<!-- Specify the actual path to the Globalization Pipeline Ant Task jar -->
+		<classpath path="gp-ant-task.jar"/>
 	</taskdef>
 
-	<!--Specify the location of the credentials json file-->
-	<property name="gp.credentials" value="credentials.json"/>
+	<!-- Specify the location of the credentials json file -->
+	<property name="gp.credentials.json" value="creds.json"/>
 
-	<!-- basic usecase for uploading resources(this uploads java .properties files by default)-->
-	<target name="upload-resources">
-		<gp:upload credentialsJson= "${gp.credentials}" sourceDir="resources"/>
+	<!--
+		Basic use case - uploading translation source resources.
+		This target uploads the contents of java property files without
+		language suffix under 'src' directory.
+	-->
+	<target name="upload-props">
+		<gp:upload credentialsJson= "${gp.credentials.json}" sourceDir="src"/>
 	</target>
 
-	<target name="upload-resources-adv">
-		<gp:upload credentialsJson= "${gp.credentials}" sourceDir="resources">
-			<targetLanguage lang="fr"/>
-			<targetLanguage lang="ko"/>
-			<targetLanguage lang="pt-BR"/>
+	<!--
+		Basic use case for downloading translated resources.
+		This target downloads translated java property files corresponding
+		to translation source files available under 'src' directory.
+		The output files are created under 'bin' directory with
+		language suffix in property file names.
+	-->
+	<target name="download-props">
+		<gp:download credentialsJson="${gp.credentials.json}" sourceDir="src" outputDir="bin"/>
+	</target>
+
+	<!--
+		Advanced upload use case example.
+		This target uploads the contents of source JSON files in
+		'en' directory under 'web' directory.
+		If the corresponding bundle in Globalization Pipeline service instance
+		is not available, this target creates a new one and set Spanish(es),
+		French(fr), Brazilian Portuguese(pt-BR) and Simplified Chinese(zh-Hans)
+		as translation target languages.
+	-->
+	<target name="upload-json">
+		<gp:upload credentialsJson= "${gp.credentials.json}">
 			<targetLanguage lang="es"/>
-			<bundleSet  type="JSON">
-				<fileset dir="resources" includes="**/*.json"/>
+			<targetLanguage lang="fr"/>
+			<targetLanguage lang="pt-BR"/>
+			<targetLanguage lang="zh-Hans"/>
+			<bundleSet type="JSON">
+				<fileset dir="web" includes="**/en/*.json"/>
 			</bundleSet>
 		</gp:upload>
 	</target>
 
-	<!-- basic use case for downloading resources (this downloads the java .properties files to the target/classes folder of the project) -->
-	<target name="download-translations">
-		<gp:download credentialsJson="${gp.credentials}" sourceDir="resources" outputDir="target"/>
-	</target>
+	<!--
+		Advanced download use case example.
+		This target downloads translated JSON files corresponding to
+		translation source files available in 'en' directory under
+		'web' directory.
 
-	<!-- advanced use case for downloading resources. This downloads java properties files and json properties files and organizes them differently -->
-	<target name="download-translations-adv">
-		<property name="gp.url" value="https://gp-rest.ng.bluemix.net/translate/rest"/>
-		<property name="gp.userId" value="b9818b62e1db014dedb2bbb8eaf176b4"/>
-		<property name="gp.password" value="Tl7edjvzdwd2Rqjpztdbitagfendv6i4"/>
-		<property name="gp.instanceId" value="1b088966b5fed337baf9940496db40ac"/>
-		<property name="gp.download.src" value="resources"/>
-		<property name="gp.download.dest" value="target"/>
-		<property name="gp.overwrite" value="true"/>
-		<property name="gp.languageIdStyle" value="BCP47_UNDERSCORE"/>
-		<property name="gp.outputDir" value="target"/>
-		<property name="gp.type" value="JSON"/>
-		<property name="gp.sourceLanguage" value="en"/>
-		<property name="gp.outputContentOption" value="MERGE_TO_SOURCE"/>
-		<property name="gp.bundleLayout" value="LANGUAGE_DIR"/>
-		<property name="gp.includepattern" value="**/*.json"/>
-		<property name="gp.excludepattern" value="**/*_*.json"/>
-		<gp:download overwrite="${gp.overwrite}">
-			<credentials url="${gp.url}" userId="${gp.userId}" password="${gp.password}" instanceId="${gp.instanceId}"/>
-			<targetLanguage lang="es"/>
-			<targetLanguage lang="pt-BR"/>
-			<bundleSet
-				type="${gp.type}" 
-				sourceLanguage="${gp.sourceLanguage}" 
-				languageIdStyle="${gp.languageIdStyle}" 
-				outputContentOption="${gp.outputContentOption}" 
-				bundleLayout="${gp.bundleLayout}"
-				outputDir="${gp.download.dest}">
-				<targetLanguage lang="ja"/>
-				<targetLanguage lang="fr"/>
-				<targetLanguage lang="ko"/>
-				<targetLanguage lang="pt-BR"/>
+		The output files are created under language directory (LANGUAGE_DIR)
+		at the same level with 'en' under 'dist/web' directory.
+
+		The languge code for Brazilian Portugues(pt-BR) will be changed
+		to 'pt', the language code for Simplified Chinese(zh-Hans) is
+		changed to 'zh-CN'. Language code separator (<languageMap> elements).
+
+		The output language directory name will use '-' as the subtag
+		separator (languageIdStyle="BPC47").
+
+		When the source file path is web/nls/en/colors.json, the output files are:
+			- dist/web/nls/es/colors.json
+			- dist/web/nls/fr/colors.json
+			- dist/web/nls/pt/colors.json
+			- dist/web/nls/zh-CN/colors.json
+	-->
+	<target name="download-json">
+		<gp:download credentialsJson="${gp.credentials.json}">
+			<bundleSet type="JSON"
+					languageIdStyle="BCP47"
+					bundleLayout="LANGUAGE_DIR"
+					outputDir="dist/web"> 
+				<fileset dir="web" includes="**/en/*.json"/>
 				<languageMap from="pt-BR" to="pt"/>
-				<fileset dir="${gp.download.src}" includes="${gp.includepattern}" excludes="${gp.excludepattern}"/>
-			</bundleSet>
-			<bundleSet
-				type="JAVA" 
-				sourceLanguage="en" 
-				languageIdStyle="BCP47" 
-				outputDir="${gp.download.dest}">
-				<fileset dir="${gp.download.src}" includes="**/*.properties"/>
+				<languageMap from="zh-Hans" to="zh-CN"/>
 			</bundleSet>
 		</gp:download>
+	</target>
+
+	<target name="clean">
+		<delete dir="bin"/>
+		<delete dir="dist"/>
 	</target>
 </project>

@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2015,2016
+ * Copyright IBM Corp. 2015,2016,2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ public class GPCmd {
         jc.addCommand("list-bundle", new ListBundlesCmd(), "list");
         jc.addCommand("show-bundle", new ShowBundleCmd(), "show");
         jc.addCommand("create-bundle", new CreateBundleCmd(), "create");
+        jc.addCommand("update-bundle", new UpdateBundleCmd(), "update");
         jc.addCommand("delete-bundle", new DeleteBundleCmd(), "delete");
         jc.addCommand("copy-bundle", new CopyBundleCmd(), "copy");
         jc.addCommand("copy-all-bundles", new CopyAllBundlesCmd());

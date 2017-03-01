@@ -4,6 +4,10 @@
     for unknown error types. */
 "ErrorString_1" = "An unknown error 
     occurred.";
+/* Brown Bear has multiple comments */
+/* Mama Bear */
+/* Papa Bear */
+/* Baby Bear */
 "bear 3" = "Brown Bear";
 "frog 4" = "Red-eyed Tree Frog";
 "owl 5"="Great Horned Owl";

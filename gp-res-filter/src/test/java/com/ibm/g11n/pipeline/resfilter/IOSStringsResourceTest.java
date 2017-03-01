@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -49,12 +50,19 @@ public class IOSStringsResourceTest {
     private static final File EXPECTED_MERGE_2_FILE = new File("src/test/resource/resfilter/ios/merge-output-2.strings");
 
     private static final Collection<ResourceString> EXPECTED_INPUT_RES_LIST;
+    private static final List<String> EXPECTED_GLOBAL_NOTES = Arrays.asList(
+            " This is the first global comment... ",
+            " This is the 2nd global comment... ");
 
     static {
-        List<ResourceString> lst = new LinkedList<>();
-        lst.add(new ResourceString("Insert Element", "Insert Element", 1));
-        lst.add(new ResourceString("ErrorString_1", "An unknown error occurred.", 2));
-        lst.add(new ResourceString("bear 3", "Brown Bear", 3));
+        List<ResourceString> lst = new ArrayList<>();
+        lst.add(new ResourceString("Insert Element", "Insert Element", 1,
+                Arrays.asList(" Insert = Element menu item ")));
+        lst.add(new ResourceString("ErrorString_1", "An unknown error occurred.", 2,
+                Arrays.asList(" Error string used ","    for unknown error types. ")));
+        lst.add(new ResourceString("bear 3", "Brown Bear", 3,
+        Arrays.asList(" Brown Bear has multiple comments "," Mama Bear ",
+                " Papa Bear "," Baby Bear ")));
         lst.add(new ResourceString("frog 4", "Red-eyed Tree Frog", 4));
         lst.add(new ResourceString("owl 5", "Great Horned Owl", 5));
 
@@ -66,8 +74,11 @@ public class IOSStringsResourceTest {
 
     static {
         WRITE_BUNDLE = new Bundle();
-        WRITE_BUNDLE.addResourceString("sealion 3", "California Sea Lion", 3);
-        WRITE_BUNDLE.addResourceString("otter 1", "Sea Otter", 1);
+        WRITE_BUNDLE.addResourceString("sealion 3", "California Sea Lion", 3,
+                Arrays.asList(" This is a brilliant comment","  about California Sea Lions! "));
+
+        WRITE_BUNDLE.addResourceString("otter 1", "Sea Otter", 1,
+                Arrays.asList(" The sea otter swims a lot. "));
         WRITE_BUNDLE.addResourceString("crow 2", "American Crow", 2);
         WRITE_BUNDLE.addResourceString("Lorem",
                 "Loremのイプサムは、単に印刷と植字業界のダミーテキストです。 Loremのイプサムは、未知のプリンターがタイプのゲラを取り、"
@@ -81,6 +92,10 @@ public class IOSStringsResourceTest {
                         + "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 "
                         + "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 ",
                 4);
+        WRITE_BUNDLE.addNote(" This is the first global comment... ");
+        WRITE_BUNDLE.addNote(" This is the 2nd global comment... ");
+
+;
     }
 
     private static Bundle MERGE_BUNDLE;
@@ -123,6 +138,8 @@ public class IOSStringsResourceTest {
             List<ResourceString> resStrList = new ArrayList<>(bundle.getResourceStrings());
             Collections.sort(resStrList, new ResourceStringComparator());
             assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, resStrList);
+            List<String> globalNotes = bundle.getNotes();
+            assertEquals("Global comments did not match.", EXPECTED_GLOBAL_NOTES, globalNotes);
         }
     }
 

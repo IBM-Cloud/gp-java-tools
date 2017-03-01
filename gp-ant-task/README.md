@@ -100,6 +100,7 @@ your Globalization Pipeline service instance.
 
 In your Ant build.xml, specify the JSON file in **credentialsJson** attribute in
 each Globalization Pipeline Ant task as below:
+
 ```xml
     <target name="upload-resources">
         <gp:upload credentialsJson= "gpcreds.json" sourceDir="src/main/resources"/>
@@ -142,7 +143,7 @@ used by Globalization Pipeline service instance.
     <target name="upload-resources">
       <gp:upload credentialsJson= "${gp.credentials}" sourceDir="src/main/resources" />
   </target>
-
+  
   <!-- Downloads translated .properties files from the Globalization Pipeline services intances to outputDir -->
   <target name="download-translations">
     <gp:download credentialsJson="${gp.credentials}" sourceDir="src/main/resources" outputDir="target/classes" />
@@ -285,6 +286,7 @@ of `gp:download` are described below:
 |dir| Specifies the source directory location for the bundleSet to be used as reference | Yes |
 |includes| Specifies the file pattern that needs to be included for reference when downloading|No, but recommended|
 |excludes| Specifies the file pattern that needs to be excluded for reference|No|
+
 ### <a name="TOC-Usage-Example"></a>Example
 
 `example` directory contains some usage examples. Please read the

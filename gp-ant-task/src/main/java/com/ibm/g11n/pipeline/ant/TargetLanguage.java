@@ -33,22 +33,25 @@ public class TargetLanguage {
     /**
      * a target language
      */
-    String lang;
+    private String lang;
 
+    /**
+     * Constructor.
+     */
     public TargetLanguage() {
     }
 
     /**
-     * 
-     * @param targetLang
+     * Sets a target language.
+     * @param targetLang    A target language
      */
     public void setLang(String targetLang) { 
         this.lang = targetLang; 
     }
 
     /**
-     * 
-     * @return targetLang
+     * Returns a target language
+     * @return targetLang   A target language
      */
     public String getLang() { 
         return lang; 

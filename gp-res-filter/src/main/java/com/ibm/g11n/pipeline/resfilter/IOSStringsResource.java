@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2015, 2016
+ * Copyright IBM Corp. 2015, 2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.BreakIterator;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -40,7 +42,9 @@ import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 public class IOSStringsResource implements ResourceFilter {
 
     private static final String CHAR_SET = "UTF-8";
-
+    private static final String COMMENT_BEGIN = "/*";
+    private static final String COMMENT_END = "*/";
+    
     @Override
     public Bundle parse(InputStream in) throws IOException {
         Bundle bundle = new Bundle();
@@ -48,13 +52,32 @@ public class IOSStringsResource implements ResourceFilter {
 
         int sqNum = 0;
         String line;
+        List<String> notes = new ArrayList<>();
+        Boolean commentIsGlobal = true;
         while ((line = reader.readLine()) != null) {
-            if (line.matches("^\\s*/\\*.*")) {// begins with /*
+            if (line.trim().startsWith(COMMENT_BEGIN)) {// begins with /*
                 // skip comments until line ends with */
                 // the short circuit expression evaluation handles both
                 // single and multi lined comments
-                while (!line.matches(".*\\*/$") && (line = reader.readLine()) != null)
-                    ;
+                String comment = line.substring(line.indexOf(COMMENT_BEGIN)+2);
+                Boolean commentEndProcessed = false;
+                while (!commentEndProcessed && line != null) {
+                    if (comment.trim().endsWith(COMMENT_END)) {
+                        comment = comment.substring(0, comment.lastIndexOf(COMMENT_END));
+                        commentEndProcessed = true;
+                    }
+                    notes.add(comment);
+                    if (!commentEndProcessed) {
+                        line = reader.readLine();
+                        comment = line;
+                    }
+                }
+            } else if (commentIsGlobal && line.isEmpty()) {
+                commentIsGlobal = false;
+                if (!notes.isEmpty()) {
+                    bundle.addNotes(notes);
+                    notes.clear();
+                }
             } else if (line.matches("^\\s*\".*")) { // begins with quote char
                 // new entry
                 StringBuilder entry = new StringBuilder(128);
@@ -69,7 +92,12 @@ public class IOSStringsResource implements ResourceFilter {
                 String key = parts[0].substring(parts[0].indexOf('"') + 1).trim();
                 String value = parts[1].substring(0, parts[1].lastIndexOf('"')).trim();
 
-                bundle.addResourceString(key, value, ++sqNum);
+                if (notes.isEmpty()) {
+                    bundle.addResourceString(key, value, ++sqNum);
+                } else {
+                    bundle.addResourceString(key, value, ++sqNum, notes);
+                    notes.clear();
+                }
             }
         }
 
@@ -83,9 +111,19 @@ public class IOSStringsResource implements ResourceFilter {
 
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, CHAR_SET));
 
+        boolean globalNotesWritten = false;
+        for (String globalNote : bundle.getNotes()) {
+            writer.write(COMMENT_BEGIN+globalNote+COMMENT_END);
+            writer.newLine();
+            globalNotesWritten = true;
+        }
+        if (globalNotesWritten) {
+            writer.newLine();
+        }
+
         for (ResourceString res : sortedResources) {
             // empties the buffer
-            writer.write(formatEntry(res.getKey(), res.getValue(), language));
+            writer.write(formatEntry(res.getKey(), res.getValue(), language, res.getNotes()));
         }
 
         writer.flush();
@@ -95,9 +133,9 @@ public class IOSStringsResource implements ResourceFilter {
     public void merge(InputStream base, OutputStream os, String language, Bundle bundle)
             throws IOException {
         // put res data into a map for easier searching
-        Map<String, String> resMap = new HashMap<String, String>(bundle.getResourceStrings().size() * 4 / 3 + 1);
+        Map<String, ResourceString> resMap = new HashMap<String, ResourceString>(bundle.getResourceStrings().size() * 4 / 3 + 1);
         for (ResourceString res : bundle.getResourceStrings()) {
-            resMap.put(res.getKey(), res.getValue());
+            resMap.put(res.getKey(), res);
         }
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(base, CHAR_SET));
@@ -130,7 +168,7 @@ public class IOSStringsResource implements ResourceFilter {
                     continue;
                 }
 
-                writer.write(formatEntry(key, resMap.get(key), language));
+                writer.write(formatEntry(key, resMap.get(key).getValue(), language, resMap.get(key).getNotes()));
             } else {
                 writer.write(line);
                 writer.newLine();
@@ -140,11 +178,23 @@ public class IOSStringsResource implements ResourceFilter {
         writer.flush();
     }
 
-    static String formatEntry(String key, String value, String localeStr) {
+    static String formatEntry(String key, String value, String localeStr, List<String> notes) {
         int maxLineLen = 80;
 
         StringBuilder output = new StringBuilder();
+        StringBuilder comments = new StringBuilder();
 
+        if (notes.size() > 0) {
+            comments.append(COMMENT_BEGIN);
+            Iterator<String> i = notes.iterator();
+            while (i.hasNext())  {
+                comments.append(i.next());
+                if (i.hasNext()) {
+                    comments.append("\n");
+                }
+            }
+            comments.append(COMMENT_END).append("\n");
+        }
         // construct the entire entry, i.e.
         // "key" = "value";
         StringBuilder entryBuilder = new StringBuilder(key.length() + value.length() + 7);
@@ -154,7 +204,7 @@ public class IOSStringsResource implements ResourceFilter {
         int entryLen = entry.length();
         // entry fits on one line
         if (maxLineLen > entryLen) {
-            return entry;
+            return comments.toString()+entry;
         }
 
         // entry needs to be split onto multiple lines
@@ -197,7 +247,7 @@ public class IOSStringsResource implements ResourceFilter {
             }
         }
 
-        return output.toString();
+        return comments.toString()+output.toString();
     }
 
 }
