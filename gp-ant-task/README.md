@@ -23,7 +23,8 @@
   * [Tasks](#TOC-Usage-Tasks)
   * [Specifying Globalization Pipeline Service Credentials](#TOC-Usage-Credentials)
   * [Basic Use Case](#TOC-Usage-Basic)
-  * [Example](#Example)
+  * [Task Parameters in build.xml](#TOC-Parameters)
+  * [Example](#TOC-Usage-Example)
 
 ---
 ## <a name="TOC-Overview"></a>Overview
@@ -51,7 +52,7 @@ from the official [release page](https://github.com/IBM-Bluemix/gp-java-tools/re
 2. Set up name space for the Globalization Pipleline tasks and task definition
 as below in your Ant build.xml as below.
 
-```
+```xml
 <?xml version="1.0" encoding="utf-8" ?>
 <project name="My Project" xmlns:gp="antlib:com.ibm.g11n.pipeline.ant">
 
@@ -99,7 +100,8 @@ your Globalization Pipeline service instance.
 
 In your Ant build.xml, specify the JSON file in **credentialsJson** attribute in
 each Globalization Pipeline Ant task as below:
-```
+
+```xml
     <target name="upload-resources">
         <gp:upload credentialsJson= "gpcreds.json" sourceDir="src/main/resources"/>
     </target>
@@ -110,7 +112,7 @@ each Globalization Pipeline Ant task as below:
 The service credentials can be also embedded in `build.xml` using `<credentials>` tag
 as below.
 
-```
+```xml
   <target name="upload-resources">
     <gp:upload sourceDir="src/main/resources">
       <credentials url="https://gp-rest.ng.bluemix.net/translate/rest"
@@ -126,7 +128,7 @@ used by Globalization Pipeline service instance.
 ### <a name="TOC-Usage-Basic"></a>Basic Use Case
 
 **build.xml** below illustrates basic use cases of the tant tasks:
-```
+```xml
 <?xml version="1.0" encoding="utf-8"?>
 <project name="Example Project" xmlns:gp="antlib:com.ibm.g11n.pipeline.ant">
 
@@ -141,8 +143,8 @@ used by Globalization Pipeline service instance.
     <target name="upload-resources">
       <gp:upload credentialsJson= "${gp.credentials}" sourceDir="src/main/resources" />
   </target>
-
-  <!-- Downloads translated .properties files from the Globalization Pipeline services intances to outputDir ->
+  
+  <!-- Downloads translated .properties files from the Globalization Pipeline services intances to outputDir -->
   <target name="download-translations">
     <gp:download credentialsJson="${gp.credentials}" sourceDir="src/main/resources" outputDir="target/classes" />
   </target>
@@ -191,6 +193,99 @@ standard build output directory (`target/classes`) (*outputDir* attribute)  with
 as `Messages_fr.properties` for French. This operation is done for all available
 target languages in the Globalization Pipeline bundle.
 
+### <a name="TOC-Parameters"></a>Task Parameters
+
+### upload task
+The upload task should be configured using `gp:upload` task definition. The attributes and nested elements
+of `gp:upload` are described below:
+
+|Attribute|Description|Required|
+| ------- | --------- | ------ |
+|credentialsJson| Specifies the pathname of Globalization Pipeline Instance credentials file|Yes (if the nested element `credentials` is not used)|
+|sourceDir| Specifies the pathname for the location where all the relevant bundle files to be uploaded are kept|Yes|
+##### Nested elements for upload task
+##### credentials (optional, can be omitted if credentialsJson is specified.)
+|Attribute|Description|Required|
+| ------- | --------- | ------ |
+|url| Specifies the instance url | Yes |
+|userId| Specifies the userId | Yes |
+|password| Specifies the password | Yes |
+|instanceId| Specifies the instance id | Yes |
+
+##### targetLanguage (optional)
+|Attribute|Description|Required|
+| ------- | --------- | ------ |
+|lang     | Specifies the MT language which the uploaded file should be translated to| Yes |
+
+##### bundleSet (optional)
+|Attribute|Description|Required|
+| ------- | --------- | ------ |
+|  type    | Type of resource bundle file (JSON, JAVA (properties), AMDJS, ...)| No, defaults to JAVA properties file format|
+|sourceLanguage|Specifies BCP 47 language tag for the language used in the source bundles|No, The default language of `en` is used|
+|languageIdStyle| Specifies one of following keywords to configure the rule for composing language ID used for output resource bundle file or path name.<ul><li><b>BCP47_UNDERSCORE</b> BCP 47 language tag, replacing '-' with '_'. For example, zh_Hant for Traditional Chinese.</li><li><b>BCP47</b> BCP 47 language tag itself. For example, zh-Hant for Traditional Chinese </li></ul>| No, The default value is BCP47_UNDERSCORE|
+
+##### targetLanguage (nested within bundleSet, optional too)
+|Attribute|Description|Required|
+| ------- | --------- | ------ |
+|lang     | Specifies the MT language which the uploaded file should be translated to| Yes |
+
+##### fileset (nested within bundleSet, required if bundleSet is used)
+|Attribute|Description|Required|
+| ------- | --------- | ------ |
+|dir| Specifies the source directory location for the bundleSet to be used as reference | Yes |
+|includes| Specifies the file pattern that needs to be included for uploading|No, but recommended|
+|excludes| Specifies the file pattern that needs to be excluded for uploading|No|
+
+### download task
+The download task should be configured using `gp:download` task definition. The attributes and nested elements
+of `gp:download` are described below:
+
+|Attribute|Description|Required|
+| ------- | --------- | ------ |
+|credentialsJson| Specifies the pathname of Globalization Pipeline Instance credentials file|Yes (if the nested element `credentials` is not used)|
+|sourceDir| Specifies the pathname for the location where all the relevant bundle files to be referenced for download are kept|Yes|
+|outputDir| Specifies the pathname for the location where all the resource bundle files should be downloaded|No, defaults to `target/classes` directory|
+##### Nested elements for download task
+##### credentials (optional, can be omitted if credentialsJson is specified.)
+|Attribute|Description|Required|
+| ------- | --------- | ------ |
+|url| Specifies the instance url | Yes |
+|userId| Specifies the userId | Yes |
+|password| Specifies the password | Yes |
+|instanceId| Specifies the instance id | Yes |
+
+##### targetLanguage (optional)
+|Attribute|Description|Required|
+| ------- | --------- | ------ |
+|lang     | Specifies the MT language which the uploaded file should be translated to| Yes |
+
+##### bundleSet (optional)
+|Attribute|Description|Required|
+| ------- | --------- | ------ |
+|  type    | Type of resource bundle file (JSON, JAVA (properties), AMDJS, ...)| No, defaults to JAVA properties file format|
+|sourceLanguage|Specifies BCP 47 language tag for the language used in the source bundles|No, The default language of `en` is used|
+|languageIdStyle| Specifies one of following keywords to configure the rule for composing language ID used for output resource bundle file or path name.<ul><li><b>BCP47_UNDERSCORE</b> BCP 47 language tag, replacing '-' with '_'. For example, zh_Hant for Traditional Chinese.</li><li><b>BCP47</b> BCP 47 language tag itself. For example, zh-Hant for Traditional Chinese </li></ul>| No, The default value is BCP47_UNDERSCORE|
+|outputDir|Specifies the output base directory for this bundleSet|No, If not specified, `outputDir` specified at `gp:download` level is used|
+|outputContentOption|Specifies one of following keywords to control how download goal generates the contents of translated resource bundle files.<ul><li><b>MERGE_TO_SOURCE</b> Duplicates the contents of the source bundle and replaces only translated resource strings. This option might not be implemented by some format types. In this case, TRANSLATED_WITH_FALLBACK is used instead.</li><li><b>TRANSLATED_WITH_FALLBACK</b> Emits only resource strings (with a simple header if applicable). When translated string value is not available, the value in the source language is used.</li><li><b>TRANSLATED_ONLY</b> Emits only resource strings (with a simple header if applicable). When translated string value is not available, do not include the key in the output.</li><li><b>MERGE_REVIEWED_TO_SOURCE</b> Duplicate the contents of the source bundle and replaces only translated resource strings marked as reviewed. This option might not be implemented by some format types. In this case, REVIEWED_WITH_FALLBACK is used instead.</li><li><b>REVIEWED_WITH_FALLBACK</b> Emits only resource strings marked as reviewed. When translated string value is not available, or not marked as reviewed, the value in the source language is used.</li><li><b>REVIEWED_ONLY</b> Emits only resource strings marked as reviewed. When translated string value is not available, or translated not marked as reviewed, do not include the key in the output.|No, The default value is MERGE_TO_SOURCE.|
+|bundleLayout|Specifies one of following keywords to control output file name or path in download goal.<ul><li><b>LANGUAGE_SUFFIX</b> In the same directory with the source bundle file, with extra language suffix. For example, if the source bundle file is com/ibm/g11n/MyMessages.properties, then the French version will be com/ibm/g11n/MyMessages_fr.properties.</li><li><b>LANGUAGE_SUBDIR</b> In a language sub-directory under the directory where the source bundle file is placed. For example, if the source bundle file is res/MyMessages.json, then the French version will be res/fr/MyMessages.json.</li><li><b>LANGUAGE_DIR</b> In a language directory at the same level with the source bundle file. For example, if the source bundle file is com/ibm/g11n/en/MyMessages.properties, then the French version will be com/ibm/g11n/fr/MyMessages.properties.</li>|No, The default value is LANGUAGE_SUFFIX.|
+
+##### targetLanguage (nested within bundleSet, optional too)
+|Attribute|Description|Required|
+| ------- | --------- | ------ |
+|lang     | Specifies the MT language which the uploaded file should be translated to| Yes |
+
+##### languageMap (nested within bundleSet, optional)
+|Attribute|Description|Required|
+| ------- | --------- | ------ |
+|from     | Specifies the language code used in bundle files/directories which needs to be downloaded | Yes|
+|to       | Specifies the language code to be used when naming the downloaded file/directory|Yes|
+
+##### fileset (nested within bundleSet, required if bundleSet is used)
+|Attribute|Description|Required|
+| ------- | --------- | ------ |
+|dir| Specifies the source directory location for the bundleSet to be used as reference | Yes |
+|includes| Specifies the file pattern that needs to be included for reference when downloading|No, but recommended|
+|excludes| Specifies the file pattern that needs to be excluded for reference|No|
 
 ### <a name="TOC-Usage-Example"></a>Example
 
