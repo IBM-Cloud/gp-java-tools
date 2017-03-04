@@ -4,7 +4,7 @@ To test existing features of gp-maven-plugin, integration tests have been added.
 to test more advanced cases/new features as per need by following the template of existing integration tests. To execute the integration tests:
 
 * Make sure that following profile is added to the **src/pom.xml**
-```
+```xml
 <profile>
   <id>run-its</id>
     <activation>
@@ -93,7 +93,7 @@ The **_t4-basic-download-success_** test contains following files:
 
 > This file contains the properties for the integration test invoker.
 ```
-invoker.name=basic upload test which should succeed
+invoker.name=basic download test which should succeed
 invoker.goals=${project.groupId}:${project.artifactId}:${project.version}:upload integration-test
 invoker.debug=false
 invoker.buildResult=success
@@ -110,7 +110,7 @@ invoker.mavenOpts=-Dgp.credentials.json=credentials.json
 ####pom.xml
 
 > This file specifies the plugin execution goals as desired.
-```
+```xml
   <plugin>
     <groupId>@project.groupId@</groupId>
     <artifactId>@project.artifactId@</artifactId>
