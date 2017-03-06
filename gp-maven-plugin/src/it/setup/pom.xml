@@ -6,25 +6,18 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>@project.groupId@</groupId>
-	<artifactId>t1-basic-upload-test-fail</artifactId>
+	<artifactId>setup</artifactId>
 	<version>@project.version@</version>
 	<packaging>jar</packaging>
 	
-	<name>gp-maven-plugin Basic Upload Fail Test</name>
+	<name>simple setup</name>
 	<build>
 		<plugins>
 			<!-- START SNIPPET: start -->
 			<plugin>
 				<groupId>@project.groupId@</groupId>
 				<artifactId>@project.artifactId@</artifactId>
-				<version>@project.version@</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>upload</goal>
-						</goals>
-					</execution>
-				</executions>
+				<version>@pom.version@</version>
 			</plugin>
 		</plugins>
     	<!-- END SNIPPET: start -->
