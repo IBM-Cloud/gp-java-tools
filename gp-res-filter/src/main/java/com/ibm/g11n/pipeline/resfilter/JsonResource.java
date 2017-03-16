@@ -22,12 +22,12 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeSet;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
@@ -46,35 +46,62 @@ public class JsonResource implements ResourceFilter {
             JsonElement root = new JsonParser().parse(reader);
             if (!root.isJsonObject()) {
                 throw new IllegalResourceFormatException("The root JSON element is not an JSON object.");
-            }
-            int sequenceNum = 0;
-            for (Map.Entry<String, JsonElement> entry : root.getAsJsonObject().entrySet()) {
-                String key = entry.getKey();
-                JsonElement value = entry.getValue();
-                if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
-                    throw new IllegalResourceFormatException("The value of JSON element " + key + " is not a string.");
-                }
-                sequenceNum++;
-                bundle.addResourceString(key, value.getAsString(), sequenceNum);
-            }
+            }            
+            addBundleStrings(root.getAsJsonObject(),"", bundle, 0);
         } catch (JsonParseException e) {
             throw new IllegalResourceFormatException("Failed to parse the specified JSON contents.", e);
         }
         return bundle;
     }
 
+    private int addBundleStrings( JsonObject obj, String keyPrefix, Bundle bundle, int sequenceNum) {
+        for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+            String key = entry.getKey();
+            JsonElement value = entry.getValue();
+            if (value.isJsonObject()) {
+                String newKeyPrefix;
+                if (keyPrefix.isEmpty()) {
+                    newKeyPrefix = "$." + key + ".";
+                } else {
+                    newKeyPrefix = keyPrefix + key + ".";
+                }
+                sequenceNum = addBundleStrings(value.getAsJsonObject(),newKeyPrefix,bundle,sequenceNum);
+            } else if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
+                throw new IllegalResourceFormatException("The value of JSON element " + key + " is not a string.");
+            } else {
+                sequenceNum++;
+                bundle.addResourceString(keyPrefix+key, value.getAsString(), sequenceNum);
+            }
+        }
+        return sequenceNum;
+    }
     @Override
     public void write(OutputStream outStream, String language, Bundle bundle) throws IOException {
         // extracts key value pairs in original sequence order
         TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
         sortedResources.addAll(bundle.getResourceStrings());
-        LinkedHashMap<String, String> kvmap = new LinkedHashMap<>(sortedResources.size());
+        JsonObject output = new JsonObject();
         for (ResourceString res : sortedResources) {
-            kvmap.put(res.getKey(), res.getValue());
+            String key = res.getKey();
+            if (key.startsWith("$.")) {
+                key = key.substring(2);
+            }
+            String[] keyPieces = key.split("\\.");
+            JsonObject current = output;
+            for (int i = 0 ; i < keyPieces.length ; i++ ) {
+                if ( i + 1 < keyPieces.length ) { // There is structure under this key piece
+                    if (!current.has(keyPieces[i])) {
+                        current.add(keyPieces[i],new JsonObject());
+                    }
+                    current = current.getAsJsonObject(keyPieces[i]);
+                } else { // This is the leaf node
+                    current.addProperty(keyPieces[i], res.getValue());
+                }
+            }
         }
         try (OutputStreamWriter writer = new OutputStreamWriter(new BufferedOutputStream(outStream),
                 StandardCharsets.UTF_8)) {
-            new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(kvmap, writer);
+            new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(output, writer);
         }
     }
 

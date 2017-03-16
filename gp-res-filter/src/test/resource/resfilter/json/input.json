@@ -1,5 +1,11 @@
 {
-    "bear 1": "Brown Bear",
+    "bears": {
+    	"grizzly": {
+    	    "brown": "Brown Bear",
+    	    "black": "Black Bear"
+    	},
+        "white": "Polar Bear"
+    },
     "frog 2": "Red-eyed Tree Frog",
     "owl 3": "Great Horned Owl"
 }
