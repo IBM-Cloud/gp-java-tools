@@ -1,11 +1,55 @@
 {
   "bears": {
     "grizzly": {
-      "brown": "Brown Bear - translated",
-      "black": "Black Bear - translated"
+      "brown": "Brown Bear - XL",
+      "black": "Black Bear - XL"
     },
-    "white": "Polar Bear - translated"
+    "white": "Polar Bear - XL"
   },
-  "frog 2": "Red-eyed Tree Frog - translated",
-  "owl 3": "Great Horned Owl - translated"
+  "countries": [
+    {
+      "Europe": [
+        "Germany - XL",
+        "Italy - XL",
+        "France - XL",
+        "Spain - XL"
+      ]
+    },
+    {
+      "Asia": [
+        "China - XL",
+        "Japan - XL",
+        "India - XL"
+      ]
+    },
+    {
+      "Americas": {
+        "S. America": [
+          "Brazil - XL",
+          "Venezuela - XL"
+        ],
+        "N. America": [
+          "United States [USA] - XL",
+          "Canada - XL",
+          "Mexico - XL"
+        ]
+      }
+    },
+    {
+      "Africa": [
+        "Egypt - XL",
+        "Somalia - XL",
+        "S. Africa - XL"
+      ]
+    }
+  ],
+  "colors": [
+    "red - XL",
+    "blue - XL",
+    "yellow - XL",
+    "orange - XL"
+  ],
+  "frog['2']": "Red-eyed Tree Frog - XL",
+  "owl[3]": "Great Horned Owl - XL",
+  "some_text": "Just a plain old string - XL"
 }
