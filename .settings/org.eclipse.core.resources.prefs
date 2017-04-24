@@ -1,4 +1,6 @@
 eclipse.preferences.version=1
 encoding//gp-res-filter/src/test/resource/resfilter/ios/write-output.strings=UTF-8
+encoding//gp-res-filter/src/test/resource/resfilter/xliff/input.xlf=UTF-8
+encoding//gp-res-filter/src/test/resource/resfilter/xliff/write-output.xlf=UTF-8
 encoding//src/main/java=UTF-8
 encoding//src/main/resources=UTF-8

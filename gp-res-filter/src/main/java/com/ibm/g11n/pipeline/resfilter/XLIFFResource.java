@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2015, 2016
+ * Copyright IBM Corp. 2015, 2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -45,16 +44,25 @@ import org.xml.sax.SAXException;
 public class XLIFFResource implements ResourceFilter {
 
     private static final String VERSION_STRING = "version";
-    private static final String VERSION_NUMBER_STRING = "2.0";
-    private static final String UNIT_STRING = "unit";
+    private static final String VERSION_NUMBER_STRING = "1.2";
+    private static final String XMLNS_STRING = "xmlns:xsi";
+    private static final String XMLNS_VALUE_STRING = "http://www.w3.org/2001/XMLSchema-instance";
+    private static final String XSI_STRING = "xsi:schemaLocation";
+    private static final String XSI_VALUE_STRING = "urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-strict.xsd";
+
+    private static final String UNIT_STRING = "trans-unit";
     private static final String ID_STRING = "id";
     private static final String SOURCE_STRING = "source";
+    private static final String TARGET_STRING = "target";
     private static final String XLIFF_STRING = "xliff";
     private static final String FILE_STRING = "file";
     private static final String ORIGINAL_STRING = "original";
-    private static final String GLOBAL_STRING = "global";
+    private static final String GLOBAL_STRING = "g11n-pipeline";
     private static final String DATATYPE_STRING = "datatype";
     private static final String PLAINTEXT_STRING = "plaintext";
+    private static final String SOURCE_LANGUAGE_STRING = "source-language";
+    private static final String ENGLISH = "en";
+    private static final String TARGET_LANGUAGE_STRING = "target-language";
     private static final String BODY_STRING = "body";
 
     @Override
@@ -106,13 +114,6 @@ public class XLIFFResource implements ResourceFilter {
     }
 
     @Override
-    @Deprecated
-    /*
-     * This method is incomplete and may not produce a valid XLIFF output file.
-     *
-     * (non-Javadoc)
-     * @see com.ibm.g11n.pipeline.resfilter.ResourceFilter#write(java.io.OutputStream, java.lang.String, java.util.Collection)
-     */
     public void write(OutputStream os, String language, Bundle bundle) {
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = null;
@@ -127,18 +128,15 @@ public class XLIFFResource implements ResourceFilter {
         Document doc = docBuilder.newDocument();
 
         Element xliff = doc.createElement(XLIFF_STRING);
-        Attr attr = doc.createAttribute(VERSION_STRING);
-        attr.setValue(VERSION_NUMBER_STRING);
-
-        Attr lang = doc.createAttribute("srcLang");
-        lang.setValue(language);
-
-        xliff.setAttributeNode(attr);
-        xliff.setAttributeNode(lang);
+        xliff.setAttribute(VERSION_STRING, VERSION_NUMBER_STRING);
+        xliff.setAttribute(XMLNS_STRING,XMLNS_VALUE_STRING);
+        xliff.setAttribute(XSI_STRING,XSI_VALUE_STRING);
 
         Element file = doc.createElement(FILE_STRING);
         file.setAttribute(ORIGINAL_STRING, GLOBAL_STRING);
         file.setAttribute(DATATYPE_STRING, PLAINTEXT_STRING);
+        file.setAttribute(SOURCE_LANGUAGE_STRING, ENGLISH);
+        file.setAttribute(TARGET_LANGUAGE_STRING, language);
         xliff.appendChild(file);
 
         Element body = doc.createElement(BODY_STRING);
@@ -148,8 +146,11 @@ public class XLIFFResource implements ResourceFilter {
             Element trans_unit = doc.createElement(UNIT_STRING);
             trans_unit.setAttribute(ID_STRING, key.getKey());
             Element source = doc.createElement(SOURCE_STRING);
-            source.setTextContent(key.getValue());
+            source.setTextContent(key.getSrcValue());
             trans_unit.appendChild(source);
+            Element target = doc.createElement(TARGET_STRING);
+            target.setTextContent(key.getValue());
+            trans_unit.appendChild(target);
             body.appendChild(trans_unit);
         }
 

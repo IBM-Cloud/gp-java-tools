@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2016
+ * Copyright IBM Corp. 2016, 2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,10 @@ public final class Bundle {
 
     public void addResourceString(String key, String value, int sequenceNumber, List<String> notes) {
         addResourceString(new ResourceString(key, value, sequenceNumber, notes));
+    }
+
+    public void addResourceString(String key, String value, int sequenceNumber, List<String> notes, String srcValue) {
+        addResourceString(new ResourceString(key, value, sequenceNumber, notes, srcValue));
     }
 
     public void addNote(String note) {

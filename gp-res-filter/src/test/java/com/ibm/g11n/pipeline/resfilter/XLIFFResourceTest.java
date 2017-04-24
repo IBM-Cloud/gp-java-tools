@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2016
+ * Copyright IBM Corp. 2016, 2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package com.ibm.g11n.pipeline.resfilter;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -23,19 +24,23 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 
 import org.junit.Test;
 
+import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
+
 /**
- * @author farhan
+ * @author farhan, jcemmons
  *
  */
 public class XLIFFResourceTest {
     private static final File INPUT_FILE = new File("src/test/resource/resfilter/xliff/input.xlf");
 
-    @SuppressWarnings("unused")
     private static final File EXPECTED_WRITE_FILE = new File("src/test/resource/resfilter/xliff/write-output.xlf");
 
     private static final File MERGE_INPUT_1_FILE = new File("src/test/resource/resfilter/xliff/merge-input-1.xlf");
@@ -45,15 +50,17 @@ public class XLIFFResourceTest {
     @SuppressWarnings("unused")
     private static final File EXPECTED_MERGE_2_FILE = new File("src/test/resource/resfilter/xliff/merge-output-2.xlf");
 
-    private static Collection<ResourceString> EXPECTED_INPUT_RES_LIST;
+    private static final Collection<ResourceString> EXPECTED_INPUT_RES_LIST;
 
     static {
-        EXPECTED_INPUT_RES_LIST = new LinkedList<ResourceString>();
+        List<ResourceString> lst = new LinkedList<>();
 
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString("1", "Quetzal", 1));
-        EXPECTED_INPUT_RES_LIST
-                .add(new ResourceString("3", "An application to manipulate and process XLIFF documents", 2));
-        EXPECTED_INPUT_RES_LIST.add(new ResourceString("4", "XLIFF Data Manager", 3));
+        lst.add(new ResourceString("1", "Quetzal", 1));
+        lst.add(new ResourceString("3", "An application to manipulate and process XLIFF documents", 2));
+        lst.add(new ResourceString("4", "XLIFF Data Manager", 3));
+        Collections.sort(lst, new ResourceStringComparator());
+        EXPECTED_INPUT_RES_LIST = lst;
+
     }
 
     private static Bundle WRITE_BUNDLE;
@@ -61,9 +68,9 @@ public class XLIFFResourceTest {
     static {
         WRITE_BUNDLE = new Bundle();
 
-        WRITE_BUNDLE.addResourceString("3", "An application to manipulate and process XLIFF documents", 2);
-        WRITE_BUNDLE.addResourceString("4", "XLIFF Data Manager", 3);
-        WRITE_BUNDLE.addResourceString("1", "Quetzal", 1);
+        WRITE_BUNDLE.addResourceString("3", "XLIFF 文書を編集、または処理 するアプリケーションです。", 2, null, "An application to manipulate and process XLIFF documents");
+        WRITE_BUNDLE.addResourceString("4", "XLIFF データ・マネージャ", 3, null, "XLIFF Data Manager");
+        WRITE_BUNDLE.addResourceString("1", "Quetzal", 1, null, "Quetzal");
     }
 
     private static Bundle MERGE_BUNDLE;
@@ -82,24 +89,22 @@ public class XLIFFResourceTest {
         assertTrue("The input test file <" + INPUT_FILE + "> does not exist.", INPUT_FILE.exists());
 
         try (InputStream is = new FileInputStream(INPUT_FILE)) {
-            @SuppressWarnings("unused")
             Bundle bundle = res.parse(is);
-            // TODO: Not ready yet
-            // assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, bundle.getResourceStrings());
+            List<ResourceString> resStrList = new ArrayList<>(bundle.getResourceStrings());
+            Collections.sort(resStrList, new ResourceStringComparator());
+            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, resStrList);
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void testWrite() throws IOException {
         File tempFile = File.createTempFile(this.getClass().getSimpleName(), ".xlf");
         tempFile.deleteOnExit();
 
         try (OutputStream os = new FileOutputStream(tempFile)) {
-            res.write(os, null, WRITE_BUNDLE);
+            res.write(os, "ja", WRITE_BUNDLE);
             os.flush();
-            // TODO: Not ready yet
-            // assertTrue(ResourceTestUtil.compareFiles(EXPECTED_WRITE_FILE, tempFile));
+            assertTrue(ResourceTestUtil.compareFiles(EXPECTED_WRITE_FILE, tempFile));
         }
     }
 

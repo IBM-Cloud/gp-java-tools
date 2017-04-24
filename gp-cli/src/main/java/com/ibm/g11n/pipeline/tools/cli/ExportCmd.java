@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2015, 2016
+ * Copyright IBM Corp. 2015, 2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,8 +82,9 @@ final class ExportCmd extends BundleCmd {
                 ResourceEntryData data = entry.getValue();
                 String resVal = data.getValue();
                 Integer seqNum = data.getSequenceNumber();
+                String srcVal = data.getSourceValue();
                 if (resVal == null && fallback) {
-                    resVal = data.getSourceValue();
+                    resVal = srcVal;
                 }
                 if (resVal != null) {
                     int sequenceNumber = -1;
@@ -91,7 +92,7 @@ final class ExportCmd extends BundleCmd {
                         sequenceNumber = seqNum.intValue();
                     }
                     ResourceString resString = new ResourceString(key, resVal,
-                            sequenceNumber, data.getNotes());
+                            sequenceNumber, data.getNotes(), srcVal);
                     bundle.addResourceString(resString);
                 }
             }
