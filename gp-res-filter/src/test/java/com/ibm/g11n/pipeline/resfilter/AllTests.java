@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2016
+ * Copyright IBM Corp. 2016, 2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
     AmdJsResourceTest.class,
     AndroidStringsResourceTest.class,
+    GlobalizeJsResourceTest.class,
     IOSStringsResourceTest.class,
     JavaPropertiesResourceTest.class,
     JsonResourceTest.class,

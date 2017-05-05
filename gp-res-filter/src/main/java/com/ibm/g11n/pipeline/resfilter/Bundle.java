@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2016
+ * Copyright IBM Corp. 2016, 2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public final class Bundle {
+    private String language = "";
     private List<String> notes;
     private Collection<ResourceString> resStrings;
 
@@ -79,5 +80,13 @@ public final class Bundle {
             return Collections.emptyList();
         }
         return Collections.unmodifiableList(notes);
+    }
+    
+    public String getLanguage() {
+        return language;
+    }
+    
+    public void setLanguage(String language) {
+        this.language = language;
     }
 }

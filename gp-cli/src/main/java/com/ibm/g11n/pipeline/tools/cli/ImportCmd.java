@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2015
+ * Copyright IBM Corp. 2015, 2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,12 @@ final class ImportCmd extends BundleCmd {
         File f = new File(fileName);
         try (FileInputStream fis = new FileInputStream(f)) {
             Bundle bundle = filter.parse(fis);
+            if (!bundle.getLanguage().isEmpty() &&
+                    !bundle.getLanguage().equals(languageId)) {
+                throw new RuntimeException("Language ID \"" + bundle.getLanguage() +
+                    "\" in the upload file does not match the specified language ID \"" +
+                    languageId + "\"");
+            }
             resEntries = new HashMap<>(bundle.getResourceStrings().size());
             for (ResourceString resString : bundle.getResourceStrings()) {
                 NewResourceEntryData resEntryData = new NewResourceEntryData(resString.getValue());

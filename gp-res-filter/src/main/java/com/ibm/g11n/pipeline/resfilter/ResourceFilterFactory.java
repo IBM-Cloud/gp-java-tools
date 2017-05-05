@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2015
+ * Copyright IBM Corp. 2015, 2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ public class ResourceFilterFactory {
             return new JavaPropertiesResource();
         } else if (type.equalsIgnoreCase("json")) {
             return new JsonResource();
+        } else if (type.equalsIgnoreCase("globalizejs")) {
+            return new GlobalizeJsResource();
         } else if (type.equalsIgnoreCase("amdjs")) {
             return new AmdJsResource();
         } else if (type.equalsIgnoreCase("yml")){
@@ -51,6 +53,8 @@ public class ResourceFilterFactory {
             return new JavaPropertiesResource();
         case JSON:
             return new JsonResource();
+        case GLOBALIZEJS:
+            return new GlobalizeJsResource();
         case AMDJS:
             return new AmdJsResource();
         case YML:
