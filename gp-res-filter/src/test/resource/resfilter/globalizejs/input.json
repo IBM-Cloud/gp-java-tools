@@ -1,0 +1,18 @@
+{
+  "en": {
+    "Action": "Action",
+    "File": "File",
+    "longText": [
+      "This is a really long sentence which",
+      "is supposed to be joined together with",
+      "a space between each string,",
+      "or at least that is what the documentation says."
+      ],
+    "Colors": {
+      "Red": "R",
+      "Green": "G",
+      "Blue": "B"
+    },
+    "Done": "Finish"
+  }
+}

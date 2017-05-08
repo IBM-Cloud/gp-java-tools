@@ -1,0 +1,13 @@
+{
+  "de": {
+    "Action": "Aktion",
+    "File": "Datei",
+    "longText": "Dies ist ein wirklich langer Satz, der zusammen mit einem Leerzeichen zwischen jedem String verbunden sein soll, oder zumindest das ist, was die Dokumentation sagt.",
+    "Colors": {
+      "Red": "Rot",
+      "Green": "Grün",
+      "Blue": "Blau"
+    },
+    "Done": "Fertig"
+  }
+}

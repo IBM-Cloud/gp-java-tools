@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2015
+ * Copyright IBM Corp. 2015, 2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ package com.ibm.g11n.pipeline.resfilter;
 public enum ResourceType {
     JAVA,
     JSON,
+    GLOBALIZEJS,
     AMDJS,
     YML,
     XLIFF,

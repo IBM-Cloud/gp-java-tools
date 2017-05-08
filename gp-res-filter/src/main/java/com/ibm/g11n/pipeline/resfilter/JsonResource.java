@@ -74,38 +74,41 @@ public class JsonResource implements ResourceFilter {
         return bundle;
     }
 
-    private int addBundleStrings(JsonObject obj, String keyPrefix, Bundle bundle, int sequenceNum) {
+    protected int addBundleStrings(JsonObject obj, String keyPrefix, Bundle bundle, int sequenceNum) {
         for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
             String key = entry.getKey();
             JsonElement value = entry.getValue();
             if (value.isJsonObject()) {
-                sequenceNum = addBundleStrings(value.getAsJsonObject(), modifiedKeyPrefix(keyPrefix,key,"$.") , bundle, sequenceNum);
+                sequenceNum = addBundleStrings(value.getAsJsonObject(), modifiedKeyPrefix(keyPrefix, key, "$."), bundle,
+                        sequenceNum);
             } else if (value.isJsonArray()) {
                 JsonArray ar = value.getAsJsonArray();
                 for (int i = 0; i < ar.size(); i++) {
                     JsonElement arrayEntry = ar.get(i);
                     if (arrayEntry.isJsonPrimitive() && arrayEntry.getAsJsonPrimitive().isString()) {
                         sequenceNum++;
-                        bundle.addResourceString(modifiedKeyPrefix(keyPrefix,key,"$.") + "[" + Integer.toString(i) + "]",
+                        bundle.addResourceString(
+                                modifiedKeyPrefix(keyPrefix, key, "$.") + "[" + Integer.toString(i) + "]",
                                 arrayEntry.getAsString(), sequenceNum);
 
                     } else {
                         sequenceNum = addBundleStrings(arrayEntry.getAsJsonObject(),
-                                modifiedKeyPrefix(keyPrefix,key,"$.") + "[" + Integer.toString(i) + "]", bundle, sequenceNum);
+                                modifiedKeyPrefix(keyPrefix, key, "$.") + "[" + Integer.toString(i) + "]", bundle,
+                                sequenceNum);
                     }
                 }
             } else if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
                 throw new IllegalResourceFormatException("The value of JSON element " + key + " is not a string.");
             } else {
                 sequenceNum++;
-                bundle.addResourceString(modifiedKeyPrefix(keyPrefix,key,""), value.getAsString(), sequenceNum);
+                bundle.addResourceString(modifiedKeyPrefix(keyPrefix, key, ""), value.getAsString(), sequenceNum);
             }
         }
         return sequenceNum;
     }
 
-    private String modifiedKeyPrefix( String keyPrefix, String key, String addPrefixIfEmpty) {
-        
+    protected String modifiedKeyPrefix(String keyPrefix, String key, String addPrefixIfEmpty) {
+
         final Pattern specialSequences = Pattern.compile("[.'\\[\\]]");
         if (key.isEmpty()) {
             return keyPrefix;
@@ -120,19 +123,29 @@ public class JsonResource implements ResourceFilter {
             return keyPrefix + "." + key;
         }
     }
-    
+
     @Override
     public void write(OutputStream outStream, String language, Bundle bundle) throws IOException {
         // extracts key value pairs in original sequence order
         TreeSet<ResourceString> sortedResources = new TreeSet<>(new ResourceStringComparator());
         sortedResources.addAll(bundle.getResourceStrings());
         JsonObject output = new JsonObject();
+        JsonObject top_level;
+        
+        if (this instanceof GlobalizeJsResource) {
+            top_level = new JsonObject();
+            top_level.add(language, output);
+        } else {
+            top_level = output;
+        }
+        
         for (ResourceString res : sortedResources) {
             String key = res.getKey();
             List<KeyPiece> keyPieces = splitKeyPieces(key);
             JsonElement current = output;
             for (int i = 0; i < keyPieces.size(); i++) {
-                if (i + 1 < keyPieces.size()) { // There is structure under this key piece
+                if (i + 1 < keyPieces.size()) { // There is structure under this
+                                                // key piece
                     if (current.isJsonObject()) {
                         JsonObject currentObject = current.getAsJsonObject();
                         if (!currentObject.has(keyPieces.get(i).keyValue)) {
@@ -146,7 +159,7 @@ public class JsonResource implements ResourceFilter {
                     } else {
                         JsonArray currentArray = current.getAsJsonArray();
                         Integer idx = Integer.valueOf(keyPieces.get(i).keyValue);
-                        for ( int arrayIndex = currentArray.size(); arrayIndex <= idx ; arrayIndex++) {
+                        for (int arrayIndex = currentArray.size(); arrayIndex <= idx; arrayIndex++) {
                             currentArray.add(JsonNull.INSTANCE);
                         }
                         if (currentArray.get(idx).isJsonNull()) {
@@ -155,7 +168,7 @@ public class JsonResource implements ResourceFilter {
                             } else {
                                 currentArray.set(idx, new JsonObject());
                             }
-                        } 
+                        }
                         current = currentArray.get(idx);
                     }
                 } else { // This is the leaf node
@@ -163,7 +176,7 @@ public class JsonResource implements ResourceFilter {
                         JsonArray currentArray = current.getAsJsonArray();
                         Integer idx = Integer.valueOf(keyPieces.get(i).keyValue);
                         JsonPrimitive e = new JsonPrimitive(res.getValue());
-                        for ( int arrayIndex = currentArray.size(); arrayIndex <= idx ; arrayIndex++) {
+                        for (int arrayIndex = currentArray.size(); arrayIndex <= idx; arrayIndex++) {
                             currentArray.add(JsonNull.INSTANCE);
                         }
                         current.getAsJsonArray().set(idx, e);
@@ -175,7 +188,7 @@ public class JsonResource implements ResourceFilter {
         }
         try (OutputStreamWriter writer = new OutputStreamWriter(new BufferedOutputStream(outStream),
                 StandardCharsets.UTF_8)) {
-            new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(output, writer);
+            new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(top_level, writer);
         }
     }
 
@@ -209,10 +222,10 @@ public class JsonResource implements ResourceFilter {
         StringCharacterIterator i = new StringCharacterIterator(data);
         while (i.current() != StringCharacterIterator.DONE) {
             char c = i.current();
-            if ( c == '\'' ) {
+            if (c == '\'') {
                 inQuotes = !inQuotes;
             }
-            if (!inQuotes && ( c == '.' || c == '[' || c == ']')) {
+            if (!inQuotes && (c == '.' || c == '[' || c == ']')) {
                 tokens.add(currentToken.toString());
                 currentToken.setLength(0);
             } else {
