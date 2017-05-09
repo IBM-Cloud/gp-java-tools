@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2016
+ * Copyright IBM Corp. 2016, 2017
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,18 @@ public final class ResourceString {
     private final String value;
     private int sequenceNumber;
     private List<String> notes;
+    private final String srcValue;
 
     public ResourceString(String key, String value, int sequenceNumber, List<String> notes ) {
+        this(key, value, sequenceNumber, notes, null);
+    }
+    
+    public ResourceString(String key, String value, int sequenceNumber, List<String> notes, String srcValue ) {
         this.key = key;
         this.value = value;
         this.sequenceNumber = sequenceNumber;
         this.notes = notes == null ? null : new ArrayList<>(notes);
+        this.srcValue = srcValue;
     }
 
     public ResourceString(String key, String value, int sequenceNumber) {
@@ -77,6 +83,10 @@ public final class ResourceString {
         return sequenceNumber;
     }
 
+    public String getSrcValue() {
+        return srcValue;
+    }
+    
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof ResourceString)) {
