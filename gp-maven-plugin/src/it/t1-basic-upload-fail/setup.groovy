@@ -21,7 +21,7 @@ import java.util.regex.*
 
 try {
 	println "Set up for basic upload fail test"
-    com.ibm.g11n.pipeline.maven.ITTools.createCredentialsFile("target/it/t1-basic-upload-fail", "setup.properties")
+    com.ibm.g11n.pipeline.maven.ITTools.createCredentialsFile(bldDir + "/it/t1-basic-upload-fail", "setup.properties")
       
 } catch( Throwable t ) {
     t.printStackTrace()
