@@ -414,12 +414,13 @@ Specifies a resource type. Available options are
 * **JAVA** - Java property resource bundle file
 * **JSON** - Resource string key/value pairs stored in JSON format. For now nested JSON object is not supported.
 * **AMDJS** - RequireJS I18N bundle file
+* **GLOBALIZEJS** - Globalize.js JSON resource bundle file
 * **IOS** - iOS String Resource file
 * **ANDROID** - Android String Resource file
 * **PO** - GNU Gettext portable object file
 * **POT** - GNU Gettext portable object template file
 * **YML** - YAML resource bundle file
-* **XLIFF** - XLIFF file (Not fully implemented)
+* **XLIFF** - XLIFF 1.2 file
 
 The default value is **JAVA**.
 
