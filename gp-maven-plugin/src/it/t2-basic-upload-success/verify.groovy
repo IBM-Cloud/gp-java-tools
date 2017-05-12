@@ -23,7 +23,7 @@ import com.ibm.g11n.pipeline.client.*
 
 try {
     println "verifying that upload succeeded"
-    String location = "target/it/t2-basic-upload-success";
+    String location = bldDir + "/it/t2-basic-upload-success";
     String propfile = "setup.properties"
     def propertyMap = ITTools.loadProperties(location, propfile);
     Credentials creds = ITTools.getCredentials(location, propfile);

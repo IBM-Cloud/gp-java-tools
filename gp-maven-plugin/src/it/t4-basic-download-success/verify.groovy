@@ -23,7 +23,7 @@ import com.google.gson.*
 
 try {
     println "verifying that download happened successfully"
-    String location="target/it/t4-basic-download-success"
+    String location = bldDir + "/it/t4-basic-download-success"
     String targetLocation = location + "/target/classes/com/bundle1"
     def dir = new File(targetLocation)
     int filecount = 0

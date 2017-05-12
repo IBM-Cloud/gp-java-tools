@@ -22,7 +22,7 @@ import java.util.regex.*
 
 try {
 	println "Set up for basic upload success test"
-    com.ibm.g11n.pipeline.maven.ITTools.createCredentialsFile("target/it/t2-basic-upload-success", "setup.properties")
+    com.ibm.g11n.pipeline.maven.ITTools.createCredentialsFile(bldDir + "/it/t2-basic-upload-success", "setup.properties")
 } catch( Throwable t ) {
     t.printStackTrace()
     return false

@@ -21,7 +21,7 @@ import java.util.regex.*
 
 try {
     println "setup for basic download fail test"
-    com.ibm.g11n.pipeline.maven.ITTools.createCredentialsFile("target/it/t3-basic-download-fail", "setup.properties")  
+    com.ibm.g11n.pipeline.maven.ITTools.createCredentialsFile(bldDir + "/it/t3-basic-download-fail", "setup.properties")  
 } catch( Throwable t ) {
     t.printStackTrace()
     return false
