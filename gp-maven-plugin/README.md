@@ -68,7 +68,7 @@ in pom.xml.
             <plugin>
                 <groupId>com.ibm.g11n.pipeline</groupId>
                 <artifactId>gp-maven-plugin</artifactId>
-                <version>1.1.4</version>
+                <version>1.1.6</version>
             </plugin>
             [...]
         </plugins>
