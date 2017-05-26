@@ -49,7 +49,14 @@
     "yellow - XL",
     "orange - XL"
   ],
+  "some_text": "Just a plain old string - XL",
+  "another.text": "Another plain old string - XL",
   "frog['2']": "Red-eyed Tree Frog - XL",
   "owl[3]": "Great Horned Owl - XL",
-  "some_text": "Just a plain old string - XL"
+  "$.xxx": "Looks like JSONPATH, but actually plain old string - XL",
+  "$.": "Looks like JSONPATH prefix, but actually plain old string - XL",
+  "$abc": "Starts with JSONPATH root char, but just a string - XL",
+  "ibm.com": {
+    "g11n.pipeline.title": "Globalization Pipeline - XL"
+  }
 }

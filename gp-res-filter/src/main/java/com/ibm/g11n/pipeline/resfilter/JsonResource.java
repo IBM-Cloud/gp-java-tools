@@ -79,7 +79,7 @@ public class JsonResource implements ResourceFilter {
             String key = entry.getKey();
             JsonElement value = entry.getValue();
             if (value.isJsonObject()) {
-                sequenceNum = addBundleStrings(value.getAsJsonObject(), modifiedKeyPrefix(keyPrefix, key, "$."), bundle,
+                sequenceNum = addBundleStrings(value.getAsJsonObject(), encodeResourceKey(keyPrefix, key, false), bundle,
                         sequenceNum);
             } else if (value.isJsonArray()) {
                 JsonArray ar = value.getAsJsonArray();
@@ -88,12 +88,12 @@ public class JsonResource implements ResourceFilter {
                     if (arrayEntry.isJsonPrimitive() && arrayEntry.getAsJsonPrimitive().isString()) {
                         sequenceNum++;
                         bundle.addResourceString(
-                                modifiedKeyPrefix(keyPrefix, key, "$.") + "[" + Integer.toString(i) + "]",
+                                encodeResourceKey(keyPrefix, key, false) + "[" + Integer.toString(i) + "]",
                                 arrayEntry.getAsString(), sequenceNum);
 
                     } else {
                         sequenceNum = addBundleStrings(arrayEntry.getAsJsonObject(),
-                                modifiedKeyPrefix(keyPrefix, key, "$.") + "[" + Integer.toString(i) + "]", bundle,
+                                encodeResourceKey(keyPrefix, key, false) + "[" + Integer.toString(i) + "]", bundle,
                                 sequenceNum);
                     }
                 }
@@ -101,27 +101,68 @@ public class JsonResource implements ResourceFilter {
                 throw new IllegalResourceFormatException("The value of JSON element " + key + " is not a string.");
             } else {
                 sequenceNum++;
-                bundle.addResourceString(modifiedKeyPrefix(keyPrefix, key, ""), value.getAsString(), sequenceNum);
+                bundle.addResourceString(encodeResourceKey(keyPrefix, key, true), value.getAsString(), sequenceNum);
             }
         }
         return sequenceNum;
     }
 
-    protected String modifiedKeyPrefix(String keyPrefix, String key, String addPrefixIfEmpty) {
 
-        final Pattern specialSequences = Pattern.compile("[.'\\[\\]]");
-        if (key.isEmpty()) {
-            return keyPrefix;
+    private static final String JSONPATH_ROOT = "$";
+
+    // Pattern used for checking key encoded by JSONPATH
+    private static final Pattern USE_JSONPATH_PATTERN = Pattern.compile("^\\$[.\\[].*");
+
+    // Pattern used for checking if a key needs to use the bracket notation.
+    private static final Pattern USE_BRACKET_PATTERN = Pattern.compile("[.'\\[\\]]");
+
+    /**
+     * Encode a JSON key into flat single string key.
+     * 
+     * @param parent    A key of the parent node (already encoded). null is allowed.
+     * @param key       A non-empty key of the target node relative to the parent.
+     * @param isLeaf    Whether if this is a leaf node
+     * @return  A key for the target node including full path information.
+     */
+    protected String encodeResourceKey(String parent, String key, boolean isLeaf) {
+        if (key == null || key.isEmpty()) {
+            throw new IllegalArgumentException("key must not be empty");
         }
-        if (specialSequences.matcher(key).find(0)) {
-            String modifiedKey = key.replaceAll("'", "\\\\u0027");
-            return keyPrefix + "['" + modifiedKey + "']";
-        } else {
-            if (keyPrefix.isEmpty()) {
-                return addPrefixIfEmpty + key;
+
+        StringBuilder keyBuf = new StringBuilder();
+
+        boolean encodeKey = false;
+        if (parent == null || parent.isEmpty()) {
+            if (isLeaf) {
+                // If this is a leaf node immediately under the root, this method
+                // only escapes the key when it starts with "$." or "$[".
+                encodeKey = USE_JSONPATH_PATTERN.matcher(key).matches();
+                if (encodeKey) {
+                    keyBuf.append(JSONPATH_ROOT);
+                }
+            } else {
+                // 1st level node, with child nodes.
+                encodeKey = USE_BRACKET_PATTERN.matcher(key).find(0);
+                keyBuf.append(JSONPATH_ROOT);
             }
-            return keyPrefix + "." + key;
+        } else {
+            encodeKey = USE_BRACKET_PATTERN.matcher(key).find(0);
+            keyBuf.append(parent);
         }
+
+        if (encodeKey) {
+            keyBuf
+            .append("['")
+            .append(key.replaceAll("'", "\\\\u0027"))
+            .append("']");
+        } else {
+            if (keyBuf.length() > 0) {
+                keyBuf.append(".");
+            }
+            keyBuf.append(key);
+        }
+
+        return keyBuf.toString();
     }
 
     @Override
@@ -193,26 +234,30 @@ public class JsonResource implements ResourceFilter {
     }
 
     private List<KeyPiece> splitKeyPieces(String key) {
-        List<KeyPiece> result = new ArrayList<KeyPiece>();
-        Matcher onlyDigits = Pattern.compile("^\\d+$").matcher("");
-        // Disregard $. at the beginning - it's not really part of the key...
-        List<String> tokens = findTokens(key.startsWith("$.") ? key.substring(2) : key);
-        for (String s : tokens) {
-            if (s.startsWith("'")) {
-                // Turn any "\u0027" in the key back into '
-                String modifiedKeyPiece = s.substring(1, s.length() - 1).replaceAll("\\\\u0027", "'");
-                result.add(new KeyPiece(modifiedKeyPiece, JsonToken.BEGIN_OBJECT));
-            } else if (onlyDigits.reset(s).matches()) {
-                result.add(new KeyPiece(s, JsonToken.BEGIN_ARRAY));
-            } else {
-                for (String s2 : s.split("\\.")) {
-                    if (!s2.isEmpty()) {
-                        result.add(new KeyPiece(s2, JsonToken.BEGIN_OBJECT));
+        if (USE_JSONPATH_PATTERN.matcher(key).matches()) {
+            List<KeyPiece> result = new ArrayList<KeyPiece>();
+            Matcher onlyDigits = Pattern.compile("^\\d+$").matcher("");
+            // Disregard $ at the beginning - it's not really part of the key...
+            List<String> tokens = findTokens(key.substring(JSONPATH_ROOT.length()));
+            for (String s : tokens) {
+                if (s.startsWith("'")) {
+                    // Turn any "\u0027" in the key back into '
+                    String modifiedKeyPiece = s.substring(1, s.length() - 1).replaceAll("\\\\u0027", "'");
+                    result.add(new KeyPiece(modifiedKeyPiece, JsonToken.BEGIN_OBJECT));
+                } else if (onlyDigits.reset(s).matches()) {
+                    result.add(new KeyPiece(s, JsonToken.BEGIN_ARRAY));
+                } else {
+                    for (String s2 : s.split("\\.")) {
+                        if (!s2.isEmpty()) {
+                            result.add(new KeyPiece(s2, JsonToken.BEGIN_OBJECT));
+                        }
                     }
                 }
             }
+            return Collections.unmodifiableList(result);
         }
-        return Collections.unmodifiableList(result);
+        // Otherwise, this is a plain JSON object label
+        return Collections.singletonList(new KeyPiece(key, JsonToken.BEGIN_OBJECT));
     }
 
     private static List<String> findTokens(String data) {
@@ -226,8 +271,10 @@ public class JsonResource implements ResourceFilter {
                 inQuotes = !inQuotes;
             }
             if (!inQuotes && (c == '.' || c == '[' || c == ']')) {
-                tokens.add(currentToken.toString());
-                currentToken.setLength(0);
+                if (currentToken.length() > 0) {
+                    tokens.add(currentToken.toString());
+                    currentToken.setLength(0);
+                }
             } else {
                 currentToken.append(c);
             }
