@@ -69,9 +69,14 @@ public class JsonResourceTest {
         lst.add(new ResourceString("$.colors[1]", "blue", 20));
         lst.add(new ResourceString("$.colors[2]", "yellow", 21));
         lst.add(new ResourceString("$.colors[3]", "orange", 22));
-        lst.add(new ResourceString("['frog[\\u00272\\u0027]']", "Red-eyed Tree Frog", 23));
-        lst.add(new ResourceString("['owl[3]']", "Great Horned Owl", 24));
-        lst.add(new ResourceString("some_text", "Just a plain old string", 25));
+        lst.add(new ResourceString("some_text", "Just a plain old string", 23));
+        lst.add(new ResourceString("another.text", "Another plain old string", 24));
+        lst.add(new ResourceString("frog['2']", "Red-eyed Tree Frog", 25));
+        lst.add(new ResourceString("owl[3]", "Great Horned Owl", 26));
+        lst.add(new ResourceString("$['$.xxx']", "Looks like JSONPATH, but actually plain old string", 27));
+        lst.add(new ResourceString("$['$.']", "Looks like JSONPATH prefix, but actually plain old string", 28));
+        lst.add(new ResourceString("$abc", "Starts with JSONPATH root char, but just a string", 29));
+        lst.add(new ResourceString("$['ibm.com']['g11n.pipeline.title']", "Globalization Pipeline", 30));
 
         Collections.sort(lst, new ResourceStringComparator());
         EXPECTED_INPUT_RES_LIST = lst;
@@ -103,9 +108,14 @@ public class JsonResourceTest {
         WRITE_BUNDLE.addResourceString("$.colors[1]", "blue - XL", 20);
         WRITE_BUNDLE.addResourceString("$.colors[2]", "yellow - XL", 21);
         WRITE_BUNDLE.addResourceString("$.colors[3]", "orange - XL", 22);
-        WRITE_BUNDLE.addResourceString("['frog[\\u00272\\u0027]']", "Red-eyed Tree Frog - XL", 23);
-        WRITE_BUNDLE.addResourceString("['owl[3]']", "Great Horned Owl - XL", 24);
-        WRITE_BUNDLE.addResourceString("some_text", "Just a plain old string - XL", 25);
+        WRITE_BUNDLE.addResourceString("some_text", "Just a plain old string - XL", 23);
+        WRITE_BUNDLE.addResourceString("another.text", "Another plain old string - XL", 24);
+        WRITE_BUNDLE.addResourceString("frog['2']", "Red-eyed Tree Frog - XL", 25);
+        WRITE_BUNDLE.addResourceString("owl[3]", "Great Horned Owl - XL", 26);
+        WRITE_BUNDLE.addResourceString("$['$.xxx']", "Looks like JSONPATH, but actually plain old string - XL", 27);
+        WRITE_BUNDLE.addResourceString("$['$.']", "Looks like JSONPATH prefix, but actually plain old string - XL", 28);
+        WRITE_BUNDLE.addResourceString("$abc", "Starts with JSONPATH root char, but just a string - XL", 29);
+        WRITE_BUNDLE.addResourceString("$['ibm.com']['g11n.pipeline.title']", "Globalization Pipeline - XL", 30);
     }
 
     private static final JsonResource res = new JsonResource();

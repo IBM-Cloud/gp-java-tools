@@ -77,7 +77,7 @@ public class GlobalizeJsResource extends JsonResource {
             String key = entry.getKey();
             JsonElement value = entry.getValue();
             if (value.isJsonObject()) {
-                sequenceNum = addBundleStrings(value.getAsJsonObject(), modifiedKeyPrefix(keyPrefix, key, "$."), bundle,
+                sequenceNum = addBundleStrings(value.getAsJsonObject(), encodeResourceKey(keyPrefix, key, false), bundle,
                         sequenceNum);
             } else if (value.isJsonArray()) {
                 JsonArray ar = value.getAsJsonArray();
@@ -95,12 +95,12 @@ public class GlobalizeJsResource extends JsonResource {
                     }
                 }
                 sequenceNum++;
-                bundle.addResourceString(modifiedKeyPrefix(keyPrefix, key, ""), sb.toString(), sequenceNum);
+                bundle.addResourceString(encodeResourceKey(keyPrefix, key, true), sb.toString(), sequenceNum);
             } else if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
                 throw new IllegalResourceFormatException("The value of JSON element " + key + " is not a string.");
             } else {
                 sequenceNum++;
-                bundle.addResourceString(modifiedKeyPrefix(keyPrefix, key, ""), value.getAsString(), sequenceNum);
+                bundle.addResourceString(encodeResourceKey(keyPrefix, key, true), value.getAsString(), sequenceNum);
             }
         }
         return sequenceNum;
