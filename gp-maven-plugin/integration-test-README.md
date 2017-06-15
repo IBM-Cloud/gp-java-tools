@@ -18,23 +18,23 @@ to test more advanced cases/new features as per need by following the template o
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-invoker-plugin</artifactId>
-					<version>2.0.0</version>
-					<configuration>
-						<debug>true</debug>
-						<addTestClassPath>true</addTestClassPath>
-						<cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-						<setupIncludes>
-							<setupInclude>setup/pom.xml</setupInclude>
-						</setupIncludes>
-						<pomIncludes>
-							<pomInclude>*/pom.xml</pomInclude>
-						</pomIncludes>
-						<preBuildHookScript>setup</preBuildHookScript>
-						<postBuildHookScript>verify</postBuildHookScript>
-						<localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
-						<settingsFile>src/it/settings.xml</settingsFile>
-					</configuration>
-					<executions>
+	  <version>2.0.0</version>
+	  <configuration>
+	  	<debug>true</debug>
+		<addTestClassPath>true</addTestClassPath>
+		<cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+		<setupIncludes>
+			<setupInclude>setup/pom.xml</setupInclude>
+		</setupIncludes>
+		<pomIncludes>
+			<pomInclude>*/pom.xml</pomInclude>
+		</pomIncludes>
+		<preBuildHookScript>setup</preBuildHookScript>
+		<postBuildHookScript>verify</postBuildHookScript>
+		<localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+		<settingsFile>src/it/settings.xml</settingsFile>
+	  </configuration>
+	  <executions>
             <execution>
               <id>integration-test</id>
               <goals>
@@ -89,7 +89,7 @@ This integration test ensures that the download of json resource bundle files sh
 
 The **_t4-basic-download-success_** test contains following files:
 
-####invoker.properties
+#### invoker.properties
 
 > This file contains the properties for the integration test invoker.
 ```
@@ -107,7 +107,7 @@ invoker.mavenOpts=-Dgp.credentials.json=credentials.json
 
 > The file is **mandatory**
 
-####pom.xml
+#### pom.xml
 
 > This file specifies the plugin execution goals as desired.
 ```xml
@@ -145,7 +145,7 @@ of ```target/classes```
 
 > The file is **mandatory** but can omit plugin configuration if not required for the integration test
 
-####setup.groovy
+#### setup.groovy
 
 > This is the prebuild hook script as configured in the ```src/pom.xml```. 
 
@@ -159,7 +159,7 @@ was added to **src/pom.xml** as part of ```maven-invoker-plugin``` configuration
 
 > This is **optional** if there is no setup required for a particular integration test
 
-####verify.groovy
+#### verify.groovy
 
 > This is the postbuild hook script as configured in the ```src/pom.xml```
 
@@ -168,15 +168,15 @@ to make sure that the build gave the results as expected.
 
 > This is **optional** if there are no verification activities that need to be performed post build (integration-test)
 
-####setup.properties
+#### setup.properties
 
 > This file is **optional** and is basically used here to help with build setup as implemented in ```setup.groovy``` script.
 
-####src/main/resources/com/bundle1/
+#### src/main/resources/com/bundle1/
 
 > This directory and its content are relevant to this particular integration test only.
 
-##Invoking the integration test
+## Invoking the integration test
 To just execute ```t4-basic-download-success``` test following command can be issued
 
 ```$ mvn integration-test -Dinvoker.test=t4-basic-download-success```
