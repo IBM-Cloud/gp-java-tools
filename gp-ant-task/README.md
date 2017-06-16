@@ -19,7 +19,7 @@
 * [Overview](#TOC-Overview)
 * [Prerequisites](#TOC-Prerequisites)
 * [Usage](#TOC-Usage)
-  * [Seting Up Globalization Pipeline Ant Task](#TOC-Usage-Setup)
+  * [Setting Up Globalization Pipeline Ant Task](#TOC-Usage-Setup)
   * [Tasks](#TOC-Usage-Tasks)
   * [Specifying Globalization Pipeline Service Credentials](#TOC-Usage-Credentials)
   * [Basic Use Case](#TOC-Usage-Basic)
@@ -50,7 +50,7 @@ To setup Globalization Pipeline Ant Task
 1. Download the Globalization Pipeline Ant Task jar file (gp-ant-task-X.X.X-with-dependencies.jar)
 from the official [release page](https://github.com/IBM-Bluemix/gp-java-tools/releases).
 2. Set up name space for the Globalization Pipleline tasks and task definition
-as below in your Ant build.xml as below.
+in your Ant build.xml as below.
 
 ```xml
 <?xml version="1.0" encoding="utf-8" ?>
@@ -127,7 +127,7 @@ used by Globalization Pipeline service instance.
 
 ### <a name="TOC-Usage-Basic"></a>Basic Use Case
 
-**build.xml** below illustrates basic use cases of the tant tasks:
+**build.xml** below illustrates basic use cases of the ant tasks:
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <project name="Example Project" xmlns:gp="antlib:com.ibm.g11n.pipeline.ant">
@@ -151,7 +151,7 @@ used by Globalization Pipeline service instance.
 </project>
 ```
 
-The ant target `upload-resources` in the example ablve does following operations:
+The ant target `upload-resources` in the example above does following operations:
 
 1. Scans files under `src/main/resources` (*sourceDir* attribute) and locates files with `.properties` extension
 (but excluding files with '_'(underscore) character in its file name, such as
@@ -182,7 +182,7 @@ This ant target `download-translations` above does following operations:
 1. Scans files under `src/main/resources`(*sourceDir* attribute) and locates Java property resource bundle
 files. This is same as in the upload goal.
 
-2. For each Java property resource bundle file, check if look up corresponding
+2. For each Java property resource bundle file, looks up corresponding
 Globalization Pipeline bundle in the instance of Globalization Pipeline service.
 
 3. If matching Globalization Pipeline bundle is found, copies the contents of
