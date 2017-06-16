@@ -5,7 +5,7 @@ Globalization Pipeline Ant Task works.
 
 Please follow the steps below to set up the environment.
 
-1. Configure Appache Ant 1.9 or later version.
+1. Configure Apache Ant 1.9 or later version.
 2. Download **gp-ant-task-X.X.X-with-dependencies.jar** from GitHub
 [gp-java-tools release page](https://github.com/IBM-Bluemix/gp-java-tools/releases).
 Copy the downloaded jar file to this (example) directory and rename jar file to
