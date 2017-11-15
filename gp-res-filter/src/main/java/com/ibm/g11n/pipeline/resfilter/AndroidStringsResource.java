@@ -23,6 +23,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.BreakIterator;
+import java.text.FieldPosition;
+import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -43,6 +45,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Attr;
+import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -50,6 +53,10 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
+import com.ibm.icu.text.MessagePattern;
+import com.ibm.icu.text.MessagePattern.ArgType;
+import com.ibm.icu.text.MessagePattern.Part;
+import com.ibm.icu.text.MessagePattern.Part.Type;
 
 /**
  *
@@ -64,12 +71,21 @@ public class AndroidStringsResource implements ResourceFilter {
     private static final String NAME_STRING = "name";
     private static final String STR_STRING = "string";
     private static final String STR_ARRAY = "string-array";
+    private static final String PLURAL_STRING = "plural";
+    private static final String PLURALS_STRING = "plurals";
+    private static final String QUANTITY_STRING = "quantity";
+    private static final String ITEM_STRING = "item";
 
     private static final String STR_ARRAY_OPEN_TAG_PTRN = "^(\\s*<string-array\\s*name=\".*\">).*";
     private static final String STR_ARRAY_CLOSE_TAG_PTRN = ".*(\\s*</string-array\\s*>)$";
 
     private static final String STR_OPEN_TAG_PTRN = "^(\\s*<string\\s*name=\".*\">).*";
     private static final String STR_CLOSE_TAG_PTRN = ".*(\\s*</string\\s*>)$";
+
+    private static final String PLURALS_OPEN_TAG_PTRN = "^(\\s*<plurals\\s*name=\".*\">).*";
+    private static final String PLURALS_CLOSE_TAG_PTRN = ".*(\\s*</plurals\\s*>)$";
+
+    private static final String PLURAL_ENTIRY_PTRN = "{0}, plural, {1}";
 
     @Override
     public Bundle parse(InputStream in) throws IOException {
@@ -125,7 +141,38 @@ public class AndroidStringsResource implements ResourceFilter {
                 }
 
                 resStrings.add(new ResourceString(key, value, seqNum++));
-            } else {
+            }else if(nodeName.equals(PLURALS_STRING)){
+                String key = node.getAttributes().getNamedItem(NAME_STRING).getNodeValue();
+                String value = "";
+                String plural_Str = "";
+                String comments = "";
+
+                NodeList plural_nodes = node.getChildNodes();
+
+                for(int pi=0; pi<plural_nodes.getLength(); pi++){
+                    Node pNode = plural_nodes.item(pi);
+                    if(pNode.getNodeName().equals(ITEM_STRING)){
+                        String pKey = pNode.getAttributes().getNamedItem(QUANTITY_STRING).getNodeValue();
+                        String pValue = pNode.getTextContent();
+                        plural_Str += (pKey + "{" + pValue +"} ");
+                    }else if(pNode.getNodeType()==Node.COMMENT_NODE){
+                        String comment = pNode.getTextContent();
+                        if(comment.trim().length()>0){
+                            comments += comment;
+                        }
+                    }
+                }
+
+                plural_Str = plural_Str.trim();
+                MessageFormat mf_plural = new MessageFormat(PLURAL_ENTIRY_PTRN);
+                StringBuffer msg_value = new StringBuffer();
+                mf_plural.format(new Object[] {key, plural_Str}, msg_value, new FieldPosition(0));
+
+                value = "{" + msg_value.toString() + "}";
+                ResourceString rs = new ResourceString(key, value, seqNum++);
+                rs.addNote(comments);
+                resStrings.add(rs);
+            }else {
                 seqNum = collectResourceStrings(node.getChildNodes(), seqNum, resStrings);
             }
         }
@@ -155,6 +202,7 @@ public class AndroidStringsResource implements ResourceFilter {
 
         for (ResourceString key : sortedResources) {
             String value = key.getValue();
+            Map<String, String> plural_categories = null;
 
             if (value.startsWith("[") && value.endsWith("]")) {
                 // creating <string-array name="$NAME">
@@ -182,7 +230,38 @@ public class AndroidStringsResource implements ResourceFilter {
                     startIndex = endIndex + 1;
                 }
                 rootElement.appendChild(child);
-            } else {
+            }else if(!(plural_categories = getPluralCategories(value)).isEmpty()){
+                Element child = doc.createElement(PLURALS_STRING);
+                Attr attr = doc.createAttribute(NAME_STRING);
+                attr.setValue(key.getKey());
+                child.setAttributeNode(attr);
+
+                if(!key.getNotes().isEmpty()){
+                    List<String> comments = key.getNotes();
+                    for(String comment: comments){
+                        Comment d_comment = doc.createComment(comment);
+                        child.appendChild(d_comment);
+                    }
+                }
+
+                /**
+                 * Append plural category items
+                 * Show the items in predefined order
+                */
+                for(String pKey : PLURA_CATEGORIES){
+                    if(plural_categories.containsKey(pKey)){
+                        String pValue = plural_categories.get(pKey);
+                        Element item = doc.createElement(ITEM_STRING);
+                        Attr pAttr = doc.createAttribute(QUANTITY_STRING);
+                        pAttr.setValue(pKey);
+                        item.setAttributeNode(pAttr);
+                        item.setTextContent(pValue);
+                        child.appendChild(item);
+                    }
+                }
+
+                rootElement.appendChild(child);
+            }else {
                 // creating <string name=$NAME>VALUE</string>
                 Element child = doc.createElement(STR_STRING);
                 Attr attr = doc.createAttribute(NAME_STRING);
@@ -226,7 +305,7 @@ public class AndroidStringsResource implements ResourceFilter {
     public void merge(InputStream base, OutputStream outStream, String language, Bundle resource)
             throws IOException {
         // put res data into a map for easier searching
-        Map<String, String> resMap = new HashMap<String, String>(resource.getResourceStrings().size() * 4 / 3 + 1);
+        Map<String, String> resMap = new HashMap<>(resource.getResourceStrings().size() * 4 / 3 + 1);
         for (ResourceString res : resource.getResourceStrings()) {
             resMap.put(res.getKey(), res.getValue());
         }
@@ -293,12 +372,53 @@ public class AndroidStringsResource implements ResourceFilter {
                 while (line != null && !line.matches(STR_CLOSE_TAG_PTRN)) {
                     line = reader.readLine();
                 }
-            } else {
+            }else if (line.matches(PLURALS_OPEN_TAG_PTRN)) {
+                // handle <plurals name="name"> tag
+                String openingTag = line.substring(0, line.indexOf('>') + 1);
+                String key = openingTag.substring(openingTag.indexOf('"') + 1, openingTag.lastIndexOf('"'));
+
+                if (!resMap.containsKey(key)) {
+                    writer.write(line);
+                    writer.newLine();
+                    continue;
+                }
+
+                String value = resMap.get(key);
+
+                Map<String, String> plural_categories = null;
+
+                if ((plural_categories = getPluralCategories(value)).isEmpty()) {
+                    writer.write(line);
+                    writer.newLine();
+                    continue;
+                }
+
+                String tabSubString = openingTag.substring(0, openingTag.indexOf('<'));
+                String spaces = tabSubString + getTabStr(tabSubString);
+                writer.write(openingTag);
+                writer.newLine();
+
+                for(String pKey : PLURA_CATEGORIES){
+                    if(plural_categories.containsKey(pKey)){
+                        String pValue = plural_categories.get(pKey);
+                        //<item quantity="one">
+                        String itemStr = "<item quantity=\""+ pKey + "\">";
+                        writer.write(formatMessage(itemStr, pValue.trim(), "</item>", spaces, language));
+                    }
+                }
+                writer.write(openingTag.substring(0, openingTag.indexOf('<')));
+
+                writer.write("</plurals>");
+                writer.newLine();
+
+                while (line != null && !line.matches(PLURALS_CLOSE_TAG_PTRN)) {
+                    line = reader.readLine();
+                }
+            }  else {
                 writer.write(line);
                 writer.newLine();
             }
         }
-
         writer.flush();
     }
 
@@ -387,4 +507,124 @@ public class AndroidStringsResource implements ResourceFilter {
 
         return output.append(whitespace).append(closingTag).append('\n').toString();
     }
+
+    /**
+     * Judge if the input string contains plural format
+     */
+    static boolean containPluralString(String inputString){
+        boolean result = false;
+
+        if(inputString.indexOf(PLURAL_STRING)<0){
+            return false;
+        }
+
+        try{
+            MessagePattern msgPat = new MessagePattern(inputString);
+
+            int numParts = msgPat.countParts();
+            for (int i = 0; i < numParts; i++) {
+                Part part = msgPat.getPart(i);
+                if (part.getType() == Type.ARG_START && part.getArgType() == ArgType.PLURAL) {
+                    return true;
+                }
+            }
+        }catch(Exception e){
+            return false;
+        }
+
+        return result;
+    }
+
+    /**
+     * Get the plural part from the input message
+     */
+    static String getPluralString(String inputString){
+        String pluralString = "";
+
+        if(inputString.indexOf(PLURAL_STRING)<0){
+            return pluralString;
+        }
+
+        try{
+            MessagePattern msgPat = new MessagePattern(inputString);
+
+            int numParts = msgPat.countParts();
+            int start = -1;
+            for (int i = 0; i < numParts; i++) {
+                Part part = msgPat.getPart(i);
+                if (part.getType() == Type.ARG_START && part.getArgType() == ArgType.PLURAL) {
+                    start = part.getIndex();
+                    continue;
+                }
+                if (part.getType() == Type.ARG_LIMIT && part.getArgType() == ArgType.PLURAL) {
+                    pluralString = inputString.substring(start, part.getIndex()+1);
+                }
+            }
+        }catch(Exception e){
+            return pluralString;
+        }
+
+        return pluralString;
+    }
+
+    /**
+     * Parse plural string and get contained categories
+     */
+    static Map<String, String> getPluralCategories(String inputString){
+        Map<String, String> category_map = new HashMap<>();
+
+        if(inputString.indexOf(PLURAL_STRING)<0){
+            return category_map;
+        }
+
+        try{
+            MessagePattern msgPat = new MessagePattern(inputString);
+
+            int numParts = msgPat.countParts();
+            boolean start = false;
+            String key = "";
+            int mStart = -1;
+
+            for (int i = 0; i < numParts; i++) {
+                Part part = msgPat.getPart(i);
+                if (part.getType() == Type.ARG_START && part.getArgType() == ArgType.PLURAL) {
+                    start = true;
+                    continue;
+                }
+                if(start&&part.getType() == Type.ARG_SELECTOR){
+                    int selector = part.getIndex();
+                    int len = part.getLength();
+                    key = inputString.substring(selector, selector + len);
+                }
+
+                if(start&&part.getType() == Type.MSG_START){
+                    mStart = part.getIndex();
+                }
+
+                if(start&&part.getType() == Type.MSG_LIMIT){
+                    int mEnd = part.getIndex();
+                    if(mStart>-1 && key.length()>0){
+                        String value  = inputString.substring(mStart+1, mEnd);
+                        category_map.put(key, value);
+                        mStart = -1;
+                        key = "";
+                    }
+                }
+
+                if (part.getType() == Type.ARG_LIMIT && part.getArgType() == ArgType.PLURAL) {
+                    start = false;
+                }
+            }
+        }catch(NumberFormatException nfe){
+            //MessagePattern exception, Invalid input string
+        }catch(IllegalArgumentException iae){
+            //MessagePattern exception, Invalid input string
+        }catch(IndexOutOfBoundsException obe){
+            //MessagePattern exception, Invalid input string
+        }
+
+        return category_map;
+    }
+
+
 }

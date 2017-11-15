@@ -86,6 +86,11 @@
 			<artifactId>jackson-databind</artifactId>
 			<version>2.6.3</version>
 		</dependency>
+		<dependency>
+		    <groupId>com.ibm.icu</groupId>
+		    <artifactId>icu4j</artifactId>
+		    <version>59.1</version>
+		</dependency>
 
 		<!-- JUnit -->
 		<dependency>

@@ -9,4 +9,16 @@
         <item>Earth</item>
         <item>Mars</item>
     </string-array>
+    <plurals name="numberOfSongsAvailable">
+        <!--
+             As a developer, you should always supply "one" and "other"
+             strings. Your translators will know which strings are actually
+             needed for their language. Always include %d in "one" because
+             translators will need to use %d for languages where "one"
+             doesn't mean 1 (as explained above).
+          -->
+        <item quantity="one">Znaleziono %d piosenke.</item>
+        <item quantity="few">Znaleziono %d piosenki.</item>
+        <item quantity="other">Znaleziono %d piosenek.</item>
+    </plurals>
 </resources>
