@@ -53,9 +53,18 @@ public class AndroidStringsResourceTest {
     static {
         List<ResourceString> lst = new LinkedList<>();
         lst.add(new ResourceString("planets_array", "[Mercury, Venus, Earth, Mars]", 1));
-        lst.add(new ResourceString("bear", "Brown Bear", 2));
-        lst.add(new ResourceString("frog", "Red-eyed Tree Frog", 3));
-        lst.add(new ResourceString("owl", "Great Horned Owl", 4));
+        ResourceString rs = new ResourceString("numberOfSongsAvailable", "{numberOfSongsAvailable, plural, one{Znaleziono %d piosenke.} few{Znaleziono %d piosenki.} other{Znaleziono %d piosenek.}}", 2);
+        rs.addNote("\n"
+                +"             As a developer, you should always supply \"one\" and \"other\"\n"
+                +"             strings. Your translators will know which strings are actually\n"
+                +"             needed for their language. Always include %d in \"one\" because\n"
+                +"             translators will need to use %d for languages where \"one\"\n"
+                +"             doesn't mean 1 (as explained above).\n"
+                +"          ");
+        lst.add(rs);
+        lst.add(new ResourceString("bear", "Brown Bear", 3));
+        lst.add(new ResourceString("frog", "Red-eyed Tree Frog", 4));
+        lst.add(new ResourceString("owl", "Great Horned Owl", 5));
         Collections.sort(lst, new ResourceStringComparator());
         EXPECTED_INPUT_RES_LIST = lst;
     }
@@ -68,6 +77,16 @@ public class AndroidStringsResourceTest {
         WRITE_BUNDLE.addResourceString("otter1", "Sea Otter", 1);
         WRITE_BUNDLE.addResourceString("crow2", "American Crow", 2);
         WRITE_BUNDLE.addResourceString("planets_array4", "[Mercury, Venus, Earth, Mars]", 4);
+        //WRITE_BUNDLE.addResourceString("numberOfSongsAvailable", "{numberOfSongsAvailable, plural, one{Znaleziono %d piosenke.} few{Znaleziono %d piosenki.} other{Znaleziono %d piosenek.}}", 5);
+        ResourceString rs = new ResourceString("numberOfSongsAvailable", "{numberOfSongsAvailable, plural, one{Znaleziono %d piosenke.} few{Znaleziono %d piosenki.} other{Znaleziono %d piosenek.}}", 5);
+        rs.addNote("\n"
+                +"             As a developer, you should always supply \"one\" and \"other\"\n"
+                +"             strings. Your translators will know which strings are actually\n"
+                +"             needed for their language. Always include %d in \"one\" because\n"
+                +"             translators will need to use %d for languages where \"one\"\n"
+                +"             doesn't mean 1 (as explained above).\n"
+                +"          ");
+        WRITE_BUNDLE.addResourceString(rs);
     }
 
     private static Bundle MERGE_BUNDLE;
@@ -98,6 +117,9 @@ public class AndroidStringsResourceTest {
                         + "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 "
                         + "1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 ",
                 6);
+        MERGE_BUNDLE.addResourceString("numberOfSongsAvailable",
+                "{numberOfSongsAvailable, plural, one{Znaleziono %d piosenke.} few{Znaleziono %d piosenki.} other{Znaleziono %d piosenek.}}",
+                8);
     }
 
     private static final AndroidStringsResource res = new AndroidStringsResource();

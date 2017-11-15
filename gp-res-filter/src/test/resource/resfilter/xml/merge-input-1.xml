@@ -6,7 +6,7 @@
         <item>Earth</item>
         <item>Mars</item>
     </string-array>
-	<plurals name="numberOfSongsAvailable">
+    <plurals name="numberOfSongsAvailable">
         <item quantity="one">Znaleziono %d piosenke.</item>
         <item quantity="few">Znaleziono %d piosenki.</item>
         <item quantity="other">Znaleziono %d piosenek.</item>

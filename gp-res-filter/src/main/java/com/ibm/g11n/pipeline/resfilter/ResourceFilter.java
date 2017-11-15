@@ -26,10 +26,12 @@ import java.io.OutputStream;
  * @author Yoshito Umaoka
  */
 public interface ResourceFilter {
+    public static String[] PLURA_CATEGORIES = {"zero", "=0", "one", "=1", "two", "=2", "few", "many", "other"};
 
     Bundle parse(InputStream inStream) throws IOException;
 
     void write(OutputStream outStream, String language, Bundle resource) throws IOException;
 
-    void merge(InputStream base, OutputStream outStream, String language, Bundle resource) throws IOException;
+    void merge(InputStream base, OutputStream outStream, String language, Bundle resource) throws IOException;    
+    
 }
