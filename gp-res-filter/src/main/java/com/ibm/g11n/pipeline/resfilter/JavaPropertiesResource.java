@@ -45,7 +45,19 @@ import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
  * @author Yoshito Umaoka, JCEmmons
  */
 public class JavaPropertiesResource implements ResourceFilter {
-
+    public boolean isUTF8 = false;
+    private String PROPS_ENC = "ISO-8859-1";
+    
+    public JavaPropertiesResource(){
+        isUTF8 = false;
+        PROPS_ENC = "ISO-8859-1";
+    }
+    
+    public JavaPropertiesResource(boolean flagUTF8){
+        isUTF8 = flagUTF8;
+        PROPS_ENC = "UTF-8";
+    }
+    
     // TODO:
     // This is not a good idea. This implementation might work,
     // but it depends on an assumption that
@@ -172,13 +184,11 @@ public class JavaPropertiesResource implements ResourceFilter {
         pw.println("#"+new Date().toString());
         for (ResourceString res : sortedResources) {
             PropDef pd = new PropDef(res.getKey(),res.getValue(),PropDef.PropSeparator.EQUAL,res.getNotes());
-            pd.print(pw, language);
+            pd.print(pw, language, isUTF8);
         }
         pw.close();
     }
-
-    private static final String PROPS_ENC = "ISO-8859-1";
-
+    
     static class PropDef {
         private String key;
         private String value;
@@ -222,6 +232,7 @@ public class JavaPropertiesResource implements ResourceFilter {
         };
 
         public static PropDef parseLine(String line) {
+            line = stripLeadingSpaces(line);
             PropSeparator sep = null;
             int sepIdx = -1;
 
@@ -283,6 +294,10 @@ public class JavaPropertiesResource implements ResourceFilter {
         }
         
         public void print(PrintWriter pw, String language) throws IOException {
+            print(pw, language, false);
+        }
+        
+        public void print(PrintWriter pw, String language, boolean isUTF8) throws IOException {
             StringBuilder buf = new StringBuilder(100);
             int len = key.length() + value.length()
                     + 3; /* 3 - length of separator plus two SPs */
@@ -297,11 +312,11 @@ public class JavaPropertiesResource implements ResourceFilter {
             if (len <= COLMAX) {
                 // Print this property in a single line
                 if (separator.getCharacter() == PropSeparator.SPACE.getCharacter()) {
-                    buf.append(escapePropKey(key)).append(separator.getCharacter());
+                    buf.append(escapePropKey(key, isUTF8)).append(separator.getCharacter());
                 } else {
-                    buf.append(escapePropKey(key)).append(' ').append(separator.getCharacter()).append(' ');
+                    buf.append(escapePropKey(key, isUTF8)).append(' ').append(separator.getCharacter()).append(' ');
                 }
-                buf.append(escapePropValue(value));
+                buf.append(escapePropValue(value, isUTF8));
                 pw.println(buf.toString());
                 return;
             }
@@ -310,9 +325,9 @@ public class JavaPropertiesResource implements ResourceFilter {
 
             // always prints out key and separator in a single line
             if (separator.getCharacter() == PropSeparator.SPACE.getCharacter()) {
-                buf.append(escapePropKey(key)).append(separator.getCharacter());
+                buf.append(escapePropKey(key, isUTF8)).append(separator.getCharacter());
             } else {
-                buf.append(escapePropKey(key)).append(' ').append(separator.getCharacter()).append(' ');
+                buf.append(escapePropKey(key, isUTF8)).append(' ').append(separator.getCharacter()).append(' ');
             }
 
             if (buf.length() > COLMAX) {
@@ -337,10 +352,10 @@ public class JavaPropertiesResource implements ResourceFilter {
                 String segment = value.substring(start, end);
                 String escSegment = null;
                 if (firstSegment) {
-                    escSegment = escape(segment, EscapeSpace.LEADING_ONLY);
+                    escSegment = escape(segment, EscapeSpace.LEADING_ONLY, isUTF8);
                     firstSegment = false;
                 } else {
-                    escSegment = escape(segment, EscapeSpace.NONE);
+                    escSegment = escape(segment, EscapeSpace.NONE, isUTF8);
                 }
                 if (emitNext || (buf.length() + escSegment.length() + 2 >= COLMAX)) {
                     // First character in a continuation line must be
@@ -404,8 +419,12 @@ public class JavaPropertiesResource implements ResourceFilter {
         LEADING_ONLY,
         NONE;
     }
-
+    
     private static String escape(String str, EscapeSpace escSpace) {
+        return escape(str, escSpace, false);
+    }
+  
+    private static String escape(String str, EscapeSpace escSpace, boolean isUTF8) {
         StringBuilder buf = new StringBuilder();
         int idx = 0;
 
@@ -456,7 +475,11 @@ public class JavaPropertiesResource implements ResourceFilter {
                     buf.append(BACKSLASH).append('r');
                     break;
                 default:
-                    appendUnicodeEscape(buf, c);
+                    if(isUTF8){
+                       buf.append(c);
+                    }else{
+                        appendUnicodeEscape(buf, c);
+                    }
                     break;
                 }
             } else {
@@ -488,13 +511,21 @@ public class JavaPropertiesResource implements ResourceFilter {
 
         return buf.toString();
     }
-
+    
     static String escapePropKey(String str) {
-        return escape(str, EscapeSpace.ALL);
+        return escape(str, EscapeSpace.ALL, false);
     }
 
+    static String escapePropKey(String str, boolean isUTF8) {
+        return escape(str, EscapeSpace.ALL, isUTF8);
+    }
+    
     static String escapePropValue(String str) {
-        return escape(str, EscapeSpace.LEADING_ONLY);
+        return escape(str, EscapeSpace.LEADING_ONLY, false);
+    }
+
+    static String escapePropValue(String str, boolean isUTF8) {
+        return escape(str, EscapeSpace.LEADING_ONLY, isUTF8);
     }
 
     static void appendUnicodeEscape(StringBuilder buf, char codeUnit) {
@@ -650,7 +681,7 @@ public class JavaPropertiesResource implements ResourceFilter {
                     // Write the property key and value
                     String key = pd.getKey();
                     PropDef modPd = new PropDef(key, resMap.get(key), pd.getSeparator(), null);
-                    modPd.print(outWriter, language);
+                    modPd.print(outWriter, language, isUTF8);
                 } else {
                     if (orgLines.isEmpty()) {
                         // Single line

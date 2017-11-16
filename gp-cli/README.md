@@ -159,6 +159,7 @@ automatically added to the bundle configuration.
 There are several different resource types available:
 
 * **JAVA** - Java property resource bundle file
+* **JAVAUTF8** - Java UTF8 property resource bundle file
 * **JSON** - Resource string key/value pairs stored in JSON format. For now nested JSON object is not supported.
 * **AMDJS** - RequireJS I18N bundle file
 * **GLOBALIZEJS** - Globalize.js JSON resource bundle file
