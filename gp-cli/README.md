@@ -240,6 +240,26 @@ but user accounts and translation configurations are not transferred, because
 they are service instance specific.
 
 
+#### merge (merge-bundle)
+
+Merge the changesof source bundle to the specified target bundle. This command allows you to merge a
+bundle in the same service instance, or another service instance.
+The following example merges the contents of exiting bundle *MyBundle* to
+a bundle *MyBundle* in the same service instance (assuming MyBundle already exists).
+```
+java -jar gp-cli.jar merge -b MyBundle -d MyNewBundle -j mycreds.json
+```
+This command can be used to merge a bundle from a service instance to
+another service instance. In this case, you need to specify the destination instance's
+credentials with --dest-* options as below (assuming MyBundle already exists on destination).
+```
+java -jar gp-cli.jar merge -b MyBundle -d MyBundle --dest-url https://gp-rest.ng.bluemix.net/translate/rest --dest-instance-id 9146abf71bb94513504a0eaf76d57804 --dest-user-id 52858e19ae57ba6f2d2ea7e38e9ab457 --dest-password o75YXQCK2obQLOvedkSslBTAyeUq7/+t -j mycreds.json
+```
+Note: This command does not copy service managed properties, such as
+updatedBy and updatedAt stored in each entity. The merged bundle
+and resource entries will have new timestamp in updatedAt property
+and the operator of this command will be set to updatedBy property.
+
 ---
 ### <a name="TOC-Cmd-User"></a>User Commands
 
