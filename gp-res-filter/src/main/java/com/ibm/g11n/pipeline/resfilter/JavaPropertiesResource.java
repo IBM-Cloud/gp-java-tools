@@ -36,8 +36,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
+import com.ibm.icu.text.MessagePattern;
+import com.ibm.icu.text.MessagePattern.Part;
+import com.ibm.icu.text.MessagePattern.Part.Type;
 
 /**
  * Java properties resource filter implementation.
@@ -132,7 +136,9 @@ public class JavaPropertiesResource implements ResourceFilter {
                 }
                 String logicalLine = sb.toString();
                 PropDef pd = PropDef.parseLine(logicalLine);
-                props.setProperty(pd.getKey(), pd.getValue());
+                String value = ConvertDoubleSingleQuote(pd.getValue());  
+                
+                props.setProperty(pd.getKey(), value);
                 if (!currentNotes.isEmpty()) {
                     notesMap.put(pd.getKey(), new ArrayList<>(currentNotes));
                     currentNotes.clear();
@@ -183,7 +189,9 @@ public class JavaPropertiesResource implements ResourceFilter {
         }
         pw.println("#"+new Date().toString());
         for (ResourceString res : sortedResources) {
-            PropDef pd = new PropDef(res.getKey(),res.getValue(),PropDef.PropSeparator.EQUAL,res.getNotes());
+            String value = res.getValue();  
+            value = ConvertSingleQuote(value);
+            PropDef pd = new PropDef(res.getKey(),value,PropDef.PropSeparator.EQUAL,res.getNotes());
             pd.print(pw, language, isUTF8);
         }
         pw.close();
@@ -272,10 +280,10 @@ public class JavaPropertiesResource implements ResourceFilter {
 
             String key = unescapePropKey(line.substring(0, sepIdx).trim());
             String value = unescapePropValue(stripLeadingSpaces(line.substring(sepIdx + 1)));
-
+            
             PropDef pl = new PropDef(key, value, sep, null);
             return pl;
-        }
+        }   
 
         public String getKey() {
             return key;
@@ -612,6 +620,154 @@ public class JavaPropertiesResource implements ResourceFilter {
 
         return buf.toString();
     }
+    
+    /***
+     * For MessageFormat with number args, convert double single quote back to single quote during import
+     * @param inputStr
+     * @return
+     */
+    public static String ConvertDoubleSingleQuote(String inputStr){
+        String outputStr = "";
+        boolean needConvert = false;
+        MessagePattern msgPat = new MessagePattern(inputStr);
+        
+        int numParts = msgPat.countParts();
+        
+        for (int i = 0; i < numParts; i++) {
+            Part part = msgPat.getPart(i);
+            //Only check ARG_NUMBER at current stage. ARG_NAME may need to be handled in future
+            if(part.getType().equals(Type.ARG_NUMBER)){ 
+                needConvert = true;
+                break;
+            }
+        }
+        
+        int len = inputStr.length();
+        boolean keepQuote = false; //Flag for '{ or '}
+        if(!needConvert){
+            outputStr = inputStr;
+        }else{
+            /***
+             * '{1}' -> '{1}'
+             * '{''}' -> '{''}'
+             * '{'' -> '{''
+             * '{'}'' -> '{'}'
+             * developer''s -> developer's
+             */
+            int outstrIndex = 0;
+            int quoteIndex = 0;
+            
+            while(quoteIndex<len){
+                int idx = inputStr.indexOf("'", quoteIndex);
+                
+                if(idx>-1){
+                    if(!keepQuote && idx+1<len 
+                            && (inputStr.charAt(idx+1)=='{'||inputStr.charAt(idx+1)=='}')){
+                        keepQuote = true;
+                        quoteIndex = idx+2;
+                    }else{
+                        if(keepQuote){ // '{ or '} is not closed yet
+                            if(idx+1<len && inputStr.charAt(idx+1)=='\''){ //Ignore ''
+                                quoteIndex = idx+2;
+                            }else{
+                                keepQuote = false; //Close '{ or '} with this '
+                                quoteIndex = idx+1;
+                            }
+                        }else{
+                            if(idx+1<len && inputStr.charAt(idx+1)=='\''){ //Convert '' to '
+                                outputStr += inputStr.substring(outstrIndex, idx);
+                                outputStr += "'";
+                                quoteIndex = idx+2;
+                                outstrIndex = quoteIndex;
+                            }
+                        }
+                    }
+                }else{
+                    //No single quote is found
+                    outputStr += inputStr.substring(outstrIndex);
+                    break;
+                }
+            }//End while
+            
+            if(quoteIndex>=len){
+                outputStr += inputStr.substring(outstrIndex);
+            }
+        }
+        
+        return outputStr;
+    }
+    
+    /***
+     * For MessageFormat with number args, convert single quote to double single quote during export
+     * @param inputStr
+     * @return
+     */
+    public static String ConvertSingleQuote(String inputStr){
+        String outputStr = "";
+        boolean needConvert = false;
+        
+        String pattern = ".*\\{\\d+\\}.*";
+        
+        String checkStr = inputStr.replaceAll("'\\{", "").replaceAll("\\}'", "");
+        needConvert = Pattern.matches(pattern, checkStr);        
+        
+        int len = inputStr.length();
+        boolean keepQuote = false; //Flag for '{ or '}
+        if(!needConvert){
+            outputStr = inputStr;
+        }else{
+            /***
+             * '{1}' -> '{1}'
+             * '{''}' -> '{''}'
+             * '{'' -> '{''
+             * '{'}' -> '{'}''
+             * developer's -> developer''s
+             */
+            int outstrIndex = 0;
+            int quoteIndex = 0;
+            
+            while(quoteIndex<len){
+                int idx = inputStr.indexOf("'", quoteIndex);
+                
+                if(idx>-1){
+                    if(!keepQuote && idx+1<len 
+                            && (inputStr.charAt(idx+1)=='{'||inputStr.charAt(idx+1)=='}')){
+                        keepQuote = true;
+                        quoteIndex = idx+2;
+                    }else{
+                        if(keepQuote){ // '{ or '} is not closed yet
+                            if(idx+1<len && inputStr.charAt(idx+1)=='\''){ //Ignore ''
+                                quoteIndex = idx+2;
+                            }else{
+                                keepQuote = false; //Close '{ or '} with this '
+                                quoteIndex = idx+1;
+                            }
+                        }else{                             
+                            outputStr += inputStr.substring(outstrIndex, idx);
+                            outputStr += "''";
+                            quoteIndex = idx+1;
+                            outstrIndex = quoteIndex;
+                        }
+                    }
+                }else{
+                    //No single quote is found
+                    outputStr += inputStr.substring(outstrIndex);
+                    break;
+                }
+            }//End while
+            
+            if(quoteIndex>=len){
+                outputStr += inputStr.substring(outstrIndex);
+            }
+            
+        }
+        
+        return outputStr;
+    }
+    
+    public static int findSingleQuote(String inputStr, int start){
+        return -1;
+    }
 
     @Override
     public void merge(InputStream base, OutputStream outStream, String language, Bundle resource) throws IOException {
@@ -680,7 +836,8 @@ public class JavaPropertiesResource implements ResourceFilter {
                     }
                     // Write the property key and value
                     String key = pd.getKey();
-                    PropDef modPd = new PropDef(key, resMap.get(key), pd.getSeparator(), null);
+                    String value = ConvertSingleQuote(resMap.get(key));
+                    PropDef modPd = new PropDef(key, value , pd.getSeparator(), null);
                     modPd.print(outWriter, language, isUTF8);
                 } else {
                     if (orgLines.isEmpty()) {

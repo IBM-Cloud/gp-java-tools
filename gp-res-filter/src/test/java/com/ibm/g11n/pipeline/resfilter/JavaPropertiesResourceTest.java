@@ -84,7 +84,10 @@ public class JavaPropertiesResourceTest {
 
         lst.add(new ResourceString("withTabs", "Tab1\tTab2\tTab3\t", 9,
                 Arrays.asList(" tabs")));
-
+        
+        lst.add(new ResourceString("withQuote", "You're about to delete '{0}' rows in Mike's file {0}.", 10,
+                Arrays.asList(" Quote")));
+        
         Collections.sort(lst, new ResourceStringComparator());
         EXPECTED_INPUT_RES_LIST = lst;
     }
@@ -111,6 +114,8 @@ public class JavaPropertiesResourceTest {
                 Arrays.asList(" trailing SPs"));
         WRITE_BUNDLE.addResourceString("withTabs", "localized Tab1\tTab2\tTab3\t", 9,
                 Arrays.asList(" tabs"));
+        WRITE_BUNDLE.addResourceString("withQuote", "You're about to delete '{1}' rows in Mike's file {0}.", 10,
+                Arrays.asList(" Quote"));
         WRITE_BUNDLE.addNotes(Arrays.asList(
                 " You are reading the \".properties\" entry.",
                 " The exclamation mark can also mark text as comments.",
@@ -285,4 +290,40 @@ public class JavaPropertiesResourceTest {
             assertEquals("unescapePropValue(" + instr + ")", expected, unescapedVal);
         }
     }
+    
+    private static final String[][] QUOTES_TEST_CASES =
+        {
+                {"It's not a bug.","It's not a bug."},
+                {"You're about to delete {0} rows.","You''re about to delete {0} rows."},
+                {"You're about to delete '{0}' rows in Mike's file {0}.","You''re about to delete '{0}' rows in Mike''s file {0}."},
+                {"Log shows '{''}' in file {0}","Log shows '{''}' in file {0}"},
+                {"Log shows '{''} in file {0}","Log shows '{''} in file {0}"},
+                {"Log shows '{'}' in file {0}","Log shows '{'}'' in file {0}"},
+                {"Log shows '{'error'}' in file {0}","Log shows '{'error'}' in file {0}"},
+                {"Log shows '{''error''}' in file {0}","Log shows '{''error''}' in file {0}"},
+                {"File {0} shows '{''error''}'","File {0} shows '{''error''}'"}
+        };
+     
+    @Test    
+    public void testConvertDoubleSingleQuote(){
+        for (String[] testCase : QUOTES_TEST_CASES) {
+            String instr = testCase[1];
+            String expected = testCase[0];
+
+            String doubleQuoteVal = JavaPropertiesResource.ConvertDoubleSingleQuote(instr);
+            assertEquals("ConvertDoubleSingleQuote(" + instr + ")", expected, doubleQuoteVal);
+        }
+    }
+    
+    @Test
+    public void testConvertSingleQuote(){
+        for (String[] testCase : QUOTES_TEST_CASES) {
+            String instr = testCase[0];
+            String expected = testCase[1];
+
+            String doubleQuoteVal = JavaPropertiesResource.ConvertSingleQuote(instr);
+            assertEquals("ConvertSingleQuote(" + instr + ")", expected, doubleQuoteVal);
+        }
+    }
+    
 }
