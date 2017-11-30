@@ -240,6 +240,13 @@ but user accounts and translation configurations are not transferred, because
 they are service instance specific.
 
 
+#### merge (merge-bundle)
+
+Merge translations from the worker instance to the master instance
+
+```
+java -jar gp-cli.jar merge-translations -m master-credentials.json -j slave-credentials.json -b test
+```
 ---
 ### <a name="TOC-Cmd-User"></a>User Commands
 
