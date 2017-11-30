@@ -53,7 +53,7 @@ public class GPCmd {
         jc.addCommand("export", new ExportCmd());
         jc.addCommand("import", new ImportCmd());
         jc.addCommand("list-mt-languages", new ListMTLanguagesCmd());
-        jc.addCommand("merge-bundle", new MergeBundleCmd(), "merge");
+        jc.addCommand("merge-translations", new MergeTranslationsCmd(), "merge-translations");
 
         //users
         jc.addCommand("list-users", new ListUsersCmd());

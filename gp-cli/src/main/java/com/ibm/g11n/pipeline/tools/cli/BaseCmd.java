@@ -65,6 +65,21 @@ abstract class BaseCmd {
         String password;
     }
 
+    protected static ServiceClient getClient(String jsonCredsFile) {
+        JsonCredentials creds;
+        try (InputStreamReader reader = new InputStreamReader(
+                new FileInputStream(jsonCredsFile), StandardCharsets.UTF_8)) {
+            Gson gson = new Gson();
+            creds = gson.fromJson(reader, JsonCredentials.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        ServiceAccount account = ServiceAccount.getInstance(
+                creds.url, creds.instanceId, creds.userId, creds.password);
+        return ServiceClient.getInstance(account);
+    }
+    
     protected ServiceClient getClient() {
         if (jsonCreds != null) {
             JsonCredentials creds;
