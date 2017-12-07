@@ -22,6 +22,7 @@ package com.ibm.g11n.pipeline.resfilter;
  */
 public enum ResourceType {
     JAVA,
+    JAVAUTF8,
     JSON,
     GLOBALIZEJS,
     AMDJS,

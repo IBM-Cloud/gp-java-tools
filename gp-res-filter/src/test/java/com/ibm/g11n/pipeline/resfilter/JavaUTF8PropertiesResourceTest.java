@@ -43,17 +43,17 @@ import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
  * @author Farhan Arshad, JCEmmons
  *
  */
-public class JavaPropertiesResourceTest {
-    private static final File INPUT_FILE = new File("src/test/resource/resfilter/properties/input.properties");
+public class JavaUTF8PropertiesResourceTest {
+    private static final File INPUT_FILE = new File("src/test/resource/resfilter/utf8_properties/input.properties");
 
     private static final File EXPECTED_WRITE_FILE = new File(
-            "src/test/resource/resfilter/properties/write-output.properties");
+            "src/test/resource/resfilter/utf8_properties/write-output.properties");
 
     private static final File EXPECTED_MERGE_FILE = new File(
-            "src/test/resource/resfilter/properties/merge-output.properties");
+            "src/test/resource/resfilter/utf8_properties/merge-output.properties");
 
     private static final File PARSE_TEST_INPUT_FILE = new File(
-            "src/test/resource/resfilter/properties/parseline-test-input.properties");
+            "src/test/resource/resfilter/utf8_properties/parseline-test-input.properties");
 
     private static final Collection<ResourceString> EXPECTED_INPUT_RES_LIST;
 
@@ -85,9 +85,9 @@ public class JavaPropertiesResourceTest {
         lst.add(new ResourceString("withTabs", "Tab1\tTab2\tTab3\t", 9,
                 Arrays.asList(" tabs")));
         
-        lst.add(new ResourceString("withQuote", "You're about to delete '{0}' rows in Mike's file {0}.", 10,
-                Arrays.asList(" Quote")));
-        
+        lst.add(new ResourceString("参数1", "Value of parameter one", 10,
+                Arrays.asList(" Raw UTF8")));
+
         Collections.sort(lst, new ResourceStringComparator());
         EXPECTED_INPUT_RES_LIST = lst;
     }
@@ -114,8 +114,8 @@ public class JavaPropertiesResourceTest {
                 Arrays.asList(" trailing SPs"));
         WRITE_BUNDLE.addResourceString("withTabs", "localized Tab1\tTab2\tTab3\t", 9,
                 Arrays.asList(" tabs"));
-        WRITE_BUNDLE.addResourceString("withQuote", "You're about to delete '{1}' rows in Mike's file {0}.", 10,
-                Arrays.asList(" Quote"));
+        WRITE_BUNDLE.addResourceString("参数1", "localized Value of parameter one", 10,
+                Arrays.asList(" Raw UTF8"));
         WRITE_BUNDLE.addNotes(Arrays.asList(
                 " You are reading the \".properties\" entry.",
                 " The exclamation mark can also mark text as comments.",
@@ -140,7 +140,7 @@ public class JavaPropertiesResourceTest {
         EXPECTED_PROP_DEF_LIST.add(new PropDef("withTabs", "Tab1\tTab2\tTab3\t", PropSeparator.EQUAL));
     }
 
-    private static final JavaPropertiesResource res = new JavaPropertiesResource();
+    private static final JavaPropertiesResource res = new JavaPropertiesResource(true);
 
     @Test
     public void testParse() throws IOException {
@@ -150,6 +150,7 @@ public class JavaPropertiesResourceTest {
             Bundle bundle = res.parse(is);
             List<ResourceString> resStrList = new ArrayList<>(bundle.getResourceStrings());
             Collections.sort(resStrList, new ResourceStringComparator());
+            
             assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, resStrList);
         }
     }
@@ -158,14 +159,15 @@ public class JavaPropertiesResourceTest {
     public void testWrite() throws IOException {
         File tempFile = File.createTempFile(this.getClass().getSimpleName(), ".properties");
         tempFile.deleteOnExit();
-
+        //System.out.println(tempFile.getAbsolutePath());
         try (OutputStream os = new FileOutputStream(tempFile)) {
             res.write(os, null, WRITE_BUNDLE);
             os.flush();
             // Properties.store() puts a comment with date and time
             // on the first line, ignore it by passing n=1 to compareFiles()
-            assertTrue(ResourceTestUtil.compareFilesUpTo(EXPECTED_WRITE_FILE, tempFile, 5));
-            assertTrue(ResourceTestUtil.compareFiles(EXPECTED_WRITE_FILE, tempFile, 6));
+            //assertTrue(ResourceTestUtil.compareFilesUpTo(EXPECTED_WRITE_FILE, tempFile, 5));
+            //assertTrue(ResourceTestUtil.compareFiles(EXPECTED_WRITE_FILE, tempFile, 6));
+            assertTrue(ResourceTestUtil.compareFiles(EXPECTED_WRITE_FILE, tempFile, 26));
         }
     }
 
@@ -206,20 +208,21 @@ public class JavaPropertiesResourceTest {
             {"a b c", "a\\ b\\ c"},
             {" a b ", "\\ a\\ b\\ "},
             {" \t abc \t ", "\\ \\t\\ abc\\ \\t\\ "},
-            {"\u0000\u0001", "\\u0000\\u0001"},
+            //{"\u0000\u0001", "\\u0000\\u0001"},
             {"a=b=c", "a\\=b\\=c"},
             {"a:b;c", "a\\:b;c"},
             {"!#$%()*+,-./", "\\!\\#$%()*+,-./"},
             {"' abc '", "'\\ abc\\ '"},
             {"a \"bc\"", "a\\ \"bc\""},
-            {"\u3042\u3044", "\\u3042\\u3044"},
+            {"\u3042\u3044", "あい"},
         };
 
         for (String[] testCase : testCases) {
             String instr = testCase[0];
             String expected = testCase[1];
+                       
 
-            String escapedKey = JavaPropertiesResource.escapePropKey(instr);
+            String escapedKey = JavaPropertiesResource.escapePropKey(instr, true);
             assertEquals("escapePropKey(" + instr + ")", expected, escapedKey);
 
             String unescapedKey = JavaPropertiesResource.unescapePropKey(escapedKey);
@@ -235,20 +238,20 @@ public class JavaPropertiesResourceTest {
                 {"a b c", "a b c"},
                 {" a b ", "\\ a b "},
                 {" \t abc \t ", "\\ \\t\\ abc \\t "},
-                {"\u0000\u0001", "\\u0000\\u0001"},
+                //{"\u0000\u0001", "\\u0000\\u0001"},
                 {"a=b=c", "a\\=b\\=c"},
                 {"a:b;c", "a\\:b;c"},
                 {"!#$%()*+,-./", "\\!\\#$%()*+,-./"},
                 {"' abc '", "' abc '"},
                 {"a \"bc\"", "a \"bc\""},
-                {"\u3042\u3044", "\\u3042\\u3044"},
+                {"\u3042\u3044", "あい"},
             };
 
             for (String[] testCase : testCases) {
                 String instr = testCase[0];
                 String expected = testCase[1];
 
-                String escapedVal = JavaPropertiesResource.escapePropValue(instr);
+                String escapedVal = JavaPropertiesResource.escapePropValue(instr, true);
                 assertEquals("escapePropValue(" + instr + ")", expected, escapedVal);
 
                 String unescapedVal = JavaPropertiesResource.unescapePropValue(escapedVal);
@@ -290,40 +293,4 @@ public class JavaPropertiesResourceTest {
             assertEquals("unescapePropValue(" + instr + ")", expected, unescapedVal);
         }
     }
-    
-    private static final String[][] QUOTES_TEST_CASES =
-        {
-                {"It's not a bug.","It's not a bug."},
-                {"You're about to delete {0} rows.","You''re about to delete {0} rows."},
-                {"You're about to delete '{0}' rows in Mike's file {0}.","You''re about to delete '{0}' rows in Mike''s file {0}."},
-                {"Log shows '{''}' in file {0}","Log shows '{''}' in file {0}"},
-                {"Log shows '{''} in file {0}","Log shows '{''} in file {0}"},
-                {"Log shows '{'}' in file {0}","Log shows '{'}'' in file {0}"},
-                {"Log shows '{'error'}' in file {0}","Log shows '{'error'}' in file {0}"},
-                {"Log shows '{''error''}' in file {0}","Log shows '{''error''}' in file {0}"},
-                {"File {0} shows '{''error''}'","File {0} shows '{''error''}'"}
-        };
-     
-    @Test    
-    public void testConvertDoubleSingleQuote(){
-        for (String[] testCase : QUOTES_TEST_CASES) {
-            String instr = testCase[1];
-            String expected = testCase[0];
-
-            String doubleQuoteVal = JavaPropertiesResource.ConvertDoubleSingleQuote(instr);
-            assertEquals("ConvertDoubleSingleQuote(" + instr + ")", expected, doubleQuoteVal);
-        }
-    }
-    
-    @Test
-    public void testConvertSingleQuote(){
-        for (String[] testCase : QUOTES_TEST_CASES) {
-            String instr = testCase[0];
-            String expected = testCase[1];
-
-            String doubleQuoteVal = JavaPropertiesResource.ConvertSingleQuote(instr);
-            assertEquals("ConvertSingleQuote(" + instr + ")", expected, doubleQuoteVal);
-        }
-    }
-    
 }

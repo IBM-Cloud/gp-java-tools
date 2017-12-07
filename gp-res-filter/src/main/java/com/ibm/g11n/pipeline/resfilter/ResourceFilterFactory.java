@@ -25,6 +25,8 @@ public class ResourceFilterFactory {
     public static ResourceFilter getX(String type) {
         if (type.equalsIgnoreCase("java")) {
             return new JavaPropertiesResource();
+        } else if (type.equalsIgnoreCase("javautf8")) {
+            return new JavaPropertiesResource(true);
         } else if (type.equalsIgnoreCase("json")) {
             return new JsonResource();
         } else if (type.equalsIgnoreCase("globalizejs")) {
@@ -51,6 +53,8 @@ public class ResourceFilterFactory {
         switch (type) {
         case JAVA:
             return new JavaPropertiesResource();
+        case JAVAUTF8:
+            return new JavaPropertiesResource(true);
         case JSON:
             return new JsonResource();
         case GLOBALIZEJS:
