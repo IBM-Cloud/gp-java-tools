@@ -43,6 +43,7 @@ public class GPCmd {
 
         jc.addCommand("help", new HelpCmd());
 
+        // bundles
         jc.addCommand("list-bundle", new ListBundlesCmd(), "list");
         jc.addCommand("show-bundle", new ShowBundleCmd(), "show");
         jc.addCommand("create-bundle", new CreateBundleCmd(), "create");
@@ -54,11 +55,20 @@ public class GPCmd {
         jc.addCommand("import", new ImportCmd());
         jc.addCommand("list-mt-languages", new ListMTLanguagesCmd());
 
-        //users
+        // users
         jc.addCommand("list-users", new ListUsersCmd());
         jc.addCommand("create-user", new CreateUserCmd());
         jc.addCommand("delete-user", new DeleteUserCmd());
         jc.addCommand("reset-user-password" , new ResetUserPasswordCmd());
+
+        // documents
+        jc.addCommand("list-documents", new ListDocumentsCmd());
+        jc.addCommand("show-document", new ShowDocumentCmd());
+        jc.addCommand("create-document", new CreateDocumentCmd());
+        jc.addCommand("delete-document", new DeleteDocumentCmd());
+        jc.addCommand("update-document", new UpdateDocumentCmd());
+        jc.addCommand("export-document", new ExportDocumentCmd());
+        jc.addCommand("import-document", new ImportDocumentCmd());
 
         try {
             jc.parse(args);
