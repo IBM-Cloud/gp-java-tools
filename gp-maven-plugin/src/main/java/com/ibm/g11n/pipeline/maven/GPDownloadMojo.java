@@ -158,18 +158,19 @@ public class GPDownloadMojo extends GPBaseMojo {
             throws MojoFailureException {
         String srcFileName = bf.getFile().getName();
         String relPath = bf.getRelativePath();
-        
-        // truncate source suffix from target resource files
-        int extensionIndex = srcFileName.lastIndexOf('.');
-		String extension = (extensionIndex > 0) ? srcFileName.substring(extensionIndex) : "";
-		int srcSuffixIndex = (langMap.containsKey(srcLang)) ? srcFileName.lastIndexOf("_" + langMap.get(srcLang)) : srcFileName.lastIndexOf("_" + srcLang);
-		srcFileName = (srcSuffixIndex > 0) ? srcFileName.substring(0,srcSuffixIndex) + extension : srcFileName;
-		
         File outputFile = null;
 
         switch (bundleLayout) {
         case LANGUAGE_SUFFIX: {
             File dir = (new File(outBaseDir, relPath)).getParentFile();
+            
+            // truncate source suffix from sourceFile name - BEGIN
+            int extensionIndex = srcFileName.lastIndexOf('.');
+            String extension = (extensionIndex > 0) ? srcFileName.substring(extensionIndex) : "";
+            int srcSuffixIndex = srcFileName.lastIndexOf("_" + getLanguageId(srcLang, langIdStyle, langMap));
+            srcFileName = (srcSuffixIndex > 0) ? srcFileName.substring(0,srcSuffixIndex) + extension : srcFileName;
+            // truncate source suffix from sourceFile name - END
+            
             int idx = srcFileName.lastIndexOf('.');
             String tgtName = null;
             if (idx < 0) {
