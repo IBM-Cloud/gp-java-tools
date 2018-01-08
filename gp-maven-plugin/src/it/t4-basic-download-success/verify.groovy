@@ -25,6 +25,7 @@ try {
     println "verifying that download happened successfully"
     String location = bldDir + "/it/t4-basic-download-success"
     String targetLocation = location + "/target/classes/com/bundle1"
+    String targetLocation2 = location + "/target/classes/com/bundle2"
     def dir = new File(targetLocation)
     int filecount = 0
     int keycount = 5 // including opening and closing braces which take 1 line each
@@ -40,6 +41,13 @@ try {
     	}
     }
     assert filecount == 20
+
+    def dir2 = new File(targetLocation2)
+    dir2.traverse { file ->
+        if (!file.directory) {
+            assert !file.name.contains("_en_")
+        }
+    }
 } catch( Throwable t ) {
     t.printStackTrace()
     return false

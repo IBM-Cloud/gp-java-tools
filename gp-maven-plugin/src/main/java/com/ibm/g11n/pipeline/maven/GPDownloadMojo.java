@@ -132,7 +132,7 @@ public class GPDownloadMojo extends GPBaseMojo {
                 if (outputSrcLang) {
                     if (bdlLangs.contains(srcLang)) {
                         exportLanguageResource(client, bf, srcLang, outDir,
-                                outContentOpt, bundleLayout, langIdStyle, langMap);
+                                outContentOpt, bundleLayout, langIdStyle, langMap, srcLang);
                     } else {
                         getLog().warn("The specified source language (" + srcLang
                                 + ") does not exist in the bundle:" + bundleId);
@@ -142,7 +142,7 @@ public class GPDownloadMojo extends GPBaseMojo {
                 for (String tgtLang: tgtLangs) {
                     if (bdlLangs.contains(tgtLang)) {
                         exportLanguageResource(client, bf, tgtLang, outDir,
-                                outContentOpt, bundleLayout, langIdStyle, langMap);
+                                outContentOpt, bundleLayout, langIdStyle, langMap, srcLang);
                     } else {
                         getLog().warn("The specified target language (" + tgtLang
                                 + ") does not exist in the bundle:" + bundleId);
@@ -154,16 +154,23 @@ public class GPDownloadMojo extends GPBaseMojo {
 
     private void exportLanguageResource(ServiceClient client, SourceBundleFile bf, String language,
             File outBaseDir, OutputContentOption outContntOpt, BundleLayout bundleLayout,
-            LanguageIdStyle langIdStyle, Map<String, String> langMap)
+            LanguageIdStyle langIdStyle, Map<String, String> langMap, String srcLang)
             throws MojoFailureException {
         String srcFileName = bf.getFile().getName();
         String relPath = bf.getRelativePath();
-
         File outputFile = null;
 
         switch (bundleLayout) {
         case LANGUAGE_SUFFIX: {
             File dir = (new File(outBaseDir, relPath)).getParentFile();
+            
+            // truncate source suffix from sourceFile name - BEGIN
+            int extensionIndex = srcFileName.lastIndexOf('.');
+            String extension = (extensionIndex > 0) ? srcFileName.substring(extensionIndex) : "";
+            int srcSuffixIndex = srcFileName.lastIndexOf("_" + getLanguageId(srcLang, langIdStyle, langMap));
+            srcFileName = (srcSuffixIndex > 0) ? srcFileName.substring(0,srcSuffixIndex) + extension : srcFileName;
+            // truncate source suffix from sourceFile name - END
+            
             int idx = srcFileName.lastIndexOf('.');
             String tgtName = null;
             if (idx < 0) {
