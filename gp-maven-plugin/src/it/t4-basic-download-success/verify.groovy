@@ -39,7 +39,7 @@ try {
         	}
     	}
     }
-    assert filecount == 10
+    assert filecount == 20
 } catch( Throwable t ) {
     t.printStackTrace()
     return false
