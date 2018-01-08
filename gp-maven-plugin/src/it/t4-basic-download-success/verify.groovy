@@ -40,8 +40,7 @@ try {
         	}
     	}
     }
-    assert filecount == 10
-
+    assert filecount == 20
 
     def dir2 = new File(targetLocation2)
     dir2.traverse { file ->
