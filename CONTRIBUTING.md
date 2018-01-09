@@ -13,8 +13,8 @@ context as possible so we can try to recreate the issue.
 
 Do not submit account credentials in bug report forms.
 
-Use Bluemix support options within the Bluemix web page for customer
-assistance with Bluemix, including the Globalization Pipeline service itself.
+Use IBM Cloud support options within the IBM Cloud web page for customer
+assistance with IBM Cloud, including the Globalization Pipeline service itself.
 
 For general questions about Globalization Pipeline, you may also use the
 StackOverflow tag [“globalization pipeline”](http://stackoverflow.com/questions/tagged/globalization-pipeline)
@@ -49,14 +49,14 @@ change your rights to use your own Contributions for any other purpose.
 
 You can download the CLAs here:
 
- - [individual](https://github.com/IBM-Bluemix/gp-common/raw/master/legal/gp-cla-individual.pdf)
- - [corporate](https://github.com/IBM-Bluemix/gp-common/raw/master/legal/gp-cla-corporate.pdf)
+ - [individual](https://github.com/IBM-Cloud/gp-common/raw/master/legal/gp-cla-individual.pdf)
+ - [corporate](https://github.com/IBM-Cloud/gp-common/raw/master/legal/gp-cla-corporate.pdf)
 
 If you are an IBMer, please contact us directly as the contribution process is
 slightly different.
 
 ### Acknowledgement
 
-- Master copy: https://github.com/IBM-Bluemix/gp-common/blob/master/CONTRIBUTING.md
-- Copyright © 2016 IBM Corporation.
+- Master copy: https://github.com/IBM-Cloud/gp-common/blob/master/CONTRIBUTING.md
+- Copyright © 2016, 2018 IBM Corporation.
 - This document forked from [wasdev](https://github.com/WASdev/wasdev.github.io/blob/master/CONTRIBUTING.md)
