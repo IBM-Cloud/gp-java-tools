@@ -163,22 +163,30 @@ public class GPDownloadMojo extends GPBaseMojo {
         switch (bundleLayout) {
         case LANGUAGE_SUFFIX: {
             File dir = (new File(outBaseDir, relPath)).getParentFile();
-            
-            // truncate source suffix from sourceFile name - BEGIN
-            int extensionIndex = srcFileName.lastIndexOf('.');
-            String extension = (extensionIndex > 0) ? srcFileName.substring(extensionIndex) : "";
-            int srcSuffixIndex = srcFileName.lastIndexOf("_" + getLanguageId(srcLang, langIdStyle, langMap));
-            srcFileName = (srcSuffixIndex > 0) ? srcFileName.substring(0,srcSuffixIndex) + extension : srcFileName;
-            // truncate source suffix from sourceFile name - END
-            
-            int idx = srcFileName.lastIndexOf('.');
-            String tgtName = null;
-            if (idx < 0) {
-                tgtName = srcFileName + "_" + getLanguageId(language, langIdStyle, langMap);
-            } else {
-                tgtName = srcFileName.substring(0, idx) + "_" + getLanguageId(language, langIdStyle, langMap)
-                    + srcFileName.substring(idx);
+
+            String tgtName = srcFileName;
+            // Compose file name if the output language is not the source language
+            if (!language.equals(srcLang)) {
+                String baseName = srcFileName;
+                String extension = "";
+                int extensionIndex = srcFileName.lastIndexOf('.');
+                if (extensionIndex > 0) {
+                    baseName = srcFileName.substring(0, extensionIndex);
+                    extension = srcFileName.substring(extensionIndex);
+                }
+
+                // checks if the source file's base name (without extension) ends with
+                // source language code suffix, e.g. foo_en => foo
+                String srcLangSuffix = "_" + getLanguageId(srcLang, langIdStyle, langMap);
+                if (baseName.endsWith(srcLangSuffix)) {
+                    // truncates source the source language suffix from base name
+                    baseName = baseName.substring(0, baseName.length() - srcLangSuffix.length());
+                }
+
+                // append target language suffix to the base name, e.g. foo => foo_de
+                tgtName = baseName + "_" + getLanguageId(language, langIdStyle, langMap) + extension;
             }
+
             outputFile = new File(dir, tgtName);
             break;
         }
