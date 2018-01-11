@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2016, 2017
+ * Copyright IBM Corp. 2016, 2017, 2018
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -188,6 +188,15 @@ public class GPDownloadMojo extends GPBaseMojo {
             }
 
             outputFile = new File(dir, tgtName);
+            break;
+        }
+        case LANGUAGE_ONLY: {
+            File dir = (new File(outBaseDir, relPath)).getParentFile();
+            int extensionIndex = srcFileName.lastIndexOf('.');
+            String extension = extensionIndex >= 0 ?
+                    srcFileName.substring(extensionIndex) : "";
+            String baseName = getLanguageId(language, langIdStyle, langMap);
+            outputFile = new File(dir, baseName + extension);
             break;
         }
         case LANGUAGE_SUBDIR: {

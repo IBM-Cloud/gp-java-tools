@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2017
+ * Copyright IBM Corp. 2017, 2018
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-import java.io.*
-import java.lang.reflect.*
-import java.util.*
-import java.util.regex.*
 import com.ibm.g11n.pipeline.maven.*
 import com.ibm.g11n.pipeline.client.*
 
 try {
     println "verifying that upload succeeded"
-    String location = bldDir + "/it/t2-basic-upload-success";
+    String location = bldDir + "/it/upload-basic";
     String propfile = "setup.properties"
     def propertyMap = ITTools.loadProperties(location, propfile);
     Credentials creds = ITTools.getCredentials(location, propfile);

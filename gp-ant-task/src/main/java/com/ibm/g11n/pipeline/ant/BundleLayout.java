@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2017
+ * Copyright IBM Corp. 2017, 2018
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,18 @@ public enum BundleLayout {
      * then the French version will be com/ibm/g11n/MyMessages_fr.properties.
      */
     LANGUAGE_SUFFIX,
+
+    /**
+     * In the same directory with the source, using language code as the
+     * file name.
+     * For example, if the source file is com/ibm/g11n/en.json,
+     * then the French version will be com/ibm/g11n/fr.json.
+     * <p>
+     * Note: With this option, output file name will be just language code
+     * (with file extension same with the source file) regardless of the source
+     * file name.
+     */
+    LANGUAGE_ONLY,
 
     /**
      * In a language sub-directory of the director where the source file is.
