@@ -13,17 +13,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import java.io.*
-import java.lang.reflect.*
-import java.util.*
-import java.util.regex.*
-
-try {
-	println "Set up for basic upload fail test"
-    com.ibm.g11n.pipeline.maven.ITTools.createCredentialsFile(bldDir + "/it/t1-basic-upload-fail", "setup.properties")
-      
-} catch( Throwable t ) {
-    t.printStackTrace()
-    return false
-}
+println "setup: Basic download test"
+com.ibm.g11n.pipeline.maven.ITTools.createCredentialsFile(bldDir + "/it/download-basic", "setup.properties")

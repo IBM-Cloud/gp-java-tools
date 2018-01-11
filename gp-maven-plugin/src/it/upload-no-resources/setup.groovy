@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2017
+ * Copyright IBM Corp. 2017, 2018
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import java.io.*
-import java.lang.reflect.*
-import java.util.*
-import java.util.regex.*
-
-try {
-    println "setup for basic download fail test"
-    com.ibm.g11n.pipeline.maven.ITTools.createCredentialsFile(bldDir + "/it/t3-basic-download-fail", "setup.properties")  
-} catch( Throwable t ) {
-    t.printStackTrace()
-    return false
-}
+println "setup: Upload with no available resources"
+com.ibm.g11n.pipeline.maven.ITTools.createCredentialsFile(bldDir + "/it/upload-no-resources", "setup.properties")

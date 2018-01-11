@@ -1,16 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project
-	xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>@project.groupId@</groupId>
-	<artifactId>basic-download-test</artifactId>
+	<artifactId>download-no-directory-config</artifactId>
 	<version>@project.version@</version>
 	<packaging>jar</packaging>
-	
-	<name>gp-maven-plugin Basic Download Success test</name>
+
+	<name>integration test - download-no-directory-config</name>
 	<build>
 		<plugins>
 			<plugin>
@@ -27,17 +25,16 @@
 				<configuration>
 					<bundleSets>
 						<bundleSet>
-								<sourceFiles>
-									<directory>src/main/resources</directory>
-									<includes>
-										<include>**/*.json</include>
-									</includes>
-								</sourceFiles>
-								<type>JSON</type>
-						</bundleSet>			            
+							<sourceFiles>
+								<directory></directory> <!-- Empty directory value -->
+								<includes>
+									<include>**/*.properties</include>
+								</includes>
+							</sourceFiles>
+						</bundleSet>
 					</bundleSets>
 				</configuration>
 			</plugin>
 		</plugins>
- 	</build>
+	</build>
 </project>

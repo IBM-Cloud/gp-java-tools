@@ -6,11 +6,10 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>@project.groupId@</groupId>
-	<artifactId>t1-basic-upload-test-fail</artifactId>
+	<artifactId>upload-no-resources</artifactId>
 	<version>@project.version@</version>
 	<packaging>jar</packaging>
-	
-	<name>gp-maven-plugin Basic Upload Success Test</name>
+	<name>gp-maven-plugin Integration test upload-no-resources</name>
 	<build>
 		<plugins>
 			<plugin>
