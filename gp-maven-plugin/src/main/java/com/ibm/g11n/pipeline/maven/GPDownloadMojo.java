@@ -133,7 +133,7 @@ public class GPDownloadMojo extends GPBaseMojo {
                 if (outputSrcLang) {
                     if (bdlLangs.contains(srcLang)) {
                         exportLanguageResource(client, bf, srcLang, outDir,
-                                outContentOpt, bundleLayout, langIdStyle, langMap);
+                                outContentOpt, bundleLayout, langIdStyle, langMap, srcLang);
                     } else {
                         getLog().warn("The specified source language (" + srcLang
                                 + ") does not exist in the bundle:" + bundleId);
@@ -143,7 +143,7 @@ public class GPDownloadMojo extends GPBaseMojo {
                 for (String tgtLang: tgtLangs) {
                     if (bdlLangs.contains(tgtLang)) {
                         exportLanguageResource(client, bf, tgtLang, outDir,
-                                outContentOpt, bundleLayout, langIdStyle, langMap);
+                                outContentOpt, bundleLayout, langIdStyle, langMap, srcLang);
                     } else {
                         getLog().warn("The specified target language (" + tgtLang
                                 + ") does not exist in the bundle:" + bundleId);
@@ -155,25 +155,49 @@ public class GPDownloadMojo extends GPBaseMojo {
 
     private void exportLanguageResource(ServiceClient client, SourceBundleFile bf, String language,
             File outBaseDir, OutputContentOption outContntOpt, BundleLayout bundleLayout,
-            LanguageIdStyle langIdStyle, Map<String, String> langMap)
+            LanguageIdStyle langIdStyle, Map<String, String> langMap, String srcLang)
             throws MojoFailureException {
         String srcFileName = bf.getFile().getName();
         String relPath = bf.getRelativePath();
-
         File outputFile = null;
 
         switch (bundleLayout) {
         case LANGUAGE_SUFFIX: {
             File dir = (new File(outBaseDir, relPath)).getParentFile();
-            int idx = srcFileName.lastIndexOf('.');
-            String tgtName = null;
-            if (idx < 0) {
-                tgtName = srcFileName + "_" + getLanguageId(language, langIdStyle, langMap);
-            } else {
-                tgtName = srcFileName.substring(0, idx) + "_" + getLanguageId(language, langIdStyle, langMap)
-                    + srcFileName.substring(idx);
+
+            String tgtName = srcFileName;
+            // Compose file name if the output language is not the source language
+            if (!language.equals(srcLang)) {
+                String baseName = srcFileName;
+                String extension = "";
+                int extensionIndex = srcFileName.lastIndexOf('.');
+                if (extensionIndex > 0) {
+                    baseName = srcFileName.substring(0, extensionIndex);
+                    extension = srcFileName.substring(extensionIndex);
+                }
+
+                // checks if the source file's base name (without extension) ends with
+                // source language code suffix, e.g. foo_en => foo
+                String srcLangSuffix = "_" + getLanguageId(srcLang, langIdStyle, langMap);
+                if (baseName.endsWith(srcLangSuffix)) {
+                    // truncates source the source language suffix from base name
+                    baseName = baseName.substring(0, baseName.length() - srcLangSuffix.length());
+                }
+
+                // append target language suffix to the base name, e.g. foo => foo_de
+                tgtName = baseName + "_" + getLanguageId(language, langIdStyle, langMap) + extension;
             }
+
             outputFile = new File(dir, tgtName);
+            break;
+        }
+        case LANGUAGE_ONLY: {
+            File dir = (new File(outBaseDir, relPath)).getParentFile();
+            int extensionIndex = srcFileName.lastIndexOf('.');
+            String extension = extensionIndex >= 0 ?
+                    srcFileName.substring(extensionIndex) : "";
+            String baseName = getLanguageId(language, langIdStyle, langMap);
+            outputFile = new File(dir, baseName + extension);
             break;
         }
         case LANGUAGE_SUBDIR: {

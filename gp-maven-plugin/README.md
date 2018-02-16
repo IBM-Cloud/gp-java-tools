@@ -68,7 +68,7 @@ in pom.xml.
             <plugin>
                 <groupId>com.ibm.g11n.pipeline</groupId>
                 <artifactId>gp-maven-plugin</artifactId>
-                <version>1.1.8</version>
+                <version>1.1.9</version>
             </plugin>
             [...]
         </plugins>
@@ -513,6 +513,8 @@ Specifies one of following keywords to control output file name or path in `down
 * **LANGUAGE_SUFFIX** In the same directory with the source bundle file, with extra language suffix.
 For example, if the source bundle file is `com/ibm/g11n/MyMessages.properties`, then the French
 version will be `com/ibm/g11n/MyMessages_fr.properties`.
+* **LANGUAGE_ONLY** In the same directory with the source bundle file, using language code as the file name with the original file extension.
+For example, if the source bundle file is `res/en.json`, then the French version will be `res/fr.json`.
 * **LANGUAGE_SUBDIR** In a language sub-directory under the directory where the source bundle file
 is placed. For example, if the source bundle file is `res/MyMessages.json`, then the French
 version will be `res/fr/MyMessages.json`.

@@ -206,7 +206,7 @@ public abstract class GPBaseMojo extends AbstractMojo {
         String pkgName = parent == null ? "" :
             parent.getPath().replace(File.separatorChar, '.');
 
-        String fileName = f.getName();
+        String fileName = f.getName().replaceAll(" ", "_");
         if (type.equals("JAVA")) {
             int dotIdx = fileName.indexOf('.');
             if (dotIdx >= 0) {
