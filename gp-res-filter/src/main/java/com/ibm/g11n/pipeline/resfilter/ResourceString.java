@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2016, 2017
+ * Copyright IBM Corp. 2016, 2018
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,45 +22,155 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * @author parth
- *
+ * <code>ResourceString</code> class stores a single resource string value
+ * and other meta data.
+ * 
+ * @author parth, yoshito_umaoka
  */
-
 public final class ResourceString {
-    private final String key;
-    private final String value;
+
+    public static int DEFAULT_SEQUENCE_NUMBER = -1;
+
+    private String key;
+    private String value;
+    private String sourceValue;
     private int sequenceNumber;
     private List<String> notes;
-    private final String srcValue;
 
-    public ResourceString(String key, String value, int sequenceNumber, List<String> notes ) {
-        this(key, value, sequenceNumber, notes, null);
-    }
-    
-    public ResourceString(String key, String value, int sequenceNumber, List<String> notes, String srcValue ) {
-        this.key = key;
-        this.value = value;
-        this.sequenceNumber = sequenceNumber;
-        this.notes = notes == null ? null : new ArrayList<>(notes);
-        this.srcValue = srcValue;
+    /**
+     * A convenient builder for <code>ResourceString</code>
+     * @author yoshito_umaoka
+     */
+    public static class Builder {
+        private String key;
+        private String value;
+        private String sourceValue;
+        private int sequenceNumber = DEFAULT_SEQUENCE_NUMBER;
+        private List<String> notes;
+
+        private Builder(String key, String value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        /**
+         * Sets the source value of this resource string.
+         * @param sourceValue   The source value of the resource string.
+         * @return  this builder.
+         */
+        public Builder sourceValue(String sourceValue) {
+            this.sourceValue = sourceValue;
+            return this;
+        }
+
+        /**
+         * Sets the sequence number of this resource string.
+         * @param sequenceNumber    The sequence number of the resource string.
+         * @return this builder.
+         */
+        public Builder sequenceNumber(int sequenceNumber) {
+            this.sequenceNumber = sequenceNumber;
+            return this;
+        }
+
+        /**
+         * Sets the array of notes for this resource string.
+         * @param notes The array of notes.
+         * @return  this builder.
+         */
+        public Builder notes(List<String> notes) {
+            if (notes == null) {
+                this.notes = null;
+            } else {
+                this.notes = new ArrayList<String>(notes);
+            }
+            return this;
+        }
+
+        /**
+         * Adds the single note for this resource string. If any notes were already
+         * added before, the note will be appended to the end of the array.
+         * @param note  The single note.
+         * @return  this builder.
+         */
+        public Builder addNote(String note) {
+            if (this.notes == null) {
+                this.notes = new ArrayList<String>();
+            }
+            this.notes.add(note);
+            return this;
+        }
+
+        /**
+         * Builds an instance of {@link ResourceString}.
+         * @return  an instance of {@link ResourceString}.
+         */
+        public ResourceString build() {
+            if (key == null || value == null) {
+                throw new NullPointerException("Both key(" + key + ") and value(" + value
+                        + ") must be non-null.");
+            }
+            return new ResourceString(this);
+        }
     }
 
-    public ResourceString(String key, String value, int sequenceNumber) {
-        this(key, value, sequenceNumber, null);
+    private ResourceString(Builder builder) {
+        this.key = builder.key;
+        this.value = builder.value;
+        this.sourceValue = builder.sourceValue;
+        this.sequenceNumber = builder.sequenceNumber;
+        this.notes = builder.notes == null ?
+                null : new ArrayList<String>(builder.notes);
     }
 
-    public ResourceString(String key, String value) {
-        this(key, value, -1);
+    /**
+     * Convenient method for creating a new {@link Builder} with the specified
+     * key and value.
+     * @param key   The resource key.
+     * @param value The resource value.
+     * @return  an instance of new {@link Builder}.
+     */
+    public static Builder with(String key, String value) {
+        return new Builder(key, value);
     }
 
+    /**
+     * Returns the resource key.
+     * @return  the resource key.
+     */
     public String getKey() {
         return key;
     }
 
+    /**
+     * Returns the resource value.
+     * @return  the resource value.
+     */
     public String getValue() {
         return value;
     }
 
+    /**
+     * Returns the resource's source value.
+     * @return  the reources's source value.
+     */
+    public String getSourceValue() {
+        return sourceValue;
+    }
+
+    /**
+     * Returns the sequence number of this resource string.
+     * @return  the sequence number of this resource string.
+     */
+    public int getSequenceNumber() {
+        return sequenceNumber;
+    }
+
+    /**
+     * Returns an unmodifiable list of notes for this resource string.
+     * An empty list is returned when no notes are available.
+     * @return  an unmodifiable list of notes for this resource string.
+     */
     public List<String> getNotes() {
         if (notes == null) {
             return Collections.emptyList();
@@ -68,61 +178,67 @@ public final class ResourceString {
         return Collections.unmodifiableList(notes);
     }
 
-    public void addNote(String note) {
-        if (notes == null) {
-            notes = new ArrayList<>();
-        }
-        notes.add(note);
-    }
-    
-    public void setSequenceNumber(int sequenceNumber) {
-        this.sequenceNumber = sequenceNumber;
-    }
-
-    public int getSequenceNumber() {
-        return sequenceNumber;
-    }
-
-    public String getSrcValue() {
-        return srcValue;
-    }
-    
     @Override
+    /**
+     * {@inheritDoc}
+     */
     public boolean equals(Object obj) {
         if (!(obj instanceof ResourceString)) {
             return false;
         }
         ResourceString rs = (ResourceString) obj;
-        return Objects.equals(this.key, rs.key) && Objects.equals(this.value, rs.value)
-                && Objects.equals(this.notes, rs.notes) && this.sequenceNumber == rs.sequenceNumber;
+        return Objects.equals(this.key, rs.key)
+                && Objects.equals(this.value, rs.value)
+                && Objects.equals(this.sourceValue, rs.sourceValue)
+                && Objects.equals(this.notes, rs.notes)
+                && this.sequenceNumber == rs.sequenceNumber;
     }
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("#");
-        builder.append(getSequenceNumber());
-        builder.append(" Key=");
-        builder.append(getKey());
-        builder.append(" Value=");
-        builder.append(getValue());
-        builder.append(" Notes=");
-        builder.append(getNotes().toString());
+        StringBuilder builder = new StringBuilder("{");
+        builder.append("key: ").append(key);
+        builder.append(", value: ").append(value);
+        builder.append(", sourceValue: ").append(sourceValue);
+        builder.append(", notes: ").append(notes);
+        builder.append(", sequenceNumber: ")
+            .append(sequenceNumber == DEFAULT_SEQUENCE_NUMBER ? "<default>" : sequenceNumber);
+        builder.append("}");
         return builder.toString();
     }
 
+    /**
+     * Comparator implementation for {@link ResourceString}
+     * 
+     * @author yoshito_umaoka
+     */
     public static class ResourceStringComparator implements Comparator<ResourceString> {
         private boolean isUnknownSequenceFirst = false;
 
+        /**
+         * Default constructor, equivalent to <code>ResourceStringComparator(false)</code>.
+         */
         public ResourceStringComparator() {
             this(false);
         }
 
+        /**
+         * Constructor.
+         * @param isUnknownSequenceFirst    When true, a resource string with default
+         *  sequence number value will be less than another resource string with non-default
+         *  sequence number.
+         */
         public ResourceStringComparator(boolean isUnknownSequenceFirst) {
             this.isUnknownSequenceFirst = isUnknownSequenceFirst;
         }
 
         @Override
+        /**
+         * {@inheritDoc}
+         */
         public int compare(ResourceString o1, ResourceString o2) {
             int seq1 = o1.getSequenceNumber();
             int seq2 = o2.getSequenceNumber();
@@ -152,8 +268,12 @@ public final class ResourceString {
                 // Use value's natural order as tie-breaker
                 cmp = compareStrings(o1.getValue(), o2.getValue());
                 if (cmp == 0) {
-                    // Note value's natural order as tie-breaker
-                    cmp = compareNotes(o1.getNotes(), o2.getNotes());
+                    // Use source value's natural order as tie-breaker
+                    cmp = compareStrings(o1.getSourceValue(), o2.getSourceValue());
+                    if (cmp == 0) {
+                        // Note value's natural order as tie-breaker
+                        cmp = compareNotes(o1.getNotes(), o2.getNotes());
+                    }
                 }
             }
 

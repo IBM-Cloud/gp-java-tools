@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2017
+ * Copyright IBM Corp. 2017, 2018
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -33,8 +34,10 @@ import com.ibm.g11n.pipeline.client.NewBundleData;
 import com.ibm.g11n.pipeline.client.NewResourceEntryData;
 import com.ibm.g11n.pipeline.client.ServiceClient;
 import com.ibm.g11n.pipeline.client.ServiceException;
-import com.ibm.g11n.pipeline.resfilter.Bundle;
+import com.ibm.g11n.pipeline.resfilter.FilterOptions;
+import com.ibm.g11n.pipeline.resfilter.LanguageBundle;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilter;
+import com.ibm.g11n.pipeline.resfilter.ResourceFilterException;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterFactory;
 import com.ibm.g11n.pipeline.resfilter.ResourceString;
 
@@ -88,11 +91,14 @@ public class GPUploadTask extends GPBaseTask {
                     }
 
                     // Parse the resource bundle file
-                    ResourceFilter filter = ResourceFilterFactory.get(bf.getType());
-                    Map<String, NewResourceEntryData> resEntries = new HashMap<>();
+                    ResourceFilter filter = ResourceFilterFactory.getResourceFilter(bf.getType());
+                    if (filter == null) {
+                        throw new BuildException("Resource filter for " + bf.getType() + " is not available.");
+                    }
 
+                    Map<String, NewResourceEntryData> resEntries = new HashMap<>();
                     try (FileInputStream fis = new FileInputStream(bf.getFile())) {
-                        Bundle resBundle = filter.parse(fis);
+                        LanguageBundle resBundle = filter.parse(fis, new FilterOptions(Locale.forLanguageTag(srcLang)));
 
                         if (createNew) {
                             NewBundleData newBundleData = new NewBundleData(srcLang);
@@ -118,6 +124,9 @@ public class GPUploadTask extends GPBaseTask {
                         }
                     } catch (IOException e) {
                         throw new BuildException("Failed to read the resoruce data from "
+                                + bf.getFile().getAbsolutePath() + ": " + e.getMessage(), e);
+                    } catch (ResourceFilterException e) {
+                        throw new BuildException("Failed to parse the resource data from "
                                 + bf.getFile().getAbsolutePath() + ": " + e.getMessage(), e);
                     }
 

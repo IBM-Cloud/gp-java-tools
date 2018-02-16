@@ -19,17 +19,19 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.ibm.g11n.pipeline.client.NewResourceEntryData;
 import com.ibm.g11n.pipeline.client.ServiceException;
-import com.ibm.g11n.pipeline.resfilter.Bundle;
+import com.ibm.g11n.pipeline.resfilter.FilterOptions;
+import com.ibm.g11n.pipeline.resfilter.LanguageBundle;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilter;
+import com.ibm.g11n.pipeline.resfilter.ResourceFilterException;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterFactory;
 import com.ibm.g11n.pipeline.resfilter.ResourceString;
-import com.ibm.g11n.pipeline.resfilter.ResourceType;
 
 /**
  * Imports resource data to a translate bundle.
@@ -47,9 +49,8 @@ final class ImportCmd extends BundleCmd {
     @Parameter(
             names = {"-t", "-type"},
             description = "Resource file type",
-            converter = ResourceTypeConverter.class,
             required = true)
-    private ResourceType type;
+    private String type;
 
     @Parameter(
             names = {"-f", "--file"},
@@ -64,17 +65,18 @@ final class ImportCmd extends BundleCmd {
 
     @Override
     protected void _execute() {
+        // TODO: Bundle comments should be imported if the language of the resource files is
+        // the bundle's source language.
+
         Map<String, NewResourceEntryData> resEntries = null;
-        ResourceFilter filter = ResourceFilterFactory.get(type);
+        ResourceFilter filter = ResourceFilterFactory.getResourceFilter(type);
+        if (filter == null) {
+            throw new RuntimeException("Resource filter for " + type + " is not available.");
+        }
         File f = new File(fileName);
         try (FileInputStream fis = new FileInputStream(f)) {
-            Bundle bundle = filter.parse(fis);
-            if (!bundle.getLanguage().isEmpty() &&
-                    !bundle.getLanguage().equals(languageId)) {
-                throw new RuntimeException("Language ID \"" + bundle.getLanguage() +
-                    "\" in the upload file does not match the specified language ID \"" +
-                    languageId + "\"");
-            }
+            LanguageBundle bundle = filter.parse(fis, new FilterOptions(Locale.forLanguageTag(languageId)));
+
             resEntries = new HashMap<>(bundle.getResourceStrings().size());
             for (ResourceString resString : bundle.getResourceStrings()) {
                 NewResourceEntryData resEntryData = new NewResourceEntryData(resString.getValue());
@@ -90,6 +92,9 @@ final class ImportCmd extends BundleCmd {
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to read the resoruce data from "
+                    + fileName + ": " + e.getMessage(), e);
+        } catch (ResourceFilterException e) {
+            throw new RuntimeException("Failed to parse the resource data in "
                     + fileName + ": " + e.getMessage(), e);
         }
 

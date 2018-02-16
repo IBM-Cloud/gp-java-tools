@@ -1,5 +1,5 @@
-/*
- * Copyright IBM Corp. 2015
+/*  
+ * Copyright IBM Corp. 2018
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 package com.ibm.g11n.pipeline.resfilter;
 
 /**
- * An exception used when input resource data is illegal.
- *
- * @author Yoshito Umaoka
+ * An exception type used for illegal resource format.
+ * 
+ * @author yoshito_umaoka
  */
-public class IllegalResourceFormatException extends RuntimeException {
+public class IllegalResourceFormatException extends ResourceFilterException {
+
     private static final long serialVersionUID = -940881304674153669L;
 
     public IllegalResourceFormatException() {

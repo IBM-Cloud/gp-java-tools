@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2016
+ * Copyright IBM Corp. 2016, 2018
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import java.util.Set;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 
-import com.ibm.g11n.pipeline.resfilter.ResourceType;
-
 /**
  * BundleSet class is used for specifying a set of bundle files
  * and configuration for the set.
@@ -35,7 +33,7 @@ public class BundleSet {
     private FileSet sourceFiles;
 
     @Parameter(defaultValue = "JAVA")
-    private ResourceType type = ResourceType.JAVA;
+    private String type = "JAVA";
 
     @Parameter(defaultValue = "en")
     private String sourceLanguage = "en";
@@ -75,14 +73,14 @@ public class BundleSet {
     /**
      * @return the type
      */
-    public ResourceType getType() {
+    public String getType() {
         return type;
     }
 
     /**
      * @param type the type to set
      */
-    public void setType(ResourceType type) {
+    public void setType(String type) {
         this.type = type;
     }
 
