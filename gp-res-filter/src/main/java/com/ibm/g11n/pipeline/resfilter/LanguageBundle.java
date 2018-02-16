@@ -31,6 +31,7 @@ public final class LanguageBundle {
     private Collection<ResourceString> resourceStrings;
     private List<String> notes;
     private String embeddedLanguageCode;
+    private String embeddedSourceLanguageCode;
 
     /**
      * No-arg constructor.
@@ -76,6 +77,10 @@ public final class LanguageBundle {
 
     /**
      * Sets a language code embedded in resource data.
+     * <p>
+     * Note: There are some resource formats that embed resource string language in resource
+     * content body. For example, GlobalizeJS uses locale such as "en" "fr".. as the first level
+     * key in resource object.
      * @param code  A language code embedded in resource data.
      */
     public void setEmbeddedLanguageCode(String code) {
@@ -89,6 +94,27 @@ public final class LanguageBundle {
      */
     public String getEmbeddedLanguageCode() {
         return embeddedLanguageCode;
+    }
+
+    /**
+     * Sets a source language code embedded in resource data.
+     * <p>
+     * Note: A translated XLIFF file must specify both <code>srcLang</code> and <code>trgLang</code>
+     * in &lt;xliff&gt; element. This property is used when a resource format requires translation
+     * source language to be included in the resource content body.
+     * @param code  A source language code embedded in resource data.
+     */
+    public void setEmbeddedSourceLanguageCode(String code) {
+        this.embeddedSourceLanguageCode = code;
+    }
+
+    /**
+     * Returns a source language code embedded in resource data or null if
+     * not available.
+     * @return  a source language cod embedded in resource data.
+     */
+    public String getEmbeddedSourceLanguageCode() {
+        return embeddedSourceLanguageCode;
     }
 
     /**

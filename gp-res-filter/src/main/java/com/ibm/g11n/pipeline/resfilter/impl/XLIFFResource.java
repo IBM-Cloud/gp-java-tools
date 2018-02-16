@@ -148,6 +148,7 @@ public class XLIFFResource extends ResourceFilter {
         Element file = doc.createElement(FILE_STRING);
         file.setAttribute(ORIGINAL_STRING, GLOBAL_STRING);
         file.setAttribute(DATATYPE_STRING, PLAINTEXT_STRING);
+        // TODO: Support source languages other than English
         file.setAttribute(SOURCE_LANGUAGE_STRING, ENGLISH);
         file.setAttribute(TARGET_LANGUAGE_STRING, targetLanguage);
         xliff.appendChild(file);
