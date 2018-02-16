@@ -37,7 +37,7 @@ public final class LanguageBundleBuilder {
      * Constructs a <code>LanguageBundleBuilder</code>.
      * 
      * @param autoSequenceNumbers   Whether a sequence number is set and incremented when
-     *      {@link #addResourceString(String, String) or {@link #addResourceString(com.ibm.g11n.pipeline.resfilter.ResourceString.Builder)
+     *      {@link #addResourceString(String, String)} or {@link #addResourceString(com.ibm.g11n.pipeline.resfilter.ResourceString.Builder)}
      *      is called.
      */
     public LanguageBundleBuilder(boolean autoSequenceNumbers) {
