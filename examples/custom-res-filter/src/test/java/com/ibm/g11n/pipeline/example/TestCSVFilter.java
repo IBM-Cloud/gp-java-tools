@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -83,4 +84,67 @@ public class TestCSVFilter {
             fail(e.getMessage());
         }
     }
+
+    @Test
+    public void testWrite() {
+        TestResourceStringData[] testData = {
+                new TestResourceStringData("minestrone", "Minestrone", 2),
+                new TestResourceStringData("pizza", "Pizza", 3),
+                new TestResourceStringData("spaghetti", "Spaghetti", 1)
+        };
+
+        String[] expectedLines = {
+                "key,value",
+                "spaghetti,Spaghetti",
+                "minestrone,Minestrone",
+                "pizza,Pizza"
+        };
+
+        LanguageBundle bundle = TestUtils.createLanguageBundle(testData);
+        ResourceFilter filter = ResourceFilterFactory.getResourceFilter(CSVFilter.ID);
+        try (ByteArrayOutputStream outStream = new ByteArrayOutputStream()) {
+            filter.write(outStream, bundle, new FilterOptions(Locale.ENGLISH));
+            TestUtils.compareLines(expectedLines, outStream.toByteArray());
+        } catch (IOException e) {
+            fail(e.getMessage());
+        } catch (ResourceFilterException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testMerge() {
+        String[] baseLines = {
+                "key,value",
+                "spaghetti,Spaghetti",
+                "minestrone,Minestrone",
+                "pizza,Pizza"
+        };
+
+        TestResourceStringData[] testData = {
+                new TestResourceStringData("pizza", "ピザ", 1),
+                new TestResourceStringData("spaghetti", "スパゲッティ", 2),
+                new TestResourceStringData("calzone", "カルゾーン", 3)
+        };
+
+        String[] expectedLines = {
+                "key,value",
+                "spaghetti,スパゲッティ",
+                "minestrone,Minestrone",
+                "pizza,ピザ"
+        };
+
+        LanguageBundle bundle = TestUtils.createLanguageBundle(testData);
+        ResourceFilter filter = ResourceFilterFactory.getResourceFilter(CSVFilter.ID);
+        try (InputStream baseStream = TestUtils.creteInputStream(baseLines);
+                ByteArrayOutputStream outStream = new ByteArrayOutputStream()) {
+            filter.merge(baseStream, outStream, bundle, new FilterOptions(Locale.JAPANESE));
+            TestUtils.compareLines(expectedLines, outStream.toByteArray());
+        } catch (IOException e) {
+            fail(e.getMessage());
+        } catch (ResourceFilterException e) {
+            fail(e.getMessage());
+        }
+    }
+
 }

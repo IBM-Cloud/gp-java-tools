@@ -80,7 +80,10 @@ public class MultiBundleCSVFilter extends MultiBundleResourceFilter {
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outStream, StandardCharsets.UTF_8));
         CSVPrinter printer = CSVFormat.RFC4180.withHeader("module", "key", "value").print(writer);
 
-        for (Entry<String, LanguageBundle> bundleEntry: languageBundles.entrySet()) {
+        // Sort by bundle
+        TreeMap<String, LanguageBundle> sortedBundles = new TreeMap<>(languageBundles);
+
+        for (Entry<String, LanguageBundle> bundleEntry: sortedBundles.entrySet()) {
             String module = bundleEntry.getKey();
             LanguageBundle languageBundle = bundleEntry.getValue();
             for (ResourceString resString : languageBundle.getSortedResourceStrings()) {

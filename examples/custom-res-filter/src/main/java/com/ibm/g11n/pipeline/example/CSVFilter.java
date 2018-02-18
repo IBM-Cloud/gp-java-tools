@@ -89,7 +89,6 @@ public class CSVFilter extends ResourceFilter {
             }
             printer.printRecord(key, value);
         }
-
-        write(outStream,languageBundle,options);
+        printer.flush();
     }
 }
