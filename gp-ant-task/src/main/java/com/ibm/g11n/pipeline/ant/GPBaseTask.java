@@ -235,21 +235,29 @@ public abstract class GPBaseTask extends Task{
      * @return A bundle ID corresponding to the resource type and path.
      */
     private String pathToBundleId(String type, String path) {
+        StringBuilder buf = new StringBuilder();
         File f = new File(path);
         File parent = f.getParentFile();
-        String pkgName = parent == null ? "" :
-            parent.getPath().replace(File.separatorChar, '.');
+        if (parent != null) {
+            buf.append(parent.getPath().replace(File.separatorChar, '.').replace(' ', '_'));
+        }
 
-        String fileName = f.getName().replaceAll(" ", "_");
+        char sep = '-'; // separator between package and file
+        String fileName = f.getName().replace(' ', '_');
         if (DefaultResourceFilterProvider.isJavaType(type)) {
             int dotIdx = fileName.indexOf('.');
             if (dotIdx >= 0) {
                 fileName = fileName.substring(0, dotIdx);
             }
-            return pkgName + "." + fileName;
+            sep = '.';
         }
 
-        return pkgName + "-" + fileName;
+        if (parent != null) {
+            buf.append(sep);
+        }
+        buf.append(fileName);
+
+        return buf.toString();
     }
 
     protected Set<String> resolveTargetLanguages(BundleSet bundleSet) throws BuildException {
