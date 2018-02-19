@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2016, 2017, 2018
+ * Copyright IBM Corp. 2016, 2018
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -37,11 +36,13 @@ import com.ibm.g11n.pipeline.client.BundleData;
 import com.ibm.g11n.pipeline.client.ResourceEntryData;
 import com.ibm.g11n.pipeline.client.ServiceClient;
 import com.ibm.g11n.pipeline.client.ServiceException;
-import com.ibm.g11n.pipeline.resfilter.Bundle;
+import com.ibm.g11n.pipeline.resfilter.FilterOptions;
+import com.ibm.g11n.pipeline.resfilter.LanguageBundle;
+import com.ibm.g11n.pipeline.resfilter.LanguageBundleBuilder;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilter;
+import com.ibm.g11n.pipeline.resfilter.ResourceFilterException;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterFactory;
 import com.ibm.g11n.pipeline.resfilter.ResourceString;
-import com.ibm.g11n.pipeline.resfilter.ResourceType;
 
 /**
  * Fetches translated string resource bundles from an instance of
@@ -235,36 +236,37 @@ public class GPDownloadMojo extends GPBaseMojo {
             outputFile.getParentFile().mkdirs();
         }
 
-        Bundle bundle;
+        LanguageBundle bundle;
+        String embeddedLangId = getEmbeddedLanguageId(language, langMap);
 
         switch (outContntOpt) {
         case MERGE_TO_SOURCE:
-            bundle = getBundle(client, bf.getBundleId(), language, false, true);
+            bundle = getBundle(client, bf.getBundleId(), language, embeddedLangId, false, true);
             mergeTranslation(bundle, language, bf.getType(), bf.getFile(), outputFile);
             break;
 
         case TRANSLATED_WITH_FALLBACK:
-            bundle = getBundle(client, bf.getBundleId(), language, false, true);
+            bundle = getBundle(client, bf.getBundleId(), language, embeddedLangId, false, true);
             exportTranslation(bundle, language, bf.getType(), outputFile);
             break;
 
         case TRANSLATED_ONLY:
-            bundle = getBundle(client, bf.getBundleId(), language, false, false);
+            bundle = getBundle(client, bf.getBundleId(), language, embeddedLangId, false, false);
             exportTranslation(bundle, language, bf.getType(), outputFile);
             break;
 
         case MERGE_REVIEWED_TO_SOURCE:
-            bundle = getBundle(client, bf.getBundleId(), language, true, true);
+            bundle = getBundle(client, bf.getBundleId(), language, embeddedLangId, true, true);
             mergeTranslation(bundle, language, bf.getType(), bf.getFile(), outputFile);
             break;
 
         case REVIEWED_WITH_FALLBACK:
-            bundle = getBundle(client, bf.getBundleId(), language, true, true);
+            bundle = getBundle(client, bf.getBundleId(), language, embeddedLangId, true, true);
             exportTranslation(bundle, language, bf.getType(), outputFile);
             break;
 
         case REVIEWED_ONLY:
-            bundle = getBundle(client, bf.getBundleId(), language, true, false);
+            bundle = getBundle(client, bf.getBundleId(), language, embeddedLangId, true, false);
             exportTranslation(bundle, language, bf.getType(), outputFile);
             break;
         }
@@ -290,39 +292,66 @@ public class GPDownloadMojo extends GPBaseMojo {
         return languageId;
     }
 
-    private void mergeTranslation(Bundle bundle, String language, ResourceType type,
+    private String getEmbeddedLanguageId(String gpLanguageTag, Map<String, String> langMap) {
+        String languageId = gpLanguageTag;
+        if (langMap != null) {
+            String mappedId = langMap.get(gpLanguageTag);
+            if (mappedId != null) {
+                languageId = mappedId;
+            }
+        }
+        return languageId;
+    }
+
+    private void mergeTranslation(LanguageBundle bundle, String language, String type,
             File srcFile, File outFile) throws MojoFailureException {
-        ResourceFilter filter = ResourceFilterFactory.get(type);
+        ResourceFilter filter = ResourceFilterFactory.getResourceFilter(type);
+        if (filter == null) {
+            throw new MojoFailureException("Unknown resource filter type - " + type);
+        }
         try (FileOutputStream fos = new FileOutputStream(outFile);
                 FileInputStream fis = new FileInputStream(srcFile)) {
-            filter.merge(fis, fos, language, bundle);
+            filter.merge(fis, fos, bundle, new FilterOptions(Locale.forLanguageTag(language)));
         } catch (IOException e) {
-            throw new MojoFailureException("I/O error while merging the translated values to "
+            throw new MojoFailureException("I/O error while merging the translated strings to "
+                    + outFile.getAbsolutePath(), e);
+        } catch (ResourceFilterException e) {
+            throw new MojoFailureException("Resource filter error while merging the translated strings to "
                     + outFile.getAbsolutePath(), e);
         }
     }
 
-    private void exportTranslation(Bundle bundle, String language, ResourceType type,
+    private void exportTranslation(LanguageBundle bundle, String language, String type,
             File outFile) throws MojoFailureException {
-        ResourceFilter filter = ResourceFilterFactory.get(type);
+        ResourceFilter filter = ResourceFilterFactory.getResourceFilter(type);
+        if (filter == null) {
+            throw new MojoFailureException("Unknown resource filter type - " + type);
+        }
         try (FileOutputStream fos = new FileOutputStream(outFile)) {
-            filter.write(fos, language, bundle);
+            filter.write(fos, bundle, new FilterOptions(Locale.forLanguageTag(language)));
         } catch (IOException e) {
-            throw new MojoFailureException("Failed to write the translated resoruce data to "
+            throw new MojoFailureException("I/O error while writing the translated strings to "
+                    + outFile.getAbsolutePath(), e);
+        } catch (ResourceFilterException e) {
+            throw new MojoFailureException("Resource filter error while writing the translated strings to "
                     + outFile.getAbsolutePath(), e);
         }
     }
 
-    private Bundle getBundle(ServiceClient client, String bundleId, String language,
+    private LanguageBundle getBundle(ServiceClient client, String bundleId, String language, String embeddedLanguageId,
             boolean reviewedOnly, boolean withFallback) throws MojoFailureException {
         try {
+            LanguageBundleBuilder bundleBuilder = new LanguageBundleBuilder(false);
+            bundleBuilder.embeddedLanguageCode(embeddedLanguageId);
+
             Map<String, ResourceEntryData> resEntries = client.getResourceEntries(bundleId, language);
-            Collection<ResourceString> resStrings = new LinkedList<>();
             for (Entry<String, ResourceEntryData> entry : resEntries.entrySet()) {
                 String key = entry.getKey();
                 ResourceEntryData data = entry.getValue();
                 String resVal = data.getValue();
+                String srcVal = data.getSourceValue();
                 Integer seqNum = data.getSequenceNumber();
+                List<String> notes = data.getNotes();
 
                 if (reviewedOnly) {
                     if (!data.isReviewed()) {
@@ -335,16 +364,20 @@ public class GPDownloadMojo extends GPBaseMojo {
                 }
 
                 if (resVal != null) {
-                    ResourceString resString = new ResourceString(key, resVal);
+                    ResourceString.Builder resb = ResourceString.with(key, resVal).sourceValue(srcVal);
                     if (seqNum != null) {
-                        resString.setSequenceNumber(seqNum.intValue());
+                        resb.sequenceNumber(seqNum.intValue());
                     }
-                    resStrings.add(resString);
+                    if (notes != null) {
+                        resb.notes(notes);
+                    }
+                    bundleBuilder.addResourceString(resb);
                 }
             }
-            return new Bundle(resStrings, null);
+            return bundleBuilder.build();
         } catch (ServiceException e) {
             throw new MojoFailureException("Globalization Pipeline service error", e);
         }
+
     }
 }

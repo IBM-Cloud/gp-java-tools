@@ -1,0 +1,5 @@
+module,key,value
+foods,apple,Apple
+greetings,msg_hello,Hello
+greetings,msg_bye,Bye
+foods,orange,Orange

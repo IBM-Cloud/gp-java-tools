@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2017
+ * Copyright IBM Corp. 2017, 2018
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import com.google.gson.JsonSyntaxException;
 import com.ibm.g11n.pipeline.client.ServiceAccount;
 import com.ibm.g11n.pipeline.client.ServiceClient;
 import com.ibm.g11n.pipeline.client.ServiceException;
-import com.ibm.g11n.pipeline.resfilter.ResourceType;
+import com.ibm.g11n.pipeline.resfilter.impl.DefaultResourceFilterProvider;
 
 /**
  * Base class of GP download/upload ant tasks
@@ -158,19 +158,19 @@ public abstract class GPBaseTask extends Task{
     }
 
     protected static class SourceBundleFile {
-        private ResourceType type;
+        private String type;
         private String bundleId;
         private File file;
         private String relativePath;
 
-        private SourceBundleFile(ResourceType type, String bundleId, File file, String relativePath) {
+        private SourceBundleFile(String type, String bundleId, File file, String relativePath) {
             this.type = type;
             this.bundleId = bundleId;
             this.file = file;
             this.relativePath = relativePath;
         }
 
-        public ResourceType getType() {
+        public String getType() {
             return type;
         }
 
@@ -190,7 +190,7 @@ public abstract class GPBaseTask extends Task{
     protected List<SourceBundleFile> getSourceBundleFiles(BundleSet bundleSet) {
         List<SourceBundleFile> bundleFiles = new LinkedList<SourceBundleFile>();
 
-        ResourceType type = bundleSet.getType();
+        String type = bundleSet.getType();
         FileSet fs = bundleSet.getSourceFiles();
         DirectoryScanner ds = fs.getDirectoryScanner(getProject());
         String[] includedFiles = ds.getIncludedFiles();
@@ -234,14 +234,14 @@ public abstract class GPBaseTask extends Task{
      * @param path  Relative path to package root
      * @return A bundle ID corresponding to the resource type and path.
      */
-    private String pathToBundleId(ResourceType type, String path) {
+    private String pathToBundleId(String type, String path) {
         File f = new File(path);
         File parent = f.getParentFile();
         String pkgName = parent == null ? "" :
             parent.getPath().replace(File.separatorChar, '.');
 
         String fileName = f.getName().replaceAll(" ", "_");
-        if (type == ResourceType.JAVA) {
+        if (DefaultResourceFilterProvider.isJavaType(type)) {
             int dotIdx = fileName.indexOf('.');
             if (dotIdx >= 0) {
                 fileName = fileName.substring(0, dotIdx);
