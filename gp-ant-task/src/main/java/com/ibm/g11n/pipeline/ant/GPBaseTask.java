@@ -40,6 +40,7 @@ import com.google.gson.JsonSyntaxException;
 import com.ibm.g11n.pipeline.client.ServiceAccount;
 import com.ibm.g11n.pipeline.client.ServiceClient;
 import com.ibm.g11n.pipeline.client.ServiceException;
+import com.ibm.g11n.pipeline.resfilter.impl.DefaultResourceFilterProvider;
 
 /**
  * Base class of GP download/upload ant tasks
@@ -240,7 +241,7 @@ public abstract class GPBaseTask extends Task{
             parent.getPath().replace(File.separatorChar, '.');
 
         String fileName = f.getName().replaceAll(" ", "_");
-        if (type.equals("JAVA")) {
+        if (DefaultResourceFilterProvider.isJavaType(type)) {
             int dotIdx = fileName.indexOf('.');
             if (dotIdx >= 0) {
                 fileName = fileName.substring(0, dotIdx);

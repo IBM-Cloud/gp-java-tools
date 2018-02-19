@@ -124,4 +124,12 @@ public class DefaultResourceFilterProvider extends ResourceFilterProvider {
         return null;
     }
 
+    // TODO: GP Maven/Ant plugin uses different path-bundle name mapping for Java.
+    // This method is used for checking if the type is one of Java types.
+    // We probably should provide path-bundle name mapping "function" as a part
+    // of ResourceFilter/MultiBundleResourceFilter interface instead. Revisit this later.
+    public static boolean isJavaType(String type) {
+        type = type.toUpperCase(Locale.ROOT);
+        return type.equals(Filter.JAVA.name()) || type.equals(Filter.JAVAUTF8.name());
+    }
 }
