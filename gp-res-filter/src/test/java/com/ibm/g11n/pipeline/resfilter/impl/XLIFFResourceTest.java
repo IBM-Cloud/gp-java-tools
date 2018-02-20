@@ -16,6 +16,7 @@
 package com.ibm.g11n.pipeline.resfilter.impl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.junit.Test;
+import org.xmlunit.matchers.CompareMatcher;
 
 import com.ibm.g11n.pipeline.resfilter.FilterOptions;
 import com.ibm.g11n.pipeline.resfilter.LanguageBundle;
@@ -62,7 +64,8 @@ public class XLIFFResourceTest {
         List<ResourceString> lst = new LinkedList<>();
 
         lst.add(ResourceString.with("1", "Quetzal").sequenceNumber(1).build());
-        lst.add(ResourceString.with("3", "An application to manipulate and process XLIFF documents").sequenceNumber(2).build());
+        lst.add(ResourceString.with("3", "An application to manipulate and process XLIFF documents").sequenceNumber(2)
+                .build());
         lst.add(ResourceString.with("4", "XLIFF Data Manager").sequenceNumber(3).build());
         Collections.sort(lst, new ResourceStringComparator());
         EXPECTED_INPUT_RES_LIST = lst;
@@ -72,8 +75,8 @@ public class XLIFFResourceTest {
 
     static {
         LanguageBundleBuilder bundleBuilder = new LanguageBundleBuilder(false);
-        bundleBuilder.addResourceString("3", "XLIFF 文書を編集、または処理 するアプリケーションです。", 2,
-                null, "An application to manipulate and process XLIFF documents");
+        bundleBuilder.addResourceString("3", "XLIFF 文書を編集、または処理 するアプリケーションです。", 2, null,
+                "An application to manipulate and process XLIFF documents");
         bundleBuilder.addResourceString("4", "XLIFF データ・マネージャ", 3, null, "XLIFF Data Manager");
         bundleBuilder.addResourceString("1", "Quetzal", 1, null, "Quetzal");
 
@@ -115,7 +118,7 @@ public class XLIFFResourceTest {
         try (OutputStream os = new FileOutputStream(tempFile)) {
             res.write(os, WRITE_BUNDLE, new FilterOptions(Locale.JAPANESE));
             os.flush();
-            assertTrue(ResourceTestUtil.compareFiles(EXPECTED_WRITE_FILE, tempFile));
+            assertThat(EXPECTED_WRITE_FILE, CompareMatcher.isIdenticalTo(tempFile));
         }
     }
 
@@ -132,7 +135,8 @@ public class XLIFFResourceTest {
             res.merge(is, os, MERGE_BUNDLE, new FilterOptions(Locale.ENGLISH));
             os.flush();
             // TODO: Not ready yet
-            // assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_1_FILE, tempFile));
+            // assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_1_FILE,
+            // tempFile));
         }
 
         tempFile = File.createTempFile(this.getClass().getSimpleName(), ".xlf");
@@ -143,7 +147,8 @@ public class XLIFFResourceTest {
             res.merge(is, os, MERGE_BUNDLE, new FilterOptions(Locale.JAPANESE));
             os.flush();
             // TODO: Not ready yet
-            // assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_2_FILE, tempFile));
+            // assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_2_FILE,
+            // tempFile));
         }
     }
 }
