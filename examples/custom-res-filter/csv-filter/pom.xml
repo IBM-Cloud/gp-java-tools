@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.ibm.g11n.pipeline</groupId>
 	<artifactId>csv-filter</artifactId>
-	<version>1.2.0-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>Custom resource filter example - CSV filter</name>
 
 	<properties>
@@ -21,7 +21,7 @@
 		<dependency>
 			<groupId>com.ibm.g11n.pipeline</groupId>
 			<artifactId>gp-res-filter</artifactId>
-			<version>1.2.0-SNAPSHOT</version>
+			<version>1.2.0</version>
 		</dependency>
 		<!-- JUnit -->
 		<dependency>
