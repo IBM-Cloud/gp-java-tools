@@ -57,7 +57,7 @@ Goals available for this plugin are below.
 ### <a name="TOC-Usage-AddPlugin"></a>Adding Globalization Pipeline plugin
 
 To integrate Globalization Pipeline plugin with a Maven build, add <plugin> section
-in pom.xml.
+in pom.xml, and replace version string `X.Y.Z` with an actual plug-in version.
 
 ```
 <project>
@@ -68,7 +68,7 @@ in pom.xml.
             <plugin>
                 <groupId>com.ibm.g11n.pipeline</groupId>
                 <artifactId>gp-maven-plugin</artifactId>
-                <version>1.1.9</version>
+                <version>X.Y.Z</version>
             </plugin>
             [...]
         </plugins>
