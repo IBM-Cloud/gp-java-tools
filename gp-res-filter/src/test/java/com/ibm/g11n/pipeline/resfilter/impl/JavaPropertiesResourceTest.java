@@ -91,10 +91,13 @@ public class JavaPropertiesResourceTest {
 
         lst.add(ResourceString.with("withTabs", "Tab1\tTab2\tTab3\t").sequenceNumber(9)
                 .notes(Arrays.asList(" tabs")).build());
-        
+
         lst.add(ResourceString.with("withQuote", "You're about to delete '{0}' rows in Mike's file {0}.")
                 .sequenceNumber(10).notes(Arrays.asList(" Quote")).build());
-        
+
+        lst.add(ResourceString.with("non-param", "This {} is not a parameter.")
+                .sequenceNumber(11).notes(Arrays.asList(" Not a Java MessageFormat param")).build());
+
         Collections.sort(lst, new ResourceStringComparator());
         EXPECTED_INPUT_RES_LIST = lst;
     }
@@ -123,6 +126,8 @@ public class JavaPropertiesResourceTest {
                 Arrays.asList(" tabs"));
         bundleBuilder.addResourceString("withQuote", "You're about to delete '{1}' rows in Mike's file {0}.", 10,
                 Arrays.asList(" Quote"));
+        bundleBuilder.addResourceString("non-param", "This {} is not a parameter.", 11,
+                Arrays.asList(" Not a Java MessageFormat param"));
         bundleBuilder.addNotes(Arrays.asList(
                 " You are reading the \".properties\" entry.",
                 " The exclamation mark can also mark text as comments.",
@@ -145,6 +150,9 @@ public class JavaPropertiesResourceTest {
         EXPECTED_PROP_DEF_LIST.add(new PropDef("leadTabs", "leading tabs", PropSeparator.EQUAL));
         EXPECTED_PROP_DEF_LIST.add(new PropDef("trailSPs", "trailing SPs  ", PropSeparator.EQUAL));
         EXPECTED_PROP_DEF_LIST.add(new PropDef("withTabs", "Tab1\tTab2\tTab3\t", PropSeparator.EQUAL));
+        // PropDef does not detect message pattern - message pattern handling is done by the logic in JavaPropertiesResource class
+        EXPECTED_PROP_DEF_LIST.add(new PropDef("withQuote", "You''re about to delete '{1}' rows in Mike''s file {0}.", PropSeparator.EQUAL));
+        EXPECTED_PROP_DEF_LIST.add(new PropDef("non-param", "This {} is not a parameter.", PropSeparator.EQUAL));
     }
 
     private static final JavaPropertiesResource res = new JavaPropertiesResource();
