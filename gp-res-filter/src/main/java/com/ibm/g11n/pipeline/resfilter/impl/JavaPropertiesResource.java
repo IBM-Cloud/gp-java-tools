@@ -627,7 +627,19 @@ public class JavaPropertiesResource extends ResourceFilter {
     public static String ConvertDoubleSingleQuote(String inputStr){
         String outputStr = "";
         boolean needConvert = false;
-        MessagePattern msgPat = new MessagePattern(inputStr);
+        MessagePattern msgPat = null;
+        try {
+            msgPat = new MessagePattern(inputStr);
+        } catch (IllegalArgumentException e) {
+            // not a message format pattern - fall through
+        } catch (IndexOutOfBoundsException e) {
+            // might be a valid message format pattern, but cannot handle this - fall through
+        }
+        if (msgPat == null) {
+            // if the string cannot be parsed as a MessageFormat pattern string,
+            // just returns the input string.
+            return inputStr;
+        }
 
         int numParts = msgPat.countParts();
 
