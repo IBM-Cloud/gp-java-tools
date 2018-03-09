@@ -54,7 +54,7 @@ import com.ibm.g11n.pipeline.resfilter.ResourceString;
  */
 public class JsonResource extends ResourceFilter {
 
-    private class KeyPiece {
+    static class KeyPiece {
         String keyValue;
         JsonToken keyType;
 
@@ -248,10 +248,10 @@ public class JsonResource extends ResourceFilter {
         }
     }
 
-    private List<KeyPiece> splitKeyPieces(String key) {
+    static List<KeyPiece> splitKeyPieces(String key) {
         if (USE_JSONPATH_PATTERN.matcher(key).matches()) {
             List<KeyPiece> result = new ArrayList<KeyPiece>();
-            Matcher onlyDigits = Pattern.compile("^\\d+$").matcher("");
+             Matcher onlyDigits = Pattern.compile("^\\d+$").matcher("");
             // Disregard $ at the beginning - it's not really part of the key...
             List<String> tokens = findTokens(key.substring(JSONPATH_ROOT.length()));
             for (String s : tokens) {
@@ -259,8 +259,10 @@ public class JsonResource extends ResourceFilter {
                     // Turn any "\u0027" in the key back into '
                     String modifiedKeyPiece = s.substring(1, s.length() - 1).replaceAll("\\\\u0027", "'");
                     result.add(new KeyPiece(modifiedKeyPiece, JsonToken.BEGIN_OBJECT));
-                } else if (onlyDigits.reset(s).matches()) {
+                } else if (onlyDigits.reset(s).matches()) { // BAD
                     result.add(new KeyPiece(s, JsonToken.BEGIN_ARRAY));
+                } else if (false && s.startsWith("[") && (s.length() > 1)) {
+                    result.add(new KeyPiece(s.substring(1, s.length() - 1), JsonToken.BEGIN_ARRAY));
                 } else {
                     for (String s2 : s.split("\\.")) {
                         if (!s2.isEmpty()) {
@@ -275,7 +277,7 @@ public class JsonResource extends ResourceFilter {
         return Collections.singletonList(new KeyPiece(key, JsonToken.BEGIN_OBJECT));
     }
 
-    private static List<String> findTokens(String data) {
+    static List<String> findTokens(String data) {
         List<String> tokens = new ArrayList<String>();
         boolean inQuotes = false;
         StringBuilder currentToken = new StringBuilder();
@@ -286,10 +288,16 @@ public class JsonResource extends ResourceFilter {
                 inQuotes = !inQuotes;
             }
             if (!inQuotes && (c == '.' || c == '[' || c == ']')) {
+                // if (c == ']') {
+                // currentToken.append(c);
+                // }
                 if (currentToken.length() > 0) {
                     tokens.add(currentToken.toString());
                     currentToken.setLength(0);
                 }
+                // if (c == '[') {
+                // currentToken.append(c);
+                // }
             } else {
                 currentToken.append(c);
             }
