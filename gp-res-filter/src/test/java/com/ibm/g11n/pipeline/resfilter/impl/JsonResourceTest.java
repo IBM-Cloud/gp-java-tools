@@ -15,7 +15,7 @@
  */
 package com.ibm.g11n.pipeline.resfilter.impl;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -44,6 +44,7 @@ import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
  */
 public class JsonResourceTest {
     private static final File INPUT_FILE = new File("src/test/resource/resfilter/json/input.json");
+    private static final File INPUT_FILE2 = new File("src/test/resource/resfilter/json/other-input.json");
 
     private static final File EXPECTED_WRITE_FILE = new File("src/test/resource/resfilter/json/write-output.json");
 
@@ -62,8 +63,10 @@ public class JsonResourceTest {
         lst.add(ResourceString.with("$.countries[1].Asia[1]", "Japan").sequenceNumber(9).build());
         lst.add(ResourceString.with("$.countries[1].Asia[2]", "India").sequenceNumber(10).build());
         lst.add(ResourceString.with("$.countries[2].Americas['S. America'][0]", "Brazil").sequenceNumber(11).build());
-        lst.add(ResourceString.with("$.countries[2].Americas['S. America'][1]", "Venezuela").sequenceNumber(12).build());
-        lst.add(ResourceString.with("$.countries[2].Americas['N. America'][0]", "United States [USA]").sequenceNumber(13).build());
+        lst.add(ResourceString.with("$.countries[2].Americas['S. America'][1]", "Venezuela").sequenceNumber(12)
+                .build());
+        lst.add(ResourceString.with("$.countries[2].Americas['N. America'][0]", "United States [USA]")
+                .sequenceNumber(13).build());
         lst.add(ResourceString.with("$.countries[2].Americas['N. America'][1]", "Canada").sequenceNumber(14).build());
         lst.add(ResourceString.with("$.countries[2].Americas['N. America'][2]", "Mexico").sequenceNumber(15).build());
         lst.add(ResourceString.with("$.countries[3].Africa[0]", "Egypt").sequenceNumber(16).build());
@@ -77,10 +80,14 @@ public class JsonResourceTest {
         lst.add(ResourceString.with("another.text", "Another plain old string").sequenceNumber(24).build());
         lst.add(ResourceString.with("frog['2']", "Red-eyed Tree Frog").sequenceNumber(25).build());
         lst.add(ResourceString.with("owl[3]", "Great Horned Owl").sequenceNumber(26).build());
-        lst.add(ResourceString.with("$['$.xxx']", "Looks like JSONPATH, but actually plain old string").sequenceNumber(27).build());
-        lst.add(ResourceString.with("$['$.']", "Looks like JSONPATH prefix, but actually plain old string").sequenceNumber(28).build());
-        lst.add(ResourceString.with("$abc", "Starts with JSONPATH root char, but just a string").sequenceNumber(29).build());
-        lst.add(ResourceString.with("$['ibm.com']['g11n.pipeline.title']", "Globalization Pipeline").sequenceNumber(30).build());
+        lst.add(ResourceString.with("$['$.xxx']", "Looks like JSONPATH, but actually plain old string")
+                .sequenceNumber(27).build());
+        lst.add(ResourceString.with("$['$.']", "Looks like JSONPATH prefix, but actually plain old string")
+                .sequenceNumber(28).build());
+        lst.add(ResourceString.with("$abc", "Starts with JSONPATH root char, but just a string").sequenceNumber(29)
+                .build());
+        lst.add(ResourceString.with("$['ibm.com']['g11n.pipeline.title']", "Globalization Pipeline").sequenceNumber(30)
+                .build());
 
         Collections.sort(lst, new ResourceStringComparator());
         EXPECTED_INPUT_RES_LIST = lst;
@@ -117,7 +124,8 @@ public class JsonResourceTest {
         bundleBuilder.addResourceString("frog['2']", "Red-eyed Tree Frog - XL", 25);
         bundleBuilder.addResourceString("owl[3]", "Great Horned Owl - XL", 26);
         bundleBuilder.addResourceString("$['$.xxx']", "Looks like JSONPATH, but actually plain old string - XL", 27);
-        bundleBuilder.addResourceString("$['$.']", "Looks like JSONPATH prefix, but actually plain old string - XL", 28);
+        bundleBuilder.addResourceString("$['$.']", "Looks like JSONPATH prefix, but actually plain old string - XL",
+                28);
         bundleBuilder.addResourceString("$abc", "Starts with JSONPATH root char, but just a string - XL", 29);
         bundleBuilder.addResourceString("$['ibm.com']['g11n.pipeline.title']", "Globalization Pipeline - XL", 30);
         WRITE_BUNDLE = bundleBuilder.build();
@@ -133,7 +141,8 @@ public class JsonResourceTest {
             LanguageBundle bundle = res.parse(is, null);
             List<ResourceString> resStrList = new ArrayList<>(bundle.getResourceStrings());
             Collections.sort(resStrList, new ResourceStringComparator());
-            assertEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST, resStrList);
+            assertArrayEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST.toArray(),
+                    resStrList.toArray());
         }
     }
 
@@ -145,12 +154,71 @@ public class JsonResourceTest {
         try (OutputStream os = new FileOutputStream(tempFile)) {
             res.write(os, WRITE_BUNDLE, null);
             os.flush();
-            assertTrue(ResourceTestUtil.compareFiles(EXPECTED_WRITE_FILE, tempFile));
+            ResourceTestUtil.compareFilesJson(EXPECTED_WRITE_FILE, tempFile);
+        }
+    }
+
+    // @Test
+    // public void testTestFiles() throws IOException, ResourceFilterException {
+    // // just test the test files
+    // ResourceTestUtil.compareFilesJson(INPUT_FILE, EXPECTED_WRITE_FILE);
+    // }
+
+    @Test
+    public void testReWrite() throws IOException, ResourceFilterException {
+        // First parse
+        assertTrue("The input test file <" + INPUT_FILE + "> does not exist.", INPUT_FILE.exists());
+
+        try (InputStream is = new FileInputStream(INPUT_FILE)) {
+            JsonResource res2 = new JsonResource();
+            LanguageBundle bundle = res2.parse(is, null);
+            List<ResourceString> resStrList = new ArrayList<>(bundle.getResourceStrings());
+            Collections.sort(resStrList, new ResourceStringComparator());
+            assertArrayEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST.toArray(),
+                    resStrList.toArray());
+
+            // Now write
+            File tempFile = File.createTempFile(this.getClass().getSimpleName(), "2.json");
+            // File tempFile = new File("/tmp/2.json");
+            tempFile.deleteOnExit();
+
+            try (OutputStream os = new FileOutputStream(tempFile)) {
+                res.write(os, bundle, null);
+                os.flush();
+                ResourceTestUtil.compareFilesJson(INPUT_FILE, tempFile);
+            }
+        }
+    }
+
+    @Test
+    public void testReWriteOther() throws IOException, ResourceFilterException {
+        // First parse
+        assertTrue("The input test file <" + INPUT_FILE + "> does not exist.", INPUT_FILE2.exists());
+
+        try (InputStream is = new FileInputStream(INPUT_FILE2)) {
+            JsonResource res2 = new JsonResource();
+            LanguageBundle bundle = res2.parse(is, null);
+            List<ResourceString> resStrList = new ArrayList<>(bundle.getResourceStrings());
+            Collections.sort(resStrList, new ResourceStringComparator());
+            // assertEquals("ResourceStrings did not match.",
+            // EXPECTED_INPUT_RES_LIST, resStrList);
+
+            // Now write
+            File tempFile = File.createTempFile(this.getClass().getSimpleName(), "3.json");
+            // File tempFile = new File("/tmp/3.json");
+            tempFile.deleteOnExit();
+
+            try (OutputStream os = new FileOutputStream(tempFile)) {
+                res.write(os, bundle, null);
+                os.flush();
+                System.out.println(ResourceTestUtil.fileToString(tempFile));
+                ResourceTestUtil.compareFilesJson(INPUT_FILE2, tempFile);
+            }
         }
     }
 
     // TODO: Not ready yet
-//    @Test
-//    public void testMerge() throws IOException, ResourceFilterException {
-//    }
+    // @Test
+    // public void testMerge() throws IOException, ResourceFilterException {
+    // }
 }
