@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.gson.GsonBuilder;
@@ -251,60 +250,56 @@ public class JsonResource extends ResourceFilter {
     static List<KeyPiece> splitKeyPieces(String key) {
         if (USE_JSONPATH_PATTERN.matcher(key).matches()) {
             List<KeyPiece> result = new ArrayList<KeyPiece>();
-             Matcher onlyDigits = Pattern.compile("^\\d+$").matcher("");
+            boolean inQuotes = false;
+            StringBuilder currentToken = new StringBuilder();
             // Disregard $ at the beginning - it's not really part of the key...
-            List<String> tokens = findTokens(key.substring(JSONPATH_ROOT.length()));
-            for (String s : tokens) {
-                if (s.startsWith("'")) {
-                    // Turn any "\u0027" in the key back into '
-                    String modifiedKeyPiece = s.substring(1, s.length() - 1).replaceAll("\\\\u0027", "'");
-                    result.add(new KeyPiece(modifiedKeyPiece, JsonToken.BEGIN_OBJECT));
-                } else if (onlyDigits.reset(s).matches()) { // BAD
-                    result.add(new KeyPiece(s, JsonToken.BEGIN_ARRAY));
-                } else if (false && s.startsWith("[") && (s.length() > 1)) {
-                    result.add(new KeyPiece(s.substring(1, s.length() - 1), JsonToken.BEGIN_ARRAY));
-                } else {
-                    for (String s2 : s.split("\\.")) {
-                        if (!s2.isEmpty()) {
-                            result.add(new KeyPiece(s2, JsonToken.BEGIN_OBJECT));
+            StringCharacterIterator i = new StringCharacterIterator(key.substring(JSONPATH_ROOT.length()));
+            boolean inSubscript = false;
+            while (i.current() != StringCharacterIterator.DONE) {
+                char c = i.current();
+                if (c == '\'') {
+                    inQuotes = !inQuotes;
+                }
+                if (!inQuotes && (c == '.' || c == '[' || c == ']')) {
+                    if (currentToken.length() > 0) {
+                        addToken(result, currentToken.toString(), inSubscript);
+                        currentToken.setLength(0);
+                        if (inSubscript) {
+                            inSubscript = false;
                         }
                     }
+                    if (c == '[') {
+                        inSubscript = true; // Record that the next token had an
+                                        // array subscript on it.
+                    }
+                } else {
+                    currentToken.append(c);
                 }
+                i.next();
             }
+            addToken(result, currentToken.toString(), inSubscript);
+
             return Collections.unmodifiableList(result);
         }
         // Otherwise, this is a plain JSON object label
         return Collections.singletonList(new KeyPiece(key, JsonToken.BEGIN_OBJECT));
     }
 
-    static List<String> findTokens(String data) {
-        List<String> tokens = new ArrayList<String>();
-        boolean inQuotes = false;
-        StringBuilder currentToken = new StringBuilder();
-        StringCharacterIterator i = new StringCharacterIterator(data);
-        while (i.current() != StringCharacterIterator.DONE) {
-            char c = i.current();
-            if (c == '\'') {
-                inQuotes = !inQuotes;
-            }
-            if (!inQuotes && (c == '.' || c == '[' || c == ']')) {
-                // if (c == ']') {
-                // currentToken.append(c);
-                // }
-                if (currentToken.length() > 0) {
-                    tokens.add(currentToken.toString());
-                    currentToken.setLength(0);
+    static void addToken(List<KeyPiece> result, String s, boolean inSubscript) {
+        if (s.startsWith("'")) {
+            // Turn any "\u0027" in the key back into '
+            String modifiedKeyPiece = s.substring(1, s.length() - 1).replaceAll("\\\\u0027", "'");
+            result.add(new KeyPiece(modifiedKeyPiece, JsonToken.BEGIN_OBJECT));
+        } else if (inSubscript) {
+            // [0] produces an array
+            result.add(new KeyPiece(s, JsonToken.BEGIN_ARRAY));
+        } else {
+            for (String s2 : s.split("\\.")) {
+                if (!s2.isEmpty()) {
+                    result.add(new KeyPiece(s2, JsonToken.BEGIN_OBJECT));
                 }
-                // if (c == '[') {
-                // currentToken.append(c);
-                // }
-            } else {
-                currentToken.append(c);
             }
-            i.next();
         }
-        tokens.add(currentToken.toString());
-        return Collections.unmodifiableList(tokens);
     }
 
     // TODO: Implement merge method

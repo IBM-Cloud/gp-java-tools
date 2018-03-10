@@ -16,10 +16,12 @@
 package com.ibm.g11n.pipeline.resfilter.impl;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,14 +31,19 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.junit.Test;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.ibm.g11n.pipeline.resfilter.LanguageBundle;
 import com.ibm.g11n.pipeline.resfilter.LanguageBundleBuilder;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterException;
 import com.ibm.g11n.pipeline.resfilter.ResourceString;
 import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
+import com.ibm.g11n.pipeline.resfilter.impl.JsonResource.KeyPiece;
 
 /**
  * @author farhan
@@ -45,6 +52,7 @@ import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 public class JsonResourceTest {
     private static final File INPUT_FILE = new File("src/test/resource/resfilter/json/input.json");
     private static final File INPUT_FILE2 = new File("src/test/resource/resfilter/json/other-input.json");
+    private static final File SPLITKEYS = new File("src/test/resource/resfilter/json/testSplitKeys.json");
 
     private static final File EXPECTED_WRITE_FILE = new File("src/test/resource/resfilter/json/write-output.json");
 
@@ -213,6 +221,43 @@ public class JsonResourceTest {
                 os.flush();
                 System.out.println(ResourceTestUtil.fileToString(tempFile));
                 ResourceTestUtil.compareFilesJson(INPUT_FILE2, tempFile);
+            }
+        }
+    }
+    
+    /**
+     * @throws IOException
+     * @throws FileNotFoundException
+     * @See {@link JsonResource#splitKeyPieces(String)}
+     */
+    @Test
+    public void testSplitKeyPieces() throws FileNotFoundException, IOException {
+        /*
+         * Initial data generated with: Gson g = new GsonBuilder().create();
+         * TreeMap<String, List<KeyPiece>> tm = new TreeMap<String,
+         * List<KeyPiece>>();
+         * 
+         * for (final ResourceString s : EXPECTED_INPUT_RES_LIST) {
+         * tm.put(s.getKey(), JsonResource.splitKeyPieces(s.getKey())); }
+         * System.out.println(g.toJson(tm));
+         */
+
+        JsonObject SPLITKEY_DATA = ResourceTestUtil.parseJson(SPLITKEYS).getAsJsonObject();
+        for (final Entry<String, JsonElement> e : SPLITKEY_DATA.entrySet()) {
+            final String key = e.getKey();
+            final JsonArray expectList = e.getValue().getAsJsonArray();
+
+            List<KeyPiece> actualList = JsonResource.splitKeyPieces(key);
+
+            String prefix = "‘" + key + "’: ";
+            assertEquals(prefix + "key count", expectList.size(), actualList.size());
+            for (int n = 0; n < expectList.size(); n++) {
+                JsonObject expectObject = expectList.get(n).getAsJsonObject();
+                KeyPiece actualObject = actualList.get(n);
+                String subPrefix = prefix + " key " + n;
+                assertEquals(subPrefix + " value ", expectObject.get("keyValue").getAsString(), actualObject.keyValue);
+                assertEquals(subPrefix + " type ", expectObject.get("keyType").getAsString(),
+                        actualObject.keyType.name());
             }
         }
     }
