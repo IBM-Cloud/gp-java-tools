@@ -16,6 +16,7 @@
 
 package com.ibm.g11n.pipeline.resfilter.impl;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
@@ -23,8 +24,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 
 /**
  * @author farhan, JCEmmons
@@ -76,11 +81,13 @@ public class ResourceTestUtil {
 
         return true;
     }
+
     /**
      * Returns true if the two files match exactly up to the number of lines
-     * specified in n 
+     * specified in n
      */
-    public static boolean compareFilesUpTo(File expected, File actual, int n) throws FileNotFoundException, IOException {
+    public static boolean compareFilesUpTo(File expected, File actual, int n)
+            throws FileNotFoundException, IOException {
         try (BufferedReader expectedRdr = new BufferedReader(new FileReader(expected));
                 BufferedReader actualRdr = new BufferedReader(new FileReader(actual))) {
 
@@ -123,5 +130,27 @@ public class ResourceTestUtil {
     public static String fileToString(File file) throws FileNotFoundException, IOException {
         byte[] encoded = Files.readAllBytes(Paths.get(file.getPath()));
         return new String(encoded, "UTF-8");
+    }
+
+    /**
+     * @param expectedWriteFile
+     * @param tempFile
+     * @return
+     * @throws IOException
+     * @throws FileNotFoundException
+     */
+    public static void compareFilesJson(File expectedWriteFile, File tempFile)
+            throws FileNotFoundException, IOException {
+        JsonElement expected = parseJson(expectedWriteFile);
+        JsonElement actual = parseJson(tempFile);
+        assertEquals("JSON mismatch: " + tempFile.getName() + " did not match " + expectedWriteFile.getName(), expected,
+                actual);
+    }
+
+    public static JsonElement parseJson(final File f) throws FileNotFoundException, IOException {
+        try (final Reader reader = new FileReader(f)) {
+            JsonElement parse = new JsonParser().parse(reader);
+            return parse;
+        }
     }
 }
