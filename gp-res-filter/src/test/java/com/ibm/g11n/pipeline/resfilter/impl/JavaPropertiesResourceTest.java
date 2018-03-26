@@ -42,6 +42,7 @@ import com.ibm.g11n.pipeline.resfilter.LanguageBundleBuilder;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterException;
 import com.ibm.g11n.pipeline.resfilter.ResourceString;
 import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
+import com.ibm.g11n.pipeline.resfilter.impl.JavaPropertiesResource.MessagePatternEscape;
 import com.ibm.g11n.pipeline.resfilter.impl.JavaPropertiesResource.PropDef;
 import com.ibm.g11n.pipeline.resfilter.impl.JavaPropertiesResource.PropDef.PropSeparator;
 
@@ -308,7 +309,6 @@ public class JavaPropertiesResourceTest {
     
     private static final String[][] QUOTES_TEST_CASES =
         {
-                {"It's not a bug.","It's not a bug."},
                 {"You're about to delete {0} rows.","You''re about to delete {0} rows."},
                 {"You're about to delete '{0}' rows in Mike's file {0}.","You''re about to delete '{0}' rows in Mike''s file {0}."},
                 {"Log shows '{''}' in file {0}","Log shows '{''}' in file {0}"},
@@ -316,29 +316,78 @@ public class JavaPropertiesResourceTest {
                 {"Log shows '{'}' in file {0}","Log shows '{'}'' in file {0}"},
                 {"Log shows '{'error'}' in file {0}","Log shows '{'error'}' in file {0}"},
                 {"Log shows '{''error''}' in file {0}","Log shows '{''error''}' in file {0}"},
-                {"File {0} shows '{''error''}'","File {0} shows '{''error''}'"}
+                {"File {0} shows '{''error''}'","File {0} shows '{''error''}'"},
         };
-     
-    @Test    
-    public void testConvertDoubleSingleQuote(){
-        for (String[] testCase : QUOTES_TEST_CASES) {
-            String instr = testCase[1];
-            String expected = testCase[0];
 
-            String doubleQuoteVal = JavaPropertiesResource.ConvertDoubleSingleQuote(instr);
-            assertEquals("ConvertDoubleSingleQuote(" + instr + ")", expected, doubleQuoteVal);
-        }
-    }
-    
+    private static final String[][] TO_DOUBLE_AUTO_TEST_CASES =
+        {
+            //  { input , expected }
+                {"The file isn't in use.", "The file isn't in use."},
+        };
+
+    private static final String[][] TO_DOUBLE_ALL_TEST_CASES =
+        {
+            //  { input , expected }
+                {"The file isn't in use.", "The file isn''t in use."},
+        };
+
+    private static final String[][] TO_SINGLE_AUTO_TEST_CASES =
+        {
+            //  { input , expected }
+                {"File {0} isn't in use.", "File {0} isn't in use."},
+                {"The file isn''t in use.", "The file isn''t in use."}, // no arguments - not unescaped
+        };
+
+    private static final String[][] TO_SINGLE_ALL_TEST_CASES =
+        {
+            //  { input , expected }
+                {"File {0} isn't in use.", "File {0} isn't in use."},
+                {"The file isn''t in use.", "The file isn't in use."},
+        };
+
     @Test
     public void testConvertSingleQuote(){
         for (String[] testCase : QUOTES_TEST_CASES) {
-            String instr = testCase[0];
-            String expected = testCase[1];
+            String result = JavaPropertiesResource.ConvertSingleQuote(testCase[0], MessagePatternEscape.AUTO);
+            assertEquals("ConvertSingleQuote(" + testCase[0] + ", AUTO)", testCase[1], result);
+        }
 
-            String doubleQuoteVal = JavaPropertiesResource.ConvertSingleQuote(instr);
-            assertEquals("ConvertSingleQuote(" + instr + ")", expected, doubleQuoteVal);
+        for (String[] testCase : QUOTES_TEST_CASES) {
+            String result = JavaPropertiesResource.ConvertSingleQuote(testCase[0], MessagePatternEscape.ALL);
+            assertEquals("ConvertSingleQuote(" + testCase[0] + ", ALL)", testCase[1], result);
+        }
+
+        for (String[] testCase : TO_DOUBLE_AUTO_TEST_CASES) {
+            String result = JavaPropertiesResource.ConvertSingleQuote(testCase[0], MessagePatternEscape.AUTO);
+            assertEquals("ConvertSingleQuote(" + testCase[0] + ", AUTO)", testCase[1], result);
+        }
+
+        for (String[] testCase : TO_DOUBLE_ALL_TEST_CASES) {
+            String result = JavaPropertiesResource.ConvertSingleQuote(testCase[0], MessagePatternEscape.ALL);
+            assertEquals("ConvertSingleQuote(" + testCase[0] + ", ALL)", testCase[1], result);
         }
     }
-    
+
+    @Test
+    public void testConvertDoubleSingleQuoteAuto(){
+        for (String[] testCase : QUOTES_TEST_CASES) {
+            String result = JavaPropertiesResource.ConvertDoubleSingleQuote(testCase[1], MessagePatternEscape.AUTO);
+            assertEquals("ConvertDoubleSingleQuote(" + testCase[1] + ", AUTO)", testCase[0], result);
+        }
+
+        for (String[] testCase : QUOTES_TEST_CASES) {
+            String result = JavaPropertiesResource.ConvertDoubleSingleQuote(testCase[1], MessagePatternEscape.ALL);
+            assertEquals("ConvertDoubleSingleQuote(" + testCase[1] + ", ALL)", testCase[0], result);
+        }
+
+        for (String[] testCase : TO_SINGLE_AUTO_TEST_CASES) {
+            String result = JavaPropertiesResource.ConvertDoubleSingleQuote(testCase[0], MessagePatternEscape.AUTO);
+            assertEquals("ConvertDoubleSingleQuote(" + testCase[0] + ", AUTO)", testCase[1], result);
+        }
+
+        for (String[] testCase : TO_SINGLE_ALL_TEST_CASES) {
+            String result = JavaPropertiesResource.ConvertDoubleSingleQuote(testCase[0], MessagePatternEscape.ALL);
+            assertEquals("ConvertDoubleSingleQuote(" + testCase[0] + ", ALL)", testCase[1], result);
+        }
+    }
 }

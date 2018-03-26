@@ -25,6 +25,8 @@ import com.ibm.g11n.pipeline.resfilter.FilterInfo.Type;
 import com.ibm.g11n.pipeline.resfilter.MultiBundleResourceFilter;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilter;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterProvider;
+import com.ibm.g11n.pipeline.resfilter.impl.JavaPropertiesResource.Encoding;
+import com.ibm.g11n.pipeline.resfilter.impl.JavaPropertiesResource.MessagePatternEscape;
 
 /**
  * The default {@link ResourceFilterProvider} implementation.
@@ -38,6 +40,8 @@ public class DefaultResourceFilterProvider extends ResourceFilterProvider {
         GLOBALIZEJS,
         IOS,
         JAVA,
+        JAVAMSG,
+        JAVAMSGUTF8,
         JAVAUTF8,
         JSON,
         PO,
@@ -90,10 +94,16 @@ public class DefaultResourceFilterProvider extends ResourceFilterProvider {
             result = new IOSStringsResource();
             break;
         case JAVA:
-            result = new JavaPropertiesResource(false);
+            result = new JavaPropertiesResource(Encoding.ISO_8859_1, MessagePatternEscape.AUTO);
+            break;
+        case JAVAMSG:
+            result = new JavaPropertiesResource(Encoding.ISO_8859_1, MessagePatternEscape.ALL);
+            break;
+        case JAVAMSGUTF8:
+            result = new JavaPropertiesResource(Encoding.UTF_8, MessagePatternEscape.ALL);
             break;
         case JAVAUTF8:
-            result = new JavaPropertiesResource(true);
+            result = new JavaPropertiesResource(Encoding.UTF_8, MessagePatternEscape.AUTO);
             break;
         case JSON:
             result = new JsonResource();

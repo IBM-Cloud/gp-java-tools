@@ -412,6 +412,9 @@ excludes all files with file name `config.json`.
 Specifies a resource type. Available options are
 
 * **JAVA** - Java property resource bundle file
+* **JAVAUTF8** - Java UTF8 property resource bundle file
+* **JAVAMSG** - Java property resource bundle file with MessageFormat pattern stirngs only
+* **JAVAMSGUTF8** - Java UTF8 property resource bundle file with MessageFormat pattern strings only
 * **JSON** - Resource string key/value pairs stored in JSON format. For now nested JSON object is not supported.
 * **AMDJS** - RequireJS I18N bundle file
 * **GLOBALIZEJS** - Globalize.js JSON resource bundle file
