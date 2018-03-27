@@ -34,7 +34,7 @@ import com.ibm.g11n.pipeline.resfilter.FilterInfo.Type;
 public class ResourceFilterFactoryTest {
 
     @Test
-    public void testFactory() {
+    public void testDefaultFactory() {
         Set<String> availableFilters = ResourceFilterFactory.getAvailableFilterIds();
         assertTrue("There should be some filters available by default", availableFilters.size() > 0);
 
@@ -66,5 +66,45 @@ public class ResourceFilterFactoryTest {
         String bogusId = "bogus";
         assert !availableFilters.contains(bogusId);
         assertNull("FilterInfo for bogus should not be available", ResourceFilterFactory.getFilterInfo(bogusId));
+    }
+
+    @Test
+    public void testFactory() {
+        ResourceFilterFactory defFactory = ResourceFilterFactory.getDefaultInstance();
+        ResourceFilterFactory myFactory = ResourceFilterFactory.getInstance(this.getClass().getClassLoader());
+
+        Set<String> defIds = defFactory.availableFilterIds();
+        Set<String> myIds = myFactory.availableFilterIds();
+
+        assertTrue("Available IDs with default factory and local factory", defIds.equals(myIds));
+
+        for (String id : defIds) {
+            Type defType = defFactory.filterInfo(id).getType();
+            Type myType = myFactory.filterInfo(id).getType();
+            assertTrue("Type for id:" + id, defType == myType);
+
+            switch (defType) {
+            case SINGLE:
+                assertNotNull("(defFactory) ResourceFilter should be available for " + id,
+                        defFactory.resourceFilter(id));
+                assertNull("(defFactory) MultiBundleResourceFilter should not be available for " + id,
+                        defFactory.multiBundleResourceFilter(id));
+                assertNotNull("(myFactory) ResourceFilter should be available for " + id,
+                        myFactory.resourceFilter(id));
+                assertNull("(myFactory) MultiBundleResourceFilter should not be available for " + id,
+                        myFactory.multiBundleResourceFilter(id));
+                break;
+            case MULTI:
+                assertNull("(defFactory) ResourceFilter should not be available for " + id,
+                        defFactory.resourceFilter(id));
+                assertNotNull("(defFactory) MultiBundleResourceFilter should be available for " + id,
+                        defFactory.multiBundleResourceFilter(id));
+                assertNull("(myFactory) ResourceFilter should not be available for " + id,
+                        myFactory.resourceFilter(id));
+                assertNotNull("(myFactory) MultiBundleResourceFilter should be available for " + id,
+                        myFactory.multiBundleResourceFilter(id));
+                break;
+            }
+        }
     }
 }
