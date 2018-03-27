@@ -22,6 +22,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,7 +36,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.regex.Pattern;
 
 import com.ibm.g11n.pipeline.resfilter.FilterOptions;
 import com.ibm.g11n.pipeline.resfilter.LanguageBundle;
@@ -52,19 +53,37 @@ import com.ibm.icu.text.MessagePattern.Part.Type;
  * @author Yoshito Umaoka, JCEmmons
  */
 public class JavaPropertiesResource extends ResourceFilter {
-    public boolean isUTF8 = false;
-    private String PROPS_ENC = "ISO-8859-1";
+    public enum Encoding {
+        ISO_8859_1,
+        UTF_8;
+    }
+
+    public enum MessagePatternEscape {
+        /**
+         *  Strings with parameter patterns (such as {0}) are processed as message
+         *  pattern strings
+         */
+        AUTO,
+        /**
+         * All strings are processed as message pattern strings. In other words,
+         * literal single quote is escaped on write - e.g. converting "You aren't"
+         * to "You aren''t"
+         */
+        ALL;
+    }
+
+    private final Encoding enc;
+    private final MessagePatternEscape msgPatEsc;
+
+    public JavaPropertiesResource(Encoding enc, MessagePatternEscape msgPatEsc){
+        this.enc = enc;
+        this.msgPatEsc = msgPatEsc;
+    }
     
     public JavaPropertiesResource(){
-        isUTF8 = false;
-        PROPS_ENC = "ISO-8859-1";
+        this(Encoding.ISO_8859_1, MessagePatternEscape.AUTO);
     }
-    
-    public JavaPropertiesResource(boolean flagUTF8){
-        isUTF8 = flagUTF8;
-        PROPS_ENC = "UTF-8";
-    }
-    
+
     // TODO:
     // This is not a good idea. This implementation might work,
     // but it depends on an assumption that
@@ -99,7 +118,7 @@ public class JavaPropertiesResource extends ResourceFilter {
             throws IOException, ResourceFilterException {
 
         LinkedProperties props = new LinkedProperties();
-        BufferedReader inStreamReader = new BufferedReader(new InputStreamReader(inStream, PROPS_ENC));
+        BufferedReader inStreamReader = new BufferedReader(new InputStreamReader(inStream, getCharset()));
         String line;
         Map<String, List<String>> notesMap = new HashMap<>();
         List<String> currentNotes = new ArrayList<>();
@@ -141,7 +160,7 @@ public class JavaPropertiesResource extends ResourceFilter {
                 }
                 String logicalLine = sb.toString();
                 PropDef pd = PropDef.parseLine(logicalLine);
-                String value = ConvertDoubleSingleQuote(pd.getValue());  
+                String value = ConvertDoubleSingleQuote(pd.getValue(), msgPatEsc);  
                 
                 props.setProperty(pd.getKey(), value);
                 if (!currentNotes.isEmpty()) {
@@ -185,7 +204,7 @@ public class JavaPropertiesResource extends ResourceFilter {
         List<ResourceString> resStrings = languageBundle.getSortedResourceStrings();
         BreakIterator brkItr = Utils.getWordBreakIterator(options);
 
-        PrintWriter pw = new PrintWriter(new OutputStreamWriter(outStream, PROPS_ENC));
+        PrintWriter pw = new PrintWriter(new OutputStreamWriter(outStream, getCharset()));
         for (String note : languageBundle.getNotes()) {
             pw.println("#"+note);
         }
@@ -195,13 +214,17 @@ public class JavaPropertiesResource extends ResourceFilter {
         pw.println("#"+new Date().toString());
         for (ResourceString res : resStrings) {
             String value = res.getValue();  
-            value = ConvertSingleQuote(value);
+            value = ConvertSingleQuote(value, msgPatEsc);
             PropDef pd = new PropDef(res.getKey(),value,PropDef.PropSeparator.EQUAL,res.getNotes());
-            pd.print(pw, brkItr, isUTF8);
+            pd.print(pw, brkItr, (enc == Encoding.UTF_8));
         }
         pw.close();
     }
-    
+
+    private Charset getCharset() {
+        return enc == Encoding.UTF_8 ? StandardCharsets.UTF_8 : StandardCharsets.ISO_8859_1;
+    }
+
     static class PropDef {
         private String key;
         private String value;
@@ -622,11 +645,15 @@ public class JavaPropertiesResource extends ResourceFilter {
     /***
      * For MessageFormat with number args, convert double single quote back to single quote during import
      * @param inputStr  The message pattern string with single quotes escaped
+     * @param msgPatEsc Option for message pattern processing
      * @return  A modified message pattern string not using single quote escape sequences.
      */
-    public static String ConvertDoubleSingleQuote(String inputStr){
-        String outputStr = "";
-        boolean needConvert = false;
+    public static String ConvertDoubleSingleQuote(String inputStr, MessagePatternEscape msgPatEsc){
+        // Quick check - if there are no doubled single quotes, skip this operation.
+        if (inputStr.indexOf("''") < 0) {
+            return inputStr;
+        }
+
         MessagePattern msgPat = null;
         try {
             msgPat = new MessagePattern(inputStr);
@@ -641,139 +668,179 @@ public class JavaPropertiesResource extends ResourceFilter {
             return inputStr;
         }
 
-        int numParts = msgPat.countParts();
-
-        for (int i = 0; i < numParts; i++) {
-            Part part = msgPat.getPart(i);
-            //Only check ARG_NUMBER at current stage. ARG_NAME may need to be handled in future
-            if(part.getType().equals(Type.ARG_NUMBER)){ 
-                needConvert = true;
-                break;
-            }
-        }
-
-        int len = inputStr.length();
-        boolean keepQuote = false; //Flag for '{ or '}
-        if(!needConvert){
-            outputStr = inputStr;
-        }else{
-            /***
-             * '{1}' -> '{1}'
-             * '{''}' -> '{''}'
-             * '{'' -> '{''
-             * '{'}'' -> '{'}'
-             * developer''s -> developer's
-             */
-            int outstrIndex = 0;
-            int quoteIndex = 0;
-            
-            while(quoteIndex<len){
-                int idx = inputStr.indexOf("'", quoteIndex);
-                
-                if(idx>-1){
-                    if(!keepQuote && idx+1<len 
-                            && (inputStr.charAt(idx+1)=='{'||inputStr.charAt(idx+1)=='}')){
-                        keepQuote = true;
-                        quoteIndex = idx+2;
-                    }else{
-                        if(keepQuote){ // '{ or '} is not closed yet
-                            if(idx+1<len && inputStr.charAt(idx+1)=='\''){ //Ignore ''
-                                quoteIndex = idx+2;
-                            }else{
-                                keepQuote = false; //Close '{ or '} with this '
-                                quoteIndex = idx+1;
-                            }
-                        }else{
-                            if(idx+1<len && inputStr.charAt(idx+1)=='\''){ //Convert '' to '
-                                outputStr += inputStr.substring(outstrIndex, idx);
-                                outputStr += "'";
-                                quoteIndex = idx+2;
-                                outstrIndex = quoteIndex;
-                            }
-                        }
-                    }
-                }else{
-                    //No single quote is found
-                    outputStr += inputStr.substring(outstrIndex);
+        if (msgPatEsc == MessagePatternEscape.AUTO) {
+            // In AUTO mode, checks if the input string contains arguments.
+            int numParts = msgPat.countParts();
+            boolean hasArguments = false;
+            for (int i = 0; i < numParts; i++) {
+                Part part = msgPat.getPart(i);
+                //Only check ARG_NUMBER at current stage. ARG_NAME may need to be handled in future
+                if(part.getType().equals(Type.ARG_NUMBER)){ 
+                    hasArguments = true;
                     break;
                 }
-            }//End while
-            
-            if(quoteIndex>=len){
-                outputStr += inputStr.substring(outstrIndex);
+            }
+            if (!hasArguments) {
+                // No arguments - just return the string as is
+                return inputStr;
             }
         }
-        
-        return outputStr;
-    }
-    
-    /***
-     * For MessageFormat with number args, convert single quote to double single quote during export
-     * @param inputStr  The message pattern without single quotes escaped
-     * @return  A modified message pattern string using single quote escape sequences (standard JDK
-     *          MessageFormat pattern string).
-     */
-    public static String ConvertSingleQuote(String inputStr){
-        String outputStr = "";
-        boolean needConvert = false;
-        
-        String pattern = ".*\\{\\d+\\}.*";
-        
-        String checkStr = inputStr.replaceAll("'\\{", "").replaceAll("\\}'", "");
-        needConvert = Pattern.matches(pattern, checkStr);        
-        
+
+        /***
+         * '{1}' -> '{1}'
+         * '{''}' -> '{''}'
+         * '{'' -> '{''
+         * '{'}'' -> '{'}'
+         * developer''s -> developer's
+         */
+
+        StringBuilder outputBuf = new StringBuilder();
         int len = inputStr.length();
         boolean keepQuote = false; //Flag for '{ or '}
-        if(!needConvert){
-            outputStr = inputStr;
-        }else{
-            /***
-             * '{1}' -> '{1}'
-             * '{''}' -> '{''}'
-             * '{'' -> '{''
-             * '{'}' -> '{'}''
-             * developer's -> developer''s
-             */
-            int outstrIndex = 0;
-            int quoteIndex = 0;
-            
-            while(quoteIndex<len){
-                int idx = inputStr.indexOf("'", quoteIndex);
-                
-                if(idx>-1){
-                    if(!keepQuote && idx+1<len 
-                            && (inputStr.charAt(idx+1)=='{'||inputStr.charAt(idx+1)=='}')){
-                        keepQuote = true;
-                        quoteIndex = idx+2;
-                    }else{
-                        if(keepQuote){ // '{ or '} is not closed yet
-                            if(idx+1<len && inputStr.charAt(idx+1)=='\''){ //Ignore ''
-                                quoteIndex = idx+2;
-                            }else{
-                                keepQuote = false; //Close '{ or '} with this '
-                                quoteIndex = idx+1;
-                            }
-                        }else{                             
-                            outputStr += inputStr.substring(outstrIndex, idx);
-                            outputStr += "''";
+        int outstrIndex = 0;
+        int quoteIndex = 0;
+
+        while (quoteIndex < len) {
+            int idx = inputStr.indexOf("'", quoteIndex);
+
+            if (idx > -1) {
+                if (!keepQuote && idx + 1 < len
+                        && (inputStr.charAt(idx + 1) == '{' || inputStr.charAt(idx + 1) == '}')) {
+                    keepQuote = true;
+                    quoteIndex = idx + 2;
+                } else {
+                    if (keepQuote) { // '{ or '} is not closed yet
+                        if (idx + 1 < len && inputStr.charAt(idx + 1) == '\'') { //Ignore ''
+                            quoteIndex = idx+2;
+                        } else {
+                            keepQuote = false; //Close '{ or '} with this '
                             quoteIndex = idx+1;
+                        }
+                    } else {
+                        if (idx + 1 < len && inputStr.charAt(idx + 1) == '\'') { //Convert '' to '
+                            outputBuf
+                                .append(inputStr.substring(outstrIndex, idx))
+                                .append("'");
+                            quoteIndex = idx+2;
+                            outstrIndex = quoteIndex;
+                        } else {
+                            // stand alone single quote - just emit it.
+                            quoteIndex = idx+1;
+                            outputBuf.append(inputStr.substring(outstrIndex, quoteIndex));
                             outstrIndex = quoteIndex;
                         }
                     }
-                }else{
-                    //No single quote is found
-                    outputStr += inputStr.substring(outstrIndex);
-                    break;
                 }
-            }//End while
-            
-            if(quoteIndex>=len){
-                outputStr += inputStr.substring(outstrIndex);
+            } else {
+                //No single quote is found
+                outputBuf.append(inputStr.substring(outstrIndex));
+                break;
             }
-            
+        }//End while
+        
+        if (quoteIndex >= len) {
+            outputBuf.append(inputStr.substring(outstrIndex));
         }
         
-        return outputStr;
+        return outputBuf.toString();
+    }
+
+    /***
+     * For MessageFormat with number args, convert single quote to double single quote during export
+     * @param inputStr  The message pattern without single quotes escaped
+     * @param msgPatEsc Option for message pattern processing
+     * @return  A modified message pattern string using single quote escape sequences (standard JDK
+     *          MessageFormat pattern string).
+     */
+    public static String ConvertSingleQuote(String inputStr, MessagePatternEscape msgPatEsc){
+        // Quick check - if there are no single quotes, skip this operation.
+        if (inputStr.indexOf("'") < 0) {
+            return inputStr;
+        }
+
+        MessagePattern msgPat = null;
+        try {
+            msgPat = new MessagePattern(inputStr);
+        } catch (IllegalArgumentException e) {
+            // not a message format pattern - fall through
+        } catch (IndexOutOfBoundsException e) {
+            // might be a valid message format pattern, but cannot handle this - fall through
+        }
+        if (msgPat == null) {
+            // if the string cannot be parsed as a MessageFormat pattern string,
+            // just returns the input string.
+            return inputStr;
+        }
+
+        if (msgPatEsc == MessagePatternEscape.AUTO) {
+            // In AUTO mode, checks if the input string contains arguments.
+            int numParts = msgPat.countParts();
+            boolean hasArguments = false;
+            for (int i = 0; i < numParts; i++) {
+                Part part = msgPat.getPart(i);
+                //Only check ARG_NUMBER at current stage. ARG_NAME may need to be handled in future
+                if(part.getType().equals(Type.ARG_NUMBER)){ 
+                    hasArguments = true;
+                    break;
+                }
+            }
+            if (!hasArguments) {
+                // No arguments - just return the string as is
+                return inputStr;
+            }
+        }
+
+
+        /***
+         * '{1}' -> '{1}'
+         * '{''}' -> '{''}'
+         * '{'' -> '{''
+         * '{'}' -> '{'}''
+         * developer's -> developer''s
+         */
+
+        StringBuilder outputBuf = new StringBuilder();
+        int len = inputStr.length();
+        boolean keepQuote = false; //Flag for '{ or '}
+        int outstrIndex = 0;
+        int quoteIndex = 0;
+
+        while (quoteIndex < len) {
+            int idx = inputStr.indexOf("'", quoteIndex);
+
+            if (idx > -1) {
+                if (!keepQuote && idx + 1 < len
+                        && (inputStr.charAt(idx + 1) == '{' || inputStr.charAt(idx + 1) == '}')) {
+                    keepQuote = true;
+                    quoteIndex = idx + 2;
+                } else {
+                    if (keepQuote) { // '{ or '} is not closed yet
+                        if (idx + 1 < len && inputStr.charAt(idx + 1) == '\'') { //Ignore ''
+                            quoteIndex = idx+2;
+                        } else {
+                            keepQuote = false; //Close '{ or '} with this '
+                            quoteIndex = idx+1;
+                        }
+                    } else {
+                        outputBuf
+                            .append(inputStr.substring(outstrIndex, idx))
+                            .append("''");
+                        quoteIndex = idx+1;
+                        outstrIndex = quoteIndex;
+                    }
+                }
+            } else {
+                //No single quote is found
+                outputBuf.append(inputStr.substring(outstrIndex));
+                break;
+            }
+        }//End while
+
+        if (quoteIndex >= len) {
+            outputBuf.append(inputStr.substring(outstrIndex));
+        }
+
+        return outputBuf.toString();
     }
     
     public static int findSingleQuote(String inputStr, int start){
@@ -786,8 +853,8 @@ public class JavaPropertiesResource extends ResourceFilter {
 
         Map<String, String> kvMap = Utils.createKeyValueMap(languageBundle.getResourceStrings());
 
-        BufferedReader baseReader = new BufferedReader(new InputStreamReader(baseStream, PROPS_ENC));
-        PrintWriter outWriter = new PrintWriter(new OutputStreamWriter(outStream, PROPS_ENC));
+        BufferedReader baseReader = new BufferedReader(new InputStreamReader(baseStream, getCharset()));
+        PrintWriter outWriter = new PrintWriter(new OutputStreamWriter(outStream, getCharset()));
 
         BreakIterator brkItr = Utils.getWordBreakIterator(options);
 
@@ -848,9 +915,9 @@ public class JavaPropertiesResource extends ResourceFilter {
                     }
                     // Write the property key and value
                     String key = pd.getKey();
-                    String value = ConvertSingleQuote(kvMap.get(key));
+                    String value = ConvertSingleQuote(kvMap.get(key), msgPatEsc);
                     PropDef modPd = new PropDef(key, value , pd.getSeparator(), null);
-                    modPd.print(outWriter, brkItr, isUTF8);
+                    modPd.print(outWriter, brkItr, (enc == Encoding.UTF_8));
                 } else {
                     if (orgLines.isEmpty()) {
                         // Single line

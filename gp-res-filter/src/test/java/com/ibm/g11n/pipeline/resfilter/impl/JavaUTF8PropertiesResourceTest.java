@@ -42,6 +42,8 @@ import com.ibm.g11n.pipeline.resfilter.LanguageBundleBuilder;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterException;
 import com.ibm.g11n.pipeline.resfilter.ResourceString;
 import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
+import com.ibm.g11n.pipeline.resfilter.impl.JavaPropertiesResource.Encoding;
+import com.ibm.g11n.pipeline.resfilter.impl.JavaPropertiesResource.MessagePatternEscape;
 import com.ibm.g11n.pipeline.resfilter.impl.JavaPropertiesResource.PropDef;
 import com.ibm.g11n.pipeline.resfilter.impl.JavaPropertiesResource.PropDef.PropSeparator;
 
@@ -147,7 +149,7 @@ public class JavaUTF8PropertiesResourceTest {
         EXPECTED_PROP_DEF_LIST.add(new PropDef("withTabs", "Tab1\tTab2\tTab3\t", PropSeparator.EQUAL));
     }
 
-    private static final JavaPropertiesResource res = new JavaPropertiesResource(true);
+    private static final JavaPropertiesResource res = new JavaPropertiesResource(Encoding.UTF_8, MessagePatternEscape.AUTO);
 
     @Test
     public void testParse() throws IOException, ResourceFilterException {
