@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 
@@ -30,6 +32,7 @@ import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
 public final class LanguageBundle {
     private Collection<ResourceString> resourceStrings;
     private List<String> notes;
+    private Map<String, String> metadata;
     private String embeddedLanguageCode;
     private String embeddedSourceLanguageCode;
 
@@ -57,6 +60,26 @@ public final class LanguageBundle {
             return Collections.emptyList();
         }
         return Collections.unmodifiableList(notes);
+    }
+
+    /**
+     * Sets the metadata key-value paris for this bundle.
+     * @param metadata  the metadata key-value pairs for this bundle.
+     */
+    public void setMetadata(Map<String, String> metadata) {
+        this.metadata = new TreeMap<>(metadata);
+    }
+
+    /**
+     * Returns an unmodifiable map of metadata key-value pairs for this language bundle.
+     * An empty map is returned when no metadata entries are available.
+     * @return  an unmodifiable map of metadata key-value pairs for this langauge bundle.
+     */
+    public Map<String, String> getMetadata() {
+        if (metadata == null) {
+            return Collections.emptyMap();
+        }
+        return Collections.unmodifiableMap(metadata);
     }
 
     /**

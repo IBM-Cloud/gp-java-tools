@@ -352,6 +352,7 @@ public class GPDownloadMojo extends GPBaseMojo {
                 String srcVal = data.getSourceValue();
                 Integer seqNum = data.getSequenceNumber();
                 List<String> notes = data.getNotes();
+                Map<String, String> metadata = data.getMetadata();
 
                 if (reviewedOnly) {
                     if (!data.isReviewed()) {
@@ -370,6 +371,9 @@ public class GPDownloadMojo extends GPBaseMojo {
                     }
                     if (notes != null) {
                         resb.notes(notes);
+                    }
+                    if (metadata != null) {
+                        resb.metadata(metadata);
                     }
                     bundleBuilder.addResourceString(resb);
                 }

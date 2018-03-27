@@ -18,6 +18,8 @@ package com.ibm.g11n.pipeline.resfilter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * A builder class for {@link LanguageBundle}
@@ -27,6 +29,7 @@ import java.util.List;
 public final class LanguageBundleBuilder {
     private List<ResourceString> resourceStrings = new LinkedList<ResourceString>();
     private List<String> notes = new LinkedList<String>();
+    private Map<String, String> metadata = new TreeMap<>();
     private String embeddedLanguageCode;
     private String embeddedSourceLanguageCode;
 
@@ -200,6 +203,34 @@ public final class LanguageBundleBuilder {
     }
 
     /**
+     * Add a metadata key-value pair. If the key was previously set, the value
+     * will be replaced with the spacified value.
+     * 
+     * @param key   The metadata key.
+     * @param value The metadata value.
+     * @return  this builder instance.
+     */
+    public LanguageBundleBuilder addMetadata(String key, String value) {
+        this.metadata.put(key, value);
+        return this;
+    }
+
+    /**
+     * Sets the bundle metadata key-value pairs. This method replaces previously
+     * set metadata entries.
+     * @param metadata  The metadata key-value pairs.
+     * @return  this builder instance.
+     */
+    public LanguageBundleBuilder metadata(Map<String, String> metadata) {
+        if (metadata == null) {
+            this.metadata.clear();
+        } else {
+            this.metadata = new TreeMap<>(metadata);
+        }
+        return this;
+    }
+
+    /**
      * Sets the specified embedded language code to the bundle.
      * 
      * @param code  The language code embedded in resource contents.
@@ -227,9 +258,17 @@ public final class LanguageBundleBuilder {
      * @return  A new instance of {@link LanguageBundle} configured by this builder.
      */
     public LanguageBundle build() {
+        // This method creates a copy of collection object, so the builder
+        // object can be reused.
         LanguageBundle bundle = new LanguageBundle();
         bundle.setResourceStrings(new ArrayList<ResourceString>(resourceStrings));
-        bundle.setNotes(new ArrayList<String>(notes));
+        if (!notes.isEmpty()) {
+            bundle.setNotes(new ArrayList<String>(notes));
+        }
+        if (!metadata.isEmpty()) {
+            bundle.setMetadata(new TreeMap<String, String>(metadata));
+        }
+        bundle.setMetadata(metadata);
         bundle.setEmbeddedLanguageCode(embeddedLanguageCode);
         bundle.setEmbeddedSourceLanguageCode(embeddedSourceLanguageCode);
 

@@ -85,7 +85,11 @@ final class ExportCmd extends BundleCmd {
             BundleData bundleData = getClient().getBundleInfo(bundleId);
             List<String> bundleNotes = bundleData.getNotes();
             if (bundleNotes != null) {
-                bundleBuilder.addNotes(bundleNotes);
+                bundleBuilder.notes(bundleNotes);
+            }
+            Map<String, String> bundleMetadata = bundleData.getMetadata();
+            if (bundleMetadata != null) {
+                bundleBuilder.metadata(bundleMetadata);
             }
 
             resEntries =
@@ -97,6 +101,7 @@ final class ExportCmd extends BundleCmd {
                 Integer seqNum = data.getSequenceNumber();
                 String srcVal = data.getSourceValue();
                 List<String> notes = data.getNotes();
+                Map<String, String> metadata = data.getMetadata();
 
                 if (resVal == null && fallback) {
                     resVal = srcVal;
@@ -110,6 +115,9 @@ final class ExportCmd extends BundleCmd {
                     }
                     if (notes != null) {
                         resString.notes(notes);
+                    }
+                    if (metadata != null) {
+                        resString.metadata(metadata);
                     }
                     bundleBuilder.addResourceString(resString.build());
                 }
