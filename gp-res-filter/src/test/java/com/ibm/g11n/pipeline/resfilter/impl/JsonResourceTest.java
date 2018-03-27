@@ -166,12 +166,6 @@ public class JsonResourceTest {
         }
     }
 
-    // @Test
-    // public void testTestFiles() throws IOException, ResourceFilterException {
-    // // just test the test files
-    // ResourceTestUtil.compareFilesJson(INPUT_FILE, EXPECTED_WRITE_FILE);
-    // }
-
     @Test
     public void testReWrite() throws IOException, ResourceFilterException {
         // First parse
@@ -208,18 +202,14 @@ public class JsonResourceTest {
             LanguageBundle bundle = res2.parse(is, null);
             List<ResourceString> resStrList = new ArrayList<>(bundle.getResourceStrings());
             Collections.sort(resStrList, new ResourceStringComparator());
-            // assertEquals("ResourceStrings did not match.",
-            // EXPECTED_INPUT_RES_LIST, resStrList);
 
             // Now write
             File tempFile = File.createTempFile(this.getClass().getSimpleName(), "3.json");
-            // File tempFile = new File("/tmp/3.json");
             tempFile.deleteOnExit();
 
             try (OutputStream os = new FileOutputStream(tempFile)) {
                 res.write(os, bundle, null);
                 os.flush();
-                System.out.println(ResourceTestUtil.fileToString(tempFile));
                 ResourceTestUtil.compareFilesJson(INPUT_FILE2, tempFile);
             }
         }
