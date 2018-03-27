@@ -30,6 +30,7 @@ import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 
 import com.ibm.g11n.pipeline.client.BundleData;
+import com.ibm.g11n.pipeline.client.BundleDataChangeSet;
 import com.ibm.g11n.pipeline.client.NewBundleData;
 import com.ibm.g11n.pipeline.client.NewResourceEntryData;
 import com.ibm.g11n.pipeline.client.ServiceClient;
@@ -75,6 +76,7 @@ public class GPUploadTask extends GPBaseTask {
                     // Checks if the bundle already exists
                     String bundleId = bf.getBundleId();
                     boolean createNew = false;
+                    Set<String> currentTgtLangs = null;
                     if (bundleIds.contains(bundleId)) {
                         getProject().log("Found bundle:" + bundleId, Project.MSG_INFO);
                         // Checks if the source language matches.
@@ -85,6 +87,7 @@ public class GPUploadTask extends GPBaseTask {
                                     + ") does not match the specified language("
                                     + srcLang + ").");
                         }
+                        currentTgtLangs = bundle.getTargetLanguages();
                     } else {
                         getProject().log("bundle:" + bundleId + " does not exist, creating a new bundle.", Project.MSG_INFO);
                         createNew = true;
@@ -108,8 +111,43 @@ public class GPUploadTask extends GPBaseTask {
                             }
                             // set bundle notes
                             newBundleData.setNotes(resBundle.getNotes());
+                            // set metadata
+                            newBundleData.setMetadata(resBundle.getMetadata());
                             client.createBundle(bundleId, newBundleData);
                             getProject().log("Created bundle: " + bundleId, Project.MSG_INFO);
+                        } else {
+                            BundleDataChangeSet bundleDataChanges = new BundleDataChangeSet();
+                            boolean updateBundle = false;
+
+                            // checks if target languages need to be updated
+                            if (!tgtLangs.isEmpty()) {
+                                if (currentTgtLangs == null || !currentTgtLangs.containsAll(tgtLangs)) {
+                                    // add missing target languages - we don't want to delete
+                                    // existing target languages automatically here.
+                                    Set<String> newTgtLangs = new TreeSet<>(tgtLangs);
+                                    if (currentTgtLangs != null) {
+                                        newTgtLangs.addAll(currentTgtLangs);
+                                    }
+                                    bundleDataChanges.setTargetLanguages(newTgtLangs);
+                                    updateBundle = true;
+                                }
+                            }
+
+                            // update bundle notes if any
+                            if (!resBundle.getNotes().isEmpty()) {
+                                bundleDataChanges.setNotes(resBundle.getNotes());
+                                updateBundle = true;
+                            }
+                            // update metadata if any - for now, this operation only appends
+                            // extra metadata key-value pairs from bundle files
+                            if (!resBundle.getMetadata().isEmpty()) {
+                                bundleDataChanges.setMetadata(resBundle.getMetadata());
+                                updateBundle = true;
+                            }
+                            if (updateBundle) {
+                                client.updateBundle(bundleId, bundleDataChanges);
+                                getProject().log("Updated bundle data: " + bundleId, Project.MSG_INFO);
+                            }
                         }
                         Collection<ResourceString> resStrings = resBundle.getResourceStrings();
                         for (ResourceString resString : resStrings) {

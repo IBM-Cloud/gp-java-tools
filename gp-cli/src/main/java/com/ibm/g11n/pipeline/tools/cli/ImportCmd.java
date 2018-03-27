@@ -24,6 +24,8 @@ import java.util.Map;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.ibm.g11n.pipeline.client.BundleData;
+import com.ibm.g11n.pipeline.client.BundleDataChangeSet;
 import com.ibm.g11n.pipeline.client.NewResourceEntryData;
 import com.ibm.g11n.pipeline.client.ServiceException;
 import com.ibm.g11n.pipeline.resfilter.FilterOptions;
@@ -65,9 +67,17 @@ final class ImportCmd extends BundleCmd {
 
     @Override
     protected void _execute() {
-        // TODO: Bundle comments should be imported if the language of the resource files is
-        // the bundle's source language.
+        // get the specified bundle data
+        BundleData bundleData = null;
+        try {
+            bundleData = getClient().getBundleInfo(bundleId);
+        } catch (ServiceException e) {
+            throw new RuntimeException("Failed to locate bundle: " + bundleId, e);
+        }
+        assert bundleData != null;
+        boolean isSrcLang = bundleData.getSourceLanguage().equals(languageId);
 
+        BundleDataChangeSet bundleDataChanges = null;
         Map<String, NewResourceEntryData> resEntries = null;
         ResourceFilter filter = ResourceFilterFactory.getResourceFilter(type);
         if (filter == null) {
@@ -77,6 +87,25 @@ final class ImportCmd extends BundleCmd {
         try (FileInputStream fis = new FileInputStream(f)) {
             LanguageBundle bundle = filter.parse(fis, new FilterOptions(Locale.forLanguageTag(languageId)));
 
+            if (isSrcLang) {
+                // if the specified language is the source language, update bundle data if
+                // notes/metadata are available in parsed result.
+
+                // notes
+                if (!bundle.getNotes().isEmpty()) {
+                    bundleDataChanges = new BundleDataChangeSet();
+                    bundleDataChanges.setNotes(bundle.getNotes());
+                }
+                // update metadata if any - for now, this operation only appends
+                // extra metadata key-value pairs from bundle files
+                if (!bundle.getMetadata().isEmpty()) {
+                    if (bundleDataChanges == null) {
+                        bundleDataChanges = new BundleDataChangeSet();
+                    }
+                    bundleDataChanges.setMetadata(bundle.getMetadata());
+                }
+            }
+
             resEntries = new HashMap<>(bundle.getResourceStrings().size());
             for (ResourceString resString : bundle.getResourceStrings()) {
                 NewResourceEntryData resEntryData = new NewResourceEntryData(resString.getValue());
@@ -85,6 +114,7 @@ final class ImportCmd extends BundleCmd {
                     resEntryData.setSequenceNumber(Integer.valueOf(seqNum));
                 }
                 resEntryData.setNotes(resString.getNotes());
+                resEntryData.setMetadata(resString.getMetadata());
                 if (asReviewed) {
                     resEntryData.setReviewed(Boolean.TRUE);
                 }
@@ -99,6 +129,9 @@ final class ImportCmd extends BundleCmd {
         }
 
         try {
+            if (bundleDataChanges != null) {
+                getClient().updateBundle(bundleId, bundleDataChanges);
+            }
             getClient().uploadResourceEntries(bundleId, languageId, resEntries);
         } catch (ServiceException e) {
             throw new RuntimeException(e);

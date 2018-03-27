@@ -30,6 +30,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 
 import com.ibm.g11n.pipeline.client.BundleData;
+import com.ibm.g11n.pipeline.client.BundleDataChangeSet;
 import com.ibm.g11n.pipeline.client.NewBundleData;
 import com.ibm.g11n.pipeline.client.NewResourceEntryData;
 import com.ibm.g11n.pipeline.client.ServiceClient;
@@ -74,6 +75,7 @@ public class GPUploadMojo extends GPBaseMojo {
                     // Checks if the bundle already exists
                     String bundleId = bf.getBundleId();
                     boolean createNew = false;
+                    Set<String> currentTgtLangs = null;
                     if (bundleIds.contains(bundleId)) {
                         getLog().info("Found bundle:" + bundleId);
                         // Checks if the source language matches.
@@ -84,6 +86,7 @@ public class GPUploadMojo extends GPBaseMojo {
                                     + ") does not match the specified language("
                                     + srcLang + ").");
                         }
+                        currentTgtLangs = bundle.getTargetLanguages();
                     } else {
                         getLog().info("bundle:" + bundleId + " does not exist, creating a new bundle.");
                         createNew = true;
@@ -107,8 +110,43 @@ public class GPUploadMojo extends GPBaseMojo {
                             }
                             // set bundle notes
                             newBundleData.setNotes(resBundle.getNotes());
+                            // set metadata
+                            newBundleData.setMetadata(resBundle.getMetadata());
                             client.createBundle(bundleId, newBundleData);
                             getLog().info("Created bundle: " + bundleId);
+                        } else {
+                            BundleDataChangeSet bundleDataChanges = new BundleDataChangeSet();
+                            boolean updateBundle = false;
+
+                            // checks if target languages need to be updated
+                            if (!tgtLangs.isEmpty()) {
+                                if (currentTgtLangs == null || !currentTgtLangs.containsAll(tgtLangs)) {
+                                    // add missing target languages - we don't want to delete
+                                    // existing target languages automatically here.
+                                    Set<String> newTgtLangs = new TreeSet<>(tgtLangs);
+                                    if (currentTgtLangs != null) {
+                                        newTgtLangs.addAll(currentTgtLangs);
+                                    }
+                                    bundleDataChanges.setTargetLanguages(newTgtLangs);
+                                    updateBundle = true;
+                                }
+                            }
+
+                            // update bundle notes if any
+                            if (!resBundle.getNotes().isEmpty()) {
+                                bundleDataChanges.setNotes(resBundle.getNotes());
+                                updateBundle = true;
+                            }
+                            // update metadata if any - for now, this operation only appends
+                            // extra metadata key-value pairs from bundle files
+                            if (!resBundle.getMetadata().isEmpty()) {
+                                bundleDataChanges.setMetadata(resBundle.getMetadata());
+                                updateBundle = true;
+                            }
+                            if (updateBundle) {
+                                client.updateBundle(bundleId, bundleDataChanges);
+                                getLog().info("Updated bundle data: " + bundleId);
+                            }
                         }
                         Collection<ResourceString> resStrings = resBundle.getResourceStrings();
                         for (ResourceString resString : resStrings) {
@@ -118,7 +156,13 @@ public class GPUploadMojo extends GPBaseMojo {
                                 resEntryData.setSequenceNumber(Integer.valueOf(seqNum));
                             }
                             // set resource string notes
-                            resEntryData.setNotes(resString.getNotes());
+                            if (!resString.getNotes().isEmpty()) {
+                                resEntryData.setNotes(resString.getNotes());
+                            }
+                            // set resource string metadata
+                            if (!resString.getMetadata().isEmpty()) {
+                                resEntryData.setMetadata(resString.getMetadata());
+                            }
                             resEntries.put(resString.getKey(), resEntryData);
                         }
                     } catch (IOException e) {
