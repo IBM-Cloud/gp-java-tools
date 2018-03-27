@@ -16,7 +16,7 @@ before_install:
       - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
 after_success:
-  - mvn clean cobertura:cobertura org.eluder.coveralls:coveralls-maven-plugin:report
+  - mvn clean cobertura:cobertura org.eluder.coveralls:coveralls-maven-plugin:report -Dcobertura.report.format=xml
 
 addons:
   coverity_scan:
