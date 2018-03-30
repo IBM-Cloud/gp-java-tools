@@ -1,0 +1,432 @@
+{
+	"$.firstly.1": [
+		{
+			"keyValue": "firstly",
+			"keyType": "BEGIN_OBJECT"
+		},
+		{
+			"keyValue": "1",
+			"keyType": "BEGIN_OBJECT"
+		}
+	],
+    "$.bears.grizzly.black": [
+        {
+            "keyValue": "bears",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "grizzly",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "black",
+            "keyType": "BEGIN_OBJECT"
+        }
+    ],
+    "$.bears.grizzly.brown": [
+        {
+            "keyValue": "bears",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "grizzly",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "brown",
+            "keyType": "BEGIN_OBJECT"
+        }
+    ],
+    "$.bears.white": [
+        {
+            "keyValue": "bears",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "white",
+            "keyType": "BEGIN_OBJECT"
+        }
+    ],
+    "$.colors[0]": [
+        {
+            "keyValue": "colors",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "0",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.colors[1]": [
+        {
+            "keyValue": "colors",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "1",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.colors[2]": [
+        {
+            "keyValue": "colors",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "2",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.colors[3]": [
+        {
+            "keyValue": "colors",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "3",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.countries[0].Europe[0]": [
+        {
+            "keyValue": "countries",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "0",
+            "keyType": "BEGIN_ARRAY"
+        },
+        {
+            "keyValue": "Europe",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "0",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.countries[0].Europe[1]": [
+        {
+            "keyValue": "countries",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "0",
+            "keyType": "BEGIN_ARRAY"
+        },
+        {
+            "keyValue": "Europe",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "1",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.countries[0].Europe[2]": [
+        {
+            "keyValue": "countries",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "0",
+            "keyType": "BEGIN_ARRAY"
+        },
+        {
+            "keyValue": "Europe",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "2",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.countries[0].Europe[3]": [
+        {
+            "keyValue": "countries",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "0",
+            "keyType": "BEGIN_ARRAY"
+        },
+        {
+            "keyValue": "Europe",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "3",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.countries[1].Asia[0]": [
+        {
+            "keyValue": "countries",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "1",
+            "keyType": "BEGIN_ARRAY"
+        },
+        {
+            "keyValue": "Asia",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "0",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.countries[1].Asia[1]": [
+        {
+            "keyValue": "countries",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "1",
+            "keyType": "BEGIN_ARRAY"
+        },
+        {
+            "keyValue": "Asia",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "1",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.countries[1].Asia[2]": [
+        {
+            "keyValue": "countries",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "1",
+            "keyType": "BEGIN_ARRAY"
+        },
+        {
+            "keyValue": "Asia",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "2",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.countries[2].Americas['N. America'][0]": [
+        {
+            "keyValue": "countries",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "2",
+            "keyType": "BEGIN_ARRAY"
+        },
+        {
+            "keyValue": "Americas",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "N. America",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "0",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.countries[2].Americas['N. America'][1]": [
+        {
+            "keyValue": "countries",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "2",
+            "keyType": "BEGIN_ARRAY"
+        },
+        {
+            "keyValue": "Americas",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "N. America",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "1",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.countries[2].Americas['N. America'][2]": [
+        {
+            "keyValue": "countries",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "2",
+            "keyType": "BEGIN_ARRAY"
+        },
+        {
+            "keyValue": "Americas",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "N. America",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "2",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.countries[2].Americas['S. America'][0]": [
+        {
+            "keyValue": "countries",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "2",
+            "keyType": "BEGIN_ARRAY"
+        },
+        {
+            "keyValue": "Americas",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "S. America",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "0",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.countries[2].Americas['S. America'][1]": [
+        {
+            "keyValue": "countries",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "2",
+            "keyType": "BEGIN_ARRAY"
+        },
+        {
+            "keyValue": "Americas",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "S. America",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "1",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.countries[3].Africa[0]": [
+        {
+            "keyValue": "countries",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "3",
+            "keyType": "BEGIN_ARRAY"
+        },
+        {
+            "keyValue": "Africa",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "0",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.countries[3].Africa[1]": [
+        {
+            "keyValue": "countries",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "3",
+            "keyType": "BEGIN_ARRAY"
+        },
+        {
+            "keyValue": "Africa",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "1",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$.countries[3].Africa[2]": [
+        {
+            "keyValue": "countries",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "3",
+            "keyType": "BEGIN_ARRAY"
+        },
+        {
+            "keyValue": "Africa",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "2",
+            "keyType": "BEGIN_ARRAY"
+        }
+    ],
+    "$['$.']": [
+        {
+            "keyValue": "$.",
+            "keyType": "BEGIN_OBJECT"
+        }
+    ],
+    "$['$.xxx']": [
+        {
+            "keyValue": "$.xxx",
+            "keyType": "BEGIN_OBJECT"
+        }
+    ],
+    "$['ibm.com']['g11n.pipeline.title']": [
+        {
+            "keyValue": "ibm.com",
+            "keyType": "BEGIN_OBJECT"
+        },
+        {
+            "keyValue": "g11n.pipeline.title",
+            "keyType": "BEGIN_OBJECT"
+        }
+    ],
+    "$abc": [
+        {
+            "keyValue": "$abc",
+            "keyType": "BEGIN_OBJECT"
+        }
+    ],
+    "another.text": [
+        {
+            "keyValue": "another.text",
+            "keyType": "BEGIN_OBJECT"
+        }
+    ],
+    "frog['2']": [
+        {
+            "keyValue": "frog['2']",
+            "keyType": "BEGIN_OBJECT"
+        }
+    ],
+    "owl[3]": [
+        {
+            "keyValue": "owl[3]",
+            "keyType": "BEGIN_OBJECT"
+        }
+    ],
+    "some_text": [
+        {
+            "keyValue": "some_text",
+            "keyType": "BEGIN_OBJECT"
+        }
+    ]
+}

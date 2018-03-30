@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+	xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>@project.groupId@</groupId>
+	<artifactId>download-basic</artifactId>
+	<version>@project.version@</version>
+	<packaging>jar</packaging>
+	
+	<name>gp-maven-plugin integration test - download-basic</name>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>@project.groupId@</groupId>
+				<artifactId>@project.artifactId@</artifactId>
+				<version>@project.version@</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>download</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<bundleSets>
+						<bundleSet>
+							<sourceFiles>
+								<directory>src/main/resources</directory>
+								<includes>
+									<include>**/*.json</include>
+								</includes>
+							</sourceFiles>
+							<type>JSON</type>
+						</bundleSet>
+					</bundleSets>
+				</configuration>
+			</plugin>
+		</plugins>
+ 	</build>
+</project>

@@ -2,6 +2,10 @@
 <xliff xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-strict.xsd">
   <file datatype="plaintext" original="g11n-pipeline" source-language="en" target-language="ja">
     <body>
+      <trans-unit id="1">
+        <source>Quetzal</source>
+        <target>Quetzal</target>
+      </trans-unit>
       <trans-unit id="3">
         <source>An application to manipulate and process XLIFF documents</source>
         <target>XLIFF 文書を編集、または処理 するアプリケーションです。</target>
@@ -9,10 +13,6 @@
       <trans-unit id="4">
         <source>XLIFF Data Manager</source>
         <target>XLIFF データ・マネージャ</target>
-      </trans-unit>
-      <trans-unit id="1">
-        <source>Quetzal</source>
-        <target>Quetzal</target>
       </trans-unit>
     </body>
   </file>

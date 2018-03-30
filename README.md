@@ -1,6 +1,6 @@
 <!--
 /*  
- * Copyright IBM Corp. 2016
+ * Copyright IBM Corp. 2016, 2018
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 -->
-Java Client Tools for Globalization Pipeline on IBM Bluemix
+Java Client Tools for IBM Globalization Pipeline
 ==
 
 # What is this?
 
 This repository contains Java tools for
-[Globalization Pipeline on IBM Bluemix](https://www.ng.bluemix.net/docs/services/GlobalizationPipeline/index.html).
+[IBM Globalization Pipeline](https://www.ng.bluemix.net/docs/services/GlobalizationPipeline/index.html).
 
-[![Build Status](https://travis-ci.org/IBM-Bluemix/gp-java-tools.svg?branch=master)](https://travis-ci.org/IBM-Bluemix/gp-java-tools)
-[![Coverage Status](https://coveralls.io/repos/github/IBM-Bluemix/gp-java-tools/badge.svg?branch=master)](https://coveralls.io/github/IBM-Bluemix/gp-java-tools?branch=master)
+[![Build Status](https://travis-ci.org/IBM-Cloud/gp-java-tools.svg?branch=master)](https://travis-ci.org/IBM-Cloud/gp-java-tools)
+[![Coverage Status](https://coveralls.io/repos/github/IBM-Cloud/gp-java-tools/badge.svg?branch=master)](https://coveralls.io/github/IBM-Cloud/gp-java-tools?branch=master)
 [![Coverity Scan](https://img.shields.io/coverity/scan/9398.svg)](https://scan.coverity.com/projects/ibm-bluemix-gp-java-tools)
 
 [![gp-java-tools](https://img.shields.io/maven-central/v/com.ibm.g11n.pipeline/gp-java-tools.svg)](#)
@@ -33,7 +33,7 @@ This repository contains Java tools for
 # Getting started
 
 To get started, you should familiarize yourself with the service itself. A good place
-to begin is by reading the [Quick Start Guide](https://github.com/IBM-Bluemix/gp-common#quick-start-guide) and the official [Getting Started with IBM Globalization ](https://www.ng.bluemix.net/docs/services/GlobalizationPipeline/index.html)
+to begin is by reading the [Quick Start Guide](https://github.com/IBM-Cloud/gp-common#quick-start-guide) and the official [Getting Started with IBM Globalization Pipeline](https://www.ng.bluemix.net/docs/services/GlobalizationPipeline/index.html)
 documentation.
 
 # Usage
@@ -77,7 +77,7 @@ information.
 
 # Community
 
-* View or file GitHub [Issues](https://github.com/IBM-Bluemix/gp-java-tools/issues)
+* View or file GitHub [Issues](https://github.com/IBM-Cloud/gp-java-tools/issues)
 * Connect with the open source community on [developerWorks Open](https://developer.ibm.com/open/ibm-bluemix-globalization-pipeline-service/)
 
 # Contributing

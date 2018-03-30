@@ -1,0 +1,18 @@
+!ja-JP
+#Test case for write
+#Mock resource filter
+@date=2018-03-30
+@test=true
+---
+
+#note1
+@mk1=mv1
+first=最初
+
+#note2-1
+#note2-2
+middle=中間
+
+@mk3-1=mv3-1
+@mk3-2=mv3-2
+last=最後

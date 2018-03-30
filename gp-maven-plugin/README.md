@@ -57,7 +57,7 @@ Goals available for this plugin are below.
 ### <a name="TOC-Usage-AddPlugin"></a>Adding Globalization Pipeline plugin
 
 To integrate Globalization Pipeline plugin with a Maven build, add <plugin> section
-in pom.xml.
+in pom.xml, and replace version string `X.Y.Z` with an actual plug-in version.
 
 ```
 <project>
@@ -68,7 +68,7 @@ in pom.xml.
             <plugin>
                 <groupId>com.ibm.g11n.pipeline</groupId>
                 <artifactId>gp-maven-plugin</artifactId>
-                <version>1.1.7</version>
+                <version>X.Y.Z</version>
             </plugin>
             [...]
         </plugins>
@@ -412,6 +412,9 @@ excludes all files with file name `config.json`.
 Specifies a resource type. Available options are
 
 * **JAVA** - Java property resource bundle file
+* **JAVAUTF8** - Java UTF8 property resource bundle file
+* **JAVAMSG** - Java property resource bundle file with MessageFormat pattern stirngs only
+* **JAVAMSGUTF8** - Java UTF8 property resource bundle file with MessageFormat pattern strings only
 * **JSON** - Resource string key/value pairs stored in JSON format. For now nested JSON object is not supported.
 * **AMDJS** - RequireJS I18N bundle file
 * **GLOBALIZEJS** - Globalize.js JSON resource bundle file
@@ -513,6 +516,8 @@ Specifies one of following keywords to control output file name or path in `down
 * **LANGUAGE_SUFFIX** In the same directory with the source bundle file, with extra language suffix.
 For example, if the source bundle file is `com/ibm/g11n/MyMessages.properties`, then the French
 version will be `com/ibm/g11n/MyMessages_fr.properties`.
+* **LANGUAGE_ONLY** In the same directory with the source bundle file, using language code as the file name with the original file extension.
+For example, if the source bundle file is `res/en.json`, then the French version will be `res/fr.json`.
 * **LANGUAGE_SUBDIR** In a language sub-directory under the directory where the source bundle file
 is placed. For example, if the source bundle file is `res/MyMessages.json`, then the French
 version will be `res/fr/MyMessages.json`.

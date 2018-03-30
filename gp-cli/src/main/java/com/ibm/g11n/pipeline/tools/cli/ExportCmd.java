@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2015, 2017
+ * Copyright IBM Corp. 2015, 2018
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,18 +19,23 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.ibm.g11n.pipeline.client.BundleData;
 import com.ibm.g11n.pipeline.client.ResourceEntryData;
 import com.ibm.g11n.pipeline.client.ServiceException;
-import com.ibm.g11n.pipeline.resfilter.Bundle;
+import com.ibm.g11n.pipeline.resfilter.FilterOptions;
+import com.ibm.g11n.pipeline.resfilter.LanguageBundle;
+import com.ibm.g11n.pipeline.resfilter.LanguageBundleBuilder;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilter;
+import com.ibm.g11n.pipeline.resfilter.ResourceFilterException;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterFactory;
 import com.ibm.g11n.pipeline.resfilter.ResourceString;
-import com.ibm.g11n.pipeline.resfilter.ResourceType;
 
 /**
  * Exports resource data from a translation bundle.
@@ -48,9 +53,8 @@ final class ExportCmd extends BundleCmd {
     @Parameter(
             names = {"-t", "--type"},
             description = "Resource file type",
-            converter = ResourceTypeConverter.class,
             required = true)
-    private ResourceType type;
+    private String type;
 
     @Parameter(
             names = {"-f", "--file"},
@@ -73,8 +77,21 @@ final class ExportCmd extends BundleCmd {
     @Override
     protected void _execute() {
         Map<String, ResourceEntryData> resEntries = null;
-        Bundle bundle = new Bundle();
+        LanguageBundleBuilder bundleBuilder = new LanguageBundleBuilder(false);
         try {
+            // For now, just use language ID specified on the command line
+            bundleBuilder.embeddedLanguageCode(languageId);
+
+            BundleData bundleData = getClient().getBundleInfo(bundleId);
+            List<String> bundleNotes = bundleData.getNotes();
+            if (bundleNotes != null) {
+                bundleBuilder.notes(bundleNotes);
+            }
+            Map<String, String> bundleMetadata = bundleData.getMetadata();
+            if (bundleMetadata != null) {
+                bundleBuilder.metadata(bundleMetadata);
+            }
+
             resEntries =
                     getClient().getResourceEntries(bundleId, languageId);
             for (Entry<String, ResourceEntryData> entry : resEntries.entrySet()) {
@@ -83,34 +100,50 @@ final class ExportCmd extends BundleCmd {
                 String resVal = data.getValue();
                 Integer seqNum = data.getSequenceNumber();
                 String srcVal = data.getSourceValue();
+                List<String> notes = data.getNotes();
+                Map<String, String> metadata = data.getMetadata();
+
                 if (resVal == null && fallback) {
                     resVal = srcVal;
                 }
                 if (resVal != null) {
-                    int sequenceNumber = -1;
+                    ResourceString.Builder resString = ResourceString.with(key, resVal)
+                            .sourceValue(srcVal);
+
                     if (seqNum != null) {
-                        sequenceNumber = seqNum.intValue();
+                        resString.sequenceNumber(seqNum.intValue());
                     }
-                    ResourceString resString = new ResourceString(key, resVal,
-                            sequenceNumber, data.getNotes(), srcVal);
-                    bundle.addResourceString(resString);
+                    if (notes != null) {
+                        resString.notes(notes);
+                    }
+                    if (metadata != null) {
+                        resString.metadata(metadata);
+                    }
+                    bundleBuilder.addResourceString(resString.build());
                 }
             }
         } catch (ServiceException e) {
             throw new RuntimeException(e);
         }
+        LanguageBundle bundle = bundleBuilder.build();
 
-        ResourceFilter filter = ResourceFilterFactory.get(type);
+        ResourceFilter filter = ResourceFilterFactory.getResourceFilter(type);
+        if (filter == null) {
+            throw new RuntimeException("Resource filter for " + type + " is not available.");
+        }
         File f = new File(fileName);
+        FilterOptions fopts = new FilterOptions(Locale.forLanguageTag(languageId));
         try (FileOutputStream fos = new FileOutputStream(f)) {
             if (sourceFileName != null && !sourceFileName.isEmpty()) {
                 FileInputStream fis = new FileInputStream(sourceFileName);
-                filter.merge(fis, fos, languageId, bundle);
+                filter.merge(fis, fos, bundle, fopts);
             } else {
-                filter.write(fos, languageId, bundle);
+                filter.write(fos, bundle, fopts);
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to write the resoruce data to " + fileName + ": " + e.getMessage(), e);
+        } catch (ResourceFilterException e) {
+            throw new RuntimeException("Failed to process the resource data for " + fileName + ": " + e.getMessage(), e);
         }
 
         System.out.println("Resource data exported from bundle:" + bundleId

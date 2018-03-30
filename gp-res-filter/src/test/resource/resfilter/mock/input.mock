@@ -1,0 +1,16 @@
+! en_US
+# Input test case
+# See com.ibm.g11n.pipeline.custom.MockResourceFilter
+@ test = true
+@ component = gp-res-filter
+---
+
+# flower
+@color=red
+key1 = rose
+
+# fruit
+# toropical
+@fresh=true
+@ color = yellow
+key2 = banana

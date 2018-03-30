@@ -1,2 +1,5 @@
 /target/
 /bin/
+/test-gpconfig.json
+/test-fakebroker.json
+
