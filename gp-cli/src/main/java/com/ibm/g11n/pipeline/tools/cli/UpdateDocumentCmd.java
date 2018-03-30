@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2017
+ * Copyright IBM Corp. 2017, 2018
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,13 @@ import java.util.Set;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.ibm.g11n.pipeline.client.BundleDataChangeSet;
 import com.ibm.g11n.pipeline.client.DocumentDataChangeSet;
 import com.ibm.g11n.pipeline.client.ServiceException;
 
 /**
- * Updates an existing translation bundle.
+ * Updates an existing translatable document.
  * 
- * @author Yoshito Umaoka
+ * @author John Emmons
  */
 @Parameters(commandDescription = "Updates an existing translatable document.")
 public class UpdateDocumentCmd extends DocumentCmd {

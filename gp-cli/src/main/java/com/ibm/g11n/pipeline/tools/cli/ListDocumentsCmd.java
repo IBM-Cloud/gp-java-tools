@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2015,2016
+ * Copyright IBM Corp. 2017, 2018
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.ibm.g11n.pipeline.client.DocumentType;
 import com.ibm.g11n.pipeline.client.ServiceException;
 
 /**
- * Prints out HTML document IDs.
+ * Prints out document IDs.
  * 
  * @author John Emmons
  */
@@ -41,7 +41,7 @@ final class ListDocumentsCmd extends DocumentTypeCmd {
             throw new RuntimeException(e);
         } catch (IllegalArgumentException e) {
             String errmsg = "Invalid document type: " + type + "\n" + "Valid values are: " + 
-                    Arrays.toString(DocumentType.values()).toLowerCase(); //.replaceAll("^.|.$", "").split(", ");
+                    Arrays.toString(DocumentType.values()).toLowerCase();
             throw new RuntimeException(errmsg);
         }
 

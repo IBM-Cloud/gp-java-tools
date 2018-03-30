@@ -1,5 +1,5 @@
 /*  
- * Copyright IBM Corp. 2015, 2016
+ * Copyright IBM Corp. 2017, 2018
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ public class DocumentTypeConverter implements IStringConverter<DocumentType>{
             return DocumentType.valueOf(type.toUpperCase(Locale.ENGLISH));
         } catch (IllegalArgumentException e) {
             throw new ParameterException("Parameter value " + type +
-                    " is not valid for resource type option.");
+                    " is not valid for the document type option.");
         }
     }
 }
