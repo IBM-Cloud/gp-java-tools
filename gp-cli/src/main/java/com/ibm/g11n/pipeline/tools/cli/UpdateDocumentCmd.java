@@ -98,7 +98,7 @@ public class UpdateDocumentCmd extends DocumentCmd {
             .setReadOnly(readOnly);
 
         try {
-            getClient().updateDocument(documentId, type, changes);
+            getClient().updateDocument(type, documentId, changes);
         } catch (ServiceException e) {
             throw new RuntimeException(e);
         }

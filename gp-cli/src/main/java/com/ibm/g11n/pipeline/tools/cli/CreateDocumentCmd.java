@@ -50,7 +50,7 @@ final class CreateDocumentCmd extends DocumentCmd {
         }
 
         try {
-            getClient().createDocument(documentId, type, newDocumentData);
+            getClient().createDocument(type, documentId, newDocumentData);
         } catch (ServiceException e) {
             throw new RuntimeException(e);
         }

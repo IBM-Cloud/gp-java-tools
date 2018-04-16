@@ -28,7 +28,7 @@ final class DeleteDocumentCmd extends DocumentCmd {
     @Override
     protected void _execute() {
         try {
-            getClient().deleteDocument(documentId,type);
+            getClient().deleteDocument(type, documentId);
         } catch (ServiceException e) {
             throw new RuntimeException(e);
         }

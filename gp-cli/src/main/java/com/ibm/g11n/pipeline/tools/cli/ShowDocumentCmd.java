@@ -46,7 +46,7 @@ final class ShowDocumentCmd extends DocumentCmd {
     @Override
     protected void _execute() {
         try {
-            DocumentData documentData = getClient().getDocumentInfo(documentId,type);
+            DocumentData documentData = getClient().getDocumentInfo(type,documentId);
 
             DocumentDataJson outJson = new DocumentDataJson();
 

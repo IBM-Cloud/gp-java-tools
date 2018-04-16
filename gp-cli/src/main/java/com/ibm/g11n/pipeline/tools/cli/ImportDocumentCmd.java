@@ -45,7 +45,7 @@ final class ImportDocumentCmd extends DocumentCmd {
         File f = new File(fileName);
 
         try {
-            getClient().updateDocumentContent(documentId, type, languageId, f);
+            getClient().updateDocumentContent(type, documentId, languageId, f);
         } catch (ServiceException e) {
             throw new RuntimeException(e);
         }

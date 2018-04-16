@@ -47,7 +47,7 @@ final class ExportDocumentCmd extends DocumentCmd {
     protected void _execute() {
         byte[] content;
         try {
-            content = getClient().getDocumentContent(documentId, type, languageId);
+            content = getClient().getDocumentContent(type, documentId, languageId);
         } catch (ServiceException e) {
             throw new RuntimeException(e);
         }
