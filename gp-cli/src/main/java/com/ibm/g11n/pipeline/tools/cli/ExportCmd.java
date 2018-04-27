@@ -74,6 +74,12 @@ final class ExportCmd extends BundleCmd {
             required = false)
     private boolean fallback = false;
 
+    @Parameter(
+            names = {"-r", "--reviewedOnly"},
+            description = "Includes only reviewed translation.",
+            required = false)
+    private boolean reviewedOnly = false;
+
     @Override
     protected void _execute() {
         Map<String, ResourceEntryData> resEntries = null;
@@ -102,7 +108,11 @@ final class ExportCmd extends BundleCmd {
                 String srcVal = data.getSourceValue();
                 List<String> notes = data.getNotes();
                 Map<String, String> metadata = data.getMetadata();
+                boolean isReviewed = data.isReviewed();
 
+                if (reviewedOnly && !isReviewed) {
+                    resVal = null;
+                }
                 if (resVal == null && fallback) {
                     resVal = srcVal;
                 }
