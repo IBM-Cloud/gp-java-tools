@@ -76,7 +76,7 @@ final class ExportCmd extends BundleCmd {
 
     @Parameter(
             names = {"-r", "--reviewedOnly"},
-            description = "Includes only reviewed transaltion.",
+            description = "Includes only reviewed translation.",
             required = false)
     private boolean reviewedOnly = false;
 
