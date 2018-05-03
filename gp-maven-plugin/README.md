@@ -450,6 +450,32 @@ If this parameter is not specified, `upload` goal creates a new Globalization Pi
 with all available machine translation target languages, and `download` goal exports all
 target languages currently available in the Globalization Pipeline bundle.
 
+#### `<pathToBundleMapper>`
+
+Specifies a mapping rule for converting source bundle file path to Globalization Pipeline bundle
+ID. To specify a mapping rule, use one or more `<regexMapper>` elements with pattern and replacement.
+A source resource file path relative to the base source directory (`<directory>` value in `<sourceFiles>` element) is used as the input of target path conversion specified by this setting.
+For each `<regexMapper>` element, substring matching a Java regular expression pattern specified by
+`<pattern>` value will be replaced with the value specified by `<replacement>` value.
+
+The example below will removes `.properties` from a give path, then replace `/` with `.`.
+For example, an input path `com/ibm/g11n/example/MyStrings.properties` will produce
+a fully qualified Java class name `com.ibm.g11n.example.MyStrings`, which will be used as the
+Globalization Pipeline bundle ID for the resource file.
+
+```
+<pathToBundleMapper>
+  <regexMapper>
+    <pattern>(.+).properties</pattern>
+    <replacement>$1</replacement>
+  </regexMapper>
+  <regexMapper>
+    <pattern>/</pattern>
+    <replacement>\.</replacement>
+  </regexMapper>
+</pathToBundleMapper>
+```
+
 #### `<languageMap>`
 
 Specifies custom language mappings. Each nested element name is a [BCP 47 language tag](https://tools.ietf.org/html/bcp47)
@@ -526,6 +552,31 @@ For example, if the source bundle file is `com/ibm/g11n/en/MyMessages.properties
 then the French version will be `com/ibm/g11n/fr/MyMessages.properties`.
 
 The default value is **LANGUAGE_SUFFIX**.
+
+*Note: This element is ignored when `<sourcePathToTargetMapper>` is specified.*
+
+#### `<sourcePathToTargetMapper>`
+
+Specifies mapping rule(s) to control output file path in `download` goal. To specify a mapping rule, use one or more `<regexMapper>` elements with pattern and replacement. A source resource file path
+relative to the base source directory (`<directory>` value in `<sourceFiles>` element) is used as
+the input of target path conversion specified by this setting. For each `<regexMapper>` element,
+substring matching a Java regular expression pattern specified by `<pattern>` value will be replaced
+with the value specified by `<replacement>` value. The final output path must contain a special
+place holder token `%LANG%`, which will be replaced with a target language code.
+
+The example below will replace a folder `en` with `%LANG%`. For example, when a source file path
+is `nls/comp1/en/Help.json`, the path will be converted to `nls/comp1/%LANG%/Help.json`. Then,
+`%LANG` will be replaced with language ID (configured by `<languageIdStyle>` and `<languageMap>`).
+
+```
+<sourcePathToTargetMapper>
+  <regexMapper>
+    <pattern>(.+)/en/([^/]+).json</pattern>
+    <replacement>$1/%LANG/$2.json</replacement>
+  </regexMapper>
+</sourcePathToTargetMapper>
+```
+
 
 
 ### Default Configuration

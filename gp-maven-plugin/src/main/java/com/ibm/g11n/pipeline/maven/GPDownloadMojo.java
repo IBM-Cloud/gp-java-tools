@@ -90,8 +90,6 @@ public class GPDownloadMojo extends GPBaseMojo {
             boolean outputSrcLang = bundleSet.isOutputSourceLanguage();
             List<SourceBundleFile> sourceBundleFiles = getSourceBundleFiles(bundleSet);
             OutputContentOption outContentOpt = bundleSet.getOutputContentOption();
-            BundleLayout bundleLayout = bundleSet.getBundleLayout();
-            LanguageIdStyle langIdStyle = bundleSet.getLanguageIdStyle();
             Map<String, String> langMap = bundleSet.getLanguageMap();
 
             File outDir = bundleSet.getOutputDir();
@@ -130,10 +128,12 @@ public class GPDownloadMojo extends GPBaseMojo {
                             + bdlSrcLang + ")");
                 }
 
+                File outputFile;
+
                 if (outputSrcLang) {
                     if (bdlLangs.contains(srcLang)) {
-                        exportLanguageResource(client, bf, srcLang, outDir,
-                                outContentOpt, bundleLayout, langIdStyle, langMap, srcLang);
+                        outputFile = resolveOutputFile(bf, srcLang, outDir, bundleSet);
+                        exportLanguageResource(client, bf, srcLang, outputFile, outContentOpt, langMap);
                     } else {
                         getLog().warn("The specified source language (" + srcLang
                                 + ") does not exist in the bundle:" + bundleId);
@@ -142,8 +142,8 @@ public class GPDownloadMojo extends GPBaseMojo {
 
                 for (String tgtLang: tgtLangs) {
                     if (bdlLangs.contains(tgtLang)) {
-                        exportLanguageResource(client, bf, tgtLang, outDir,
-                                outContentOpt, bundleLayout, langIdStyle, langMap, srcLang);
+                        outputFile = resolveOutputFile(bf, tgtLang, outDir, bundleSet);
+                        exportLanguageResource(client, bf, tgtLang, outputFile, outContentOpt, langMap);
                     } else {
                         getLog().warn("The specified target language (" + tgtLang
                                 + ") does not exist in the bundle:" + bundleId);
@@ -154,68 +154,8 @@ public class GPDownloadMojo extends GPBaseMojo {
     }
 
     private void exportLanguageResource(ServiceClient client, SourceBundleFile bf, String language,
-            File outBaseDir, OutputContentOption outContntOpt, BundleLayout bundleLayout,
-            LanguageIdStyle langIdStyle, Map<String, String> langMap, String srcLang)
+            File outputFile, OutputContentOption outContntOpt, Map<String, String> langMap)
             throws MojoFailureException {
-        String srcFileName = bf.getFile().getName();
-        String relPath = bf.getRelativePath();
-        File outputFile = null;
-
-        switch (bundleLayout) {
-        case LANGUAGE_SUFFIX: {
-            File dir = (new File(outBaseDir, relPath)).getParentFile();
-
-            String tgtName = srcFileName;
-            // Compose file name if the output language is not the source language
-            if (!language.equals(srcLang)) {
-                String baseName = srcFileName;
-                String extension = "";
-                int extensionIndex = srcFileName.lastIndexOf('.');
-                if (extensionIndex > 0) {
-                    baseName = srcFileName.substring(0, extensionIndex);
-                    extension = srcFileName.substring(extensionIndex);
-                }
-
-                // checks if the source file's base name (without extension) ends with
-                // source language code suffix, e.g. foo_en => foo
-                String srcLangSuffix = "_" + getLanguageId(srcLang, langIdStyle, langMap);
-                if (baseName.endsWith(srcLangSuffix)) {
-                    // truncates source the source language suffix from base name
-                    baseName = baseName.substring(0, baseName.length() - srcLangSuffix.length());
-                }
-
-                // append target language suffix to the base name, e.g. foo => foo_de
-                tgtName = baseName + "_" + getLanguageId(language, langIdStyle, langMap) + extension;
-            }
-
-            outputFile = new File(dir, tgtName);
-            break;
-        }
-        case LANGUAGE_ONLY: {
-            File dir = (new File(outBaseDir, relPath)).getParentFile();
-            int extensionIndex = srcFileName.lastIndexOf('.');
-            String extension = extensionIndex >= 0 ?
-                    srcFileName.substring(extensionIndex) : "";
-            String baseName = getLanguageId(language, langIdStyle, langMap);
-            outputFile = new File(dir, baseName + extension);
-            break;
-        }
-        case LANGUAGE_SUBDIR: {
-            File dir = (new File(outBaseDir, relPath)).getParentFile();
-            File langSubDir = new File(dir, getLanguageId(language, langIdStyle, langMap));
-            outputFile = new File(langSubDir, srcFileName);
-            break;
-        }
-        case LANGUAGE_DIR:
-            File dir = (new File(outBaseDir, relPath)).getParentFile().getParentFile();
-            File langDir = new File(dir, getLanguageId(language, langIdStyle, langMap));
-            outputFile = new File(langDir, srcFileName);
-            break;
-        }
-
-        if (outputFile == null) {
-            throw new MojoFailureException("Failed to resolve output directory");
-        }
 
         getLog().info("Exporting bundle:" + bf.getBundleId() + " language:" + language + " to "
                 + outputFile.getAbsolutePath());
@@ -382,6 +322,100 @@ public class GPDownloadMojo extends GPBaseMojo {
         } catch (ServiceException e) {
             throw new MojoFailureException("Globalization Pipeline service error", e);
         }
+    }
 
+
+    public static final String PATH_MAPPER_LANG_VAR = "%LANG%";
+
+    File resolveOutputFile(SourceBundleFile sbf, String language, File outBaseDir, BundleSet bundleSet)
+            throws MojoFailureException {
+        List<RegexMapper> spttMapper = bundleSet.getSourcePathToTargetMapper();
+        if (spttMapper == null) {
+            return resolveOutputFileByBundleLayout(sbf, language, outBaseDir, bundleSet);
+        }
+
+        String relPath = sbf.getRelativePath();
+        for (RegexMapper mapper : spttMapper) {
+            relPath = mapper.map(relPath);
+        }
+
+        if (!relPath.contains(PATH_MAPPER_LANG_VAR)) {
+            throw new MojoFailureException("Missing {LANG} in the path mapping");
+        }
+
+        Map<String, String> langMap = bundleSet.getLanguageMap();
+        String langCode = getLanguageId(language, bundleSet.getLanguageIdStyle(), langMap);
+
+        relPath = relPath.replaceAll(PATH_MAPPER_LANG_VAR, langCode);
+        return new File(outBaseDir, relPath);
+    }
+
+    File resolveOutputFileByBundleLayout(SourceBundleFile sbf, String language, File outBaseDir, BundleSet bundleSet)
+            throws MojoFailureException{
+        File outputFile = null;
+        BundleLayout bundleLayout = bundleSet.getBundleLayout();
+        String srcFileName = sbf.getFile().getName();
+        String relPath = sbf.getRelativePath();
+        String srcLang = bundleSet.getSourceLanguage();
+        LanguageIdStyle langIdStyle = bundleSet.getLanguageIdStyle();
+        Map<String, String> langMap = bundleSet.getLanguageMap();
+
+        switch (bundleLayout) {
+        case LANGUAGE_SUFFIX: {
+            File dir = (new File(outBaseDir, relPath)).getParentFile();
+
+            String tgtName = srcFileName;
+            // Compose file name if the output language is not the source language
+            if (!language.equals(srcLang)) {
+                String baseName = srcFileName;
+                String extension = "";
+                int extensionIndex = srcFileName.lastIndexOf('.');
+                if (extensionIndex > 0) {
+                    baseName = srcFileName.substring(0, extensionIndex);
+                    extension = srcFileName.substring(extensionIndex);
+                }
+
+                // checks if the source file's base name (without extension) ends with
+                // source language code suffix, e.g. foo_en => foo
+                String srcLangSuffix = "_" + getLanguageId(srcLang, langIdStyle, langMap);
+                if (baseName.endsWith(srcLangSuffix)) {
+                    // truncates source the source language suffix from base name
+                    baseName = baseName.substring(0, baseName.length() - srcLangSuffix.length());
+                }
+
+                // append target language suffix to the base name, e.g. foo => foo_de
+                tgtName = baseName + "_" + getLanguageId(language, langIdStyle, langMap) + extension;
+            }
+
+            outputFile = new File(dir, tgtName);
+            break;
+        }
+        case LANGUAGE_ONLY: {
+            File dir = (new File(outBaseDir, relPath)).getParentFile();
+            int extensionIndex = srcFileName.lastIndexOf('.');
+            String extension = extensionIndex >= 0 ?
+                    srcFileName.substring(extensionIndex) : "";
+            String baseName = getLanguageId(language, langIdStyle, langMap);
+            outputFile = new File(dir, baseName + extension);
+            break;
+        }
+        case LANGUAGE_SUBDIR: {
+            File dir = (new File(outBaseDir, relPath)).getParentFile();
+            File langSubDir = new File(dir, getLanguageId(language, langIdStyle, langMap));
+            outputFile = new File(langSubDir, srcFileName);
+            break;
+        }
+        case LANGUAGE_DIR:
+            File dir = (new File(outBaseDir, relPath)).getParentFile().getParentFile();
+            File langDir = new File(dir, getLanguageId(language, langIdStyle, langMap));
+            outputFile = new File(langDir, srcFileName);
+            break;
+        }
+
+        if (outputFile == null) {
+            throw new MojoFailureException("Failed to resolve output directory");
+        }
+
+        return outputFile;
     }
 }
