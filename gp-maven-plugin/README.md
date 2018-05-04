@@ -458,7 +458,7 @@ A source resource file path relative to the base source directory (`<directory>`
 For each `<regexMapper>` element, substring matching a Java regular expression pattern specified by
 `<pattern>` value will be replaced with the value specified by `<replacement>` value.
 
-The example below will removes `.properties` from a give path, then replace `/` with `.`.
+The example below will remove `.properties` from a given path, then replace `/` with `.`.
 For example, an input path `com/ibm/g11n/example/MyStrings.properties` will produce
 a fully qualified Java class name `com.ibm.g11n.example.MyStrings`, which will be used as the
 Globalization Pipeline bundle ID for the resource file.
