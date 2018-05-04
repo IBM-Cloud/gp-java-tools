@@ -566,13 +566,13 @@ place holder token `%LANG%`, which will be replaced with a target language code.
 
 The example below will replace a folder `en` with `%LANG%`. For example, when a source file path
 is `nls/comp1/en/Help.json`, the path will be converted to `nls/comp1/%LANG%/Help.json`. Then,
-`%LANG` will be replaced with language ID (configured by `<languageIdStyle>` and `<languageMap>`).
+`%LANG%` will be replaced with language ID (configured by `<languageIdStyle>` and `<languageMap>`).
 
 ```
 <sourcePathToTargetMapper>
   <regexMapper>
     <pattern>(.+)/en/([^/]+).json</pattern>
-    <replacement>$1/%LANG/$2.json</replacement>
+    <replacement>$1/%LANG%/$2.json</replacement>
   </regexMapper>
 </sourcePathToTargetMapper>
 ```
