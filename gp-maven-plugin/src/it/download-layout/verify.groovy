@@ -27,7 +27,9 @@ def outFiles = [
         "target/classes/lang_dir/fr/Strings.json",
         "target/classes/lang_dir/zh_Hans/Strings.json",
         "target/classes/lang_subdir/fr/Strings.json",
-        "target/classes/lang_subdir/zh_hans/Strings.json"
+        "target/classes/lang_subdir/zh_hans/Strings.json",
+        "target/classes/mapper/res/translated/fr_resource.json",
+        "target/classes/mapper/res/translated/zh-Hans_resource.json"
     ]
 
 def missing = []

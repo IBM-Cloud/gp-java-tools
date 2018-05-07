@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project
-	xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
@@ -16,7 +14,39 @@
 				<groupId>@project.groupId@</groupId>
 				<artifactId>@project.artifactId@</artifactId>
 				<version>@pom.version@</version>
+
+				<configuration>
+					<bundleSets>
+						<bundleSet>
+							<sourceFiles>
+								<directory>src/main/resources</directory>
+								<includes>
+									<include>**/*.properties</include>
+								</includes>
+							</sourceFiles>
+						</bundleSet>
+						<bundleSet>
+							<sourceFiles>
+								<directory>src/main/resources</directory>
+								<includes>
+									<include>**/*_en.json</include>
+								</includes>
+							</sourceFiles>
+							<type>JSON</type>
+							<pathToBundleMapper>
+								<regexMapper>
+									<pattern>(.+)_en.json</pattern>
+									<replacement>JSON-$1</replacement>
+								</regexMapper>
+								<regexMapper>
+									<pattern>/</pattern>
+									<replacement>_</replacement>
+								</regexMapper>
+							</pathToBundleMapper>
+						</bundleSet>
+					</bundleSets>
+				</configuration>
 			</plugin>
 		</plugins>
- 	</build>
+	</build>
 </project>

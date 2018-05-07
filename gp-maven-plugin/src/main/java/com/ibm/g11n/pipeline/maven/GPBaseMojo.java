@@ -46,6 +46,8 @@ import com.ibm.g11n.pipeline.resfilter.impl.DefaultResourceFilterProvider;
  * @author Yoshito Umaoka
  */
 public abstract class GPBaseMojo extends AbstractMojo {
+    public static final String LANGPARAM = "{LANG}";
+
     /**
      * Credentials used for accessing the instance of Globalization
      * Pipeline service. There are 4 sub-elements required: &lt;url&gt;,
@@ -172,7 +174,7 @@ public abstract class GPBaseMojo extends AbstractMojo {
         for (String relPath : relPathes) {
             File bundleFile = new File(fsBaseDir, relPath);
             bundleFiles.add(
-                    new SourceBundleFile(type, pathToBundleId(type, relPath),
+                    new SourceBundleFile(type, pathToBundleId(relPath, bundleSet),
                             bundleFile, relPath));
         }
         return bundleFiles;
@@ -197,11 +199,32 @@ public abstract class GPBaseMojo extends AbstractMojo {
      * This method might be enhanced to support custom mappings
      * through configuration in future.
      * 
+     * @param path  Relative path to package root
+     * @param bundleSet BundleSet object configuration
+     * @return A bundle ID corresponding to the resource type and path.
+     */
+    String pathToBundleId(String path, BundleSet bundleSet) {
+        List<RegexMapper> ptbMappers = bundleSet.getPathToBundleMapper();
+        if (ptbMappers == null) {
+            return defaultPathToBundleId(bundleSet.getType(), path);
+        }
+
+        String result = path;
+        for (RegexMapper mapper : ptbMappers) {
+            result = mapper.map(result);
+        }
+
+        return result;
+    }
+
+    /**
+     * Default implementation used for path to bundle ID mapping.
+     * 
      * @param type  Resource type
      * @param path  Relative path to package root
      * @return A bundle ID corresponding to the resource type and path.
      */
-    private String pathToBundleId(String type, String path) {
+    static String defaultPathToBundleId(String type, String path) {
         StringBuilder buf = new StringBuilder();
         File f = new File(path);
         File parent = f.getParentFile();

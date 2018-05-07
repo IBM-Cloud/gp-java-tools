@@ -16,6 +16,7 @@
 package com.ibm.g11n.pipeline.maven;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -62,6 +63,11 @@ public class BundleSet {
     @Parameter(defaultValue = "LANGUAGE_SUFFIX")
     private BundleLayout bundleLayout = BundleLayout.LANGUAGE_SUFFIX;
 
+    @Parameter
+    private List<RegexMapper> pathToBundleMapper;
+
+    @Parameter
+    private List<RegexMapper> sourcePathToTargetMapper;
 
     public BundleSet() {
     }
@@ -206,7 +212,35 @@ public class BundleSet {
     /**
      * @param bundleLayout the bundle layout to set
      */
-    public void setOutputPathOption(BundleLayout bundleLayout) {
+    public void setBundleLayout(BundleLayout bundleLayout) {
         this.bundleLayout = bundleLayout;
+    }
+
+    /**
+     * @return the pathToBundleMapper
+     */
+    public List<RegexMapper> getPathToBundleMapper() {
+        return pathToBundleMapper;
+    }
+
+    /**
+     * @param pathToBundleMapper the pathToBundleMapper to set
+     */
+    public void setPathToBundleMapper(List<RegexMapper> pathToBundleMapper) {
+        this.pathToBundleMapper = pathToBundleMapper;
+    }
+
+    /**
+     * @return the sourcePathToTargetMapper
+     */
+    public List<RegexMapper> getSourcePathToTargetMapper() {
+        return sourcePathToTargetMapper;
+    }
+
+    /**
+     * @param sourcePathToTargetMapper the sourcePathToTargetMapper to set
+     */
+    public void setSourcePathToTargetMapper(List<RegexMapper> sourcePathToTargetMapper) {
+        this.sourcePathToTargetMapper = sourcePathToTargetMapper;
     }
 }
