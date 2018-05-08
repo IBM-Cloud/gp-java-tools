@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>com.ibm.g11n.pipeline</groupId>
 		<artifactId>gp-java-tools</artifactId>
-		<version>1.2.3-SNAPSHOT</version>
+		<version>1.2.3</version>
 	</parent>
 
 	<artifactId>gp-maven-plugin</artifactId>
@@ -205,7 +205,7 @@
 		<dependency>
 			<groupId>com.ibm.g11n.pipeline</groupId>
 			<artifactId>gp-res-filter</artifactId>
-			<version>1.2.3-SNAPSHOT</version>
+			<version>1.2.3</version>
 		</dependency>
 	</dependencies>
 </project>
