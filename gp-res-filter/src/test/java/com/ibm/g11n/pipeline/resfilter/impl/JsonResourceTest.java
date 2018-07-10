@@ -20,6 +20,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.Writer;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -35,6 +37,8 @@ import java.util.Map.Entry;
 
 import org.junit.Test;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -51,6 +55,7 @@ import com.ibm.g11n.pipeline.resfilter.impl.JsonResource.KeyPiece;
  */
 public class JsonResourceTest {
     private static final File INPUT_FILE = new File("src/test/resource/resfilter/json/input.json");
+    private static final File OUTPUT_FILE = new File("src/test/resource/resfilter/json/output.json");
     private static final File INPUT_FILE2 = new File("src/test/resource/resfilter/json/other-input.json");
     private static final File SPLITKEYS = new File("src/test/resource/resfilter/json/testSplitKeys.json");
 
@@ -151,6 +156,17 @@ public class JsonResourceTest {
             Collections.sort(resStrList, new ResourceStringComparator());
             assertArrayEquals("ResourceStrings did not match.", EXPECTED_INPUT_RES_LIST.toArray(),
                     resStrList.toArray());
+        }
+    }
+
+    /**
+     * Not really a test, just makes sure that EXPECTED_INPUT_RES_LIST is written to a file.
+     */
+    @Test
+    public void testWriteOutput() throws IOException, ResourceFilterException {
+        try (Writer os = new FileWriter(OUTPUT_FILE)) {
+            Gson g = new GsonBuilder().create();
+            g.toJson(EXPECTED_INPUT_RES_LIST, os);
         }
     }
 
