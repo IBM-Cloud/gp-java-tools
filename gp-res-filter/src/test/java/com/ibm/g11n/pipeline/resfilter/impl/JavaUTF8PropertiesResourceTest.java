@@ -78,7 +78,7 @@ public class JavaUTF8PropertiesResourceTest {
                 .sequenceNumber(4)
                 .notes(Arrays.asList(" Add spaces to the key")).build());
 
-        ResourceString rs5 = ResourceString.with("tab", "pick up the\u00A5 tab")
+        ResourceString rs5 = ResourceString.with("tab", "pick up the ¥ tab")
                 .sequenceNumber(5).addNote(" Unicode").build();
         lst.add(rs5);
 
@@ -97,6 +97,9 @@ public class JavaUTF8PropertiesResourceTest {
         lst.add(ResourceString.with("参数1", "Value of parameter one").sequenceNumber(10)
                 .notes(Arrays.asList(" Raw UTF8")).build());
 
+        lst.add(ResourceString.with("backslashes", "a\\b\\c").sequenceNumber(11)
+                .notes(Arrays.asList(" A comment with backslashes - a\\b\\c あい \\t\\n")).build());
+
         Collections.sort(lst, new ResourceStringComparator());
         EXPECTED_INPUT_RES_LIST = lst;
     }
@@ -113,7 +116,7 @@ public class JavaUTF8PropertiesResourceTest {
         bundleBuilder.addResourceString("message", "Translated - Welcome to Wikipedia!", 3,
                 Arrays.asList(" The backslash below tells the application to continue reading",
                         " the value onto the next line."));
-        bundleBuilder.addResourceString("tab", "Translated - pick up the\u00A5 tab", 5,
+        bundleBuilder.addResourceString("tab", "Translated - pick up the ¥ tab", 5,
                 Arrays.asList(" Unicode"));
         bundleBuilder.addResourceString("leadSPs", "localized leading SPs", 6,
                 Arrays.asList(" leading SPs"));
@@ -125,6 +128,9 @@ public class JavaUTF8PropertiesResourceTest {
                 Arrays.asList(" tabs"));
         bundleBuilder.addResourceString("参数1", "localized Value of parameter one", 10,
                 Arrays.asList(" Raw UTF8"));
+        bundleBuilder.addResourceString("backslashes", "a\\b\\c", 11,
+                Arrays.asList(" A comment with backslashes - a\\b\\c あい \\t\\n"));
+
         bundleBuilder.addNotes(Arrays.asList(
                 " You are reading the \".properties\" entry.",
                 " The exclamation mark can also mark text as comments.",
@@ -142,11 +148,13 @@ public class JavaUTF8PropertiesResourceTest {
         EXPECTED_PROP_DEF_LIST.add(new PropDef("message", "Welcome to Wikipedia!", PropSeparator.COLON));
         EXPECTED_PROP_DEF_LIST.add(new PropDef("key with spaces",
                 "This is the value that could be looked up with the key \"key with spaces\".", PropSeparator.EQUAL));
-        EXPECTED_PROP_DEF_LIST.add(new PropDef("tab", "pick up the\u00A5 tab", PropSeparator.COLON));
+        EXPECTED_PROP_DEF_LIST.add(new PropDef("tab", "pick up the ¥ tab", PropSeparator.COLON));
         EXPECTED_PROP_DEF_LIST.add(new PropDef("leadSPs", "leading SPs", PropSeparator.EQUAL));
         EXPECTED_PROP_DEF_LIST.add(new PropDef("leadTabs", "leading tabs", PropSeparator.EQUAL));
         EXPECTED_PROP_DEF_LIST.add(new PropDef("trailSPs", "trailing SPs  ", PropSeparator.EQUAL));
         EXPECTED_PROP_DEF_LIST.add(new PropDef("withTabs", "Tab1\tTab2\tTab3\t", PropSeparator.EQUAL));
+        EXPECTED_PROP_DEF_LIST.add(new PropDef("参数1", "Value of parameter one", PropSeparator.EQUAL));
+        EXPECTED_PROP_DEF_LIST.add(new PropDef("backslashes", "a\\b\\c", PropSeparator.EQUAL));
     }
 
     private static final JavaPropertiesResource res = new JavaPropertiesResource(Encoding.UTF_8, MessagePatternEscape.AUTO);
