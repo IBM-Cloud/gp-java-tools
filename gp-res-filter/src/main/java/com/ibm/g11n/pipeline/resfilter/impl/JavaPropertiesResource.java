@@ -355,10 +355,14 @@ public class JavaPropertiesResource extends ResourceFilter {
             // Write out any notes (comments) associated with this resource.
             if (notes != null) {
                 for (String note : notes) {
-                    pw.println("#" + note);
+                    if (isUTF8) {
+                        pw.println("#" + note);
+                    } else {
+                        pw.println("#" + escapeOnlyUnicode(note));
+                    }
                 }
             }
-            
+
             if (len <= COLMAX) {
                 // Print this property in a single line
                 if (separator.getCharacter() == PropSeparator.SPACE.getCharacter()) {
@@ -688,7 +692,7 @@ public class JavaPropertiesResource extends ResourceFilter {
         final StringBuilder buf = new StringBuilder();
         for (int i = 0; i < str.length(); i++) {
             final char c = str.charAt(i);
-            if (c == BACKSLASH && i + 5 >= str.length()) {
+            if (c == BACKSLASH && i + 5 <= str.length()) {
                 boolean isUniEsc = false;
                 i++;
                 final char c1 = str.charAt(i);

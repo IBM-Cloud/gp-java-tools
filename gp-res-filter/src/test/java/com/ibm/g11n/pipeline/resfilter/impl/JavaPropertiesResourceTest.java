@@ -100,7 +100,7 @@ public class JavaPropertiesResourceTest {
                 .sequenceNumber(11).notes(Arrays.asList(" Not a Java MessageFormat param")).build());
 
         lst.add(ResourceString.with("backslashes", "a\\b\\c")
-                .sequenceNumber(12).notes(Arrays.asList(" A comment with backslashes - a\\b\\c")).build());
+                .sequenceNumber(12).notes(Arrays.asList(" A comment with backslashes - a\\b\\c あい \\t\\n")).build());
 
         Collections.sort(lst, new ResourceStringComparator());
         EXPECTED_INPUT_RES_LIST = lst;
@@ -133,7 +133,7 @@ public class JavaPropertiesResourceTest {
         bundleBuilder.addResourceString("non-param", "This {} is not a parameter.", 11,
                 Arrays.asList(" Not a Java MessageFormat param"));
         bundleBuilder.addResourceString("backslashes", "a\\b\\c", 12,
-                Arrays.asList(" A comment with backslashes - a\\b\\c"));
+                Arrays.asList(" A comment with backslashes - a\\b\\c あい \\t\\n"));
         bundleBuilder.addNotes(Arrays.asList(
                 " You are reading the \".properties\" entry.",
                 " The exclamation mark can also mark text as comments.",
