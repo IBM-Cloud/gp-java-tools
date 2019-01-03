@@ -99,6 +99,9 @@ public class JavaPropertiesResourceTest {
         lst.add(ResourceString.with("non-param", "This {} is not a parameter.")
                 .sequenceNumber(11).notes(Arrays.asList(" Not a Java MessageFormat param")).build());
 
+        lst.add(ResourceString.with("backslashes", "a\\b\\c")
+                .sequenceNumber(12).notes(Arrays.asList(" A comment with backslashes - a\\b\\c")).build());
+
         Collections.sort(lst, new ResourceStringComparator());
         EXPECTED_INPUT_RES_LIST = lst;
     }
@@ -129,6 +132,8 @@ public class JavaPropertiesResourceTest {
                 Arrays.asList(" Quote"));
         bundleBuilder.addResourceString("non-param", "This {} is not a parameter.", 11,
                 Arrays.asList(" Not a Java MessageFormat param"));
+        bundleBuilder.addResourceString("backslashes", "a\\b\\c", 12,
+                Arrays.asList(" A comment with backslashes - a\\b\\c"));
         bundleBuilder.addNotes(Arrays.asList(
                 " You are reading the \".properties\" entry.",
                 " The exclamation mark can also mark text as comments.",
@@ -154,6 +159,7 @@ public class JavaPropertiesResourceTest {
         // PropDef does not detect message pattern - message pattern handling is done by the logic in JavaPropertiesResource class
         EXPECTED_PROP_DEF_LIST.add(new PropDef("withQuote", "You''re about to delete '{1}' rows in Mike''s file {0}.", PropSeparator.EQUAL));
         EXPECTED_PROP_DEF_LIST.add(new PropDef("non-param", "This {} is not a parameter.", PropSeparator.EQUAL));
+        EXPECTED_PROP_DEF_LIST.add(new PropDef("backslashes", "a\\b\\c", PropSeparator.EQUAL));
     }
 
     private static final JavaPropertiesResource res = new JavaPropertiesResource();
