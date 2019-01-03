@@ -130,9 +130,17 @@ public class JavaPropertiesResource extends ResourceFilter {
             // either
             // a blank line (global comment) or a key/value pair
             if (line.startsWith("#") || line.startsWith("!")) {
-                // Strip off the leading comment marker, and perform any
-                // necessary unescaping here.
-                currentNotes.add(unescape(line.substring(1)));
+                // Strip off the leading comment marker, and decode Unicode escape
+                // if necessary.
+                if (enc == Encoding.UTF_8) {
+                    // Do not unescape unicode - because if backslash u encoding is used
+                    // in comment, it is on purpose and better not to decode it.
+                    currentNotes.add(line.substring(1));
+                } else {
+                    // Unescape unicode - if not UTF-8 props, backslash u encoding must be
+                    // used always.
+                    currentNotes.add(unescapeOnlyUnicode(line.substring(1)));
+                }
             } else if (line.isEmpty()) {
                 // We are following the convention that the first blank line in
                 // a properties
@@ -206,7 +214,13 @@ public class JavaPropertiesResource extends ResourceFilter {
 
         PrintWriter pw = new PrintWriter(new OutputStreamWriter(outStream, getCharset()));
         for (String note : languageBundle.getNotes()) {
-            pw.println("#"+note);
+            if (enc == Encoding.UTF_8) {
+                // No needs to escape raw Unicode charters
+                pw.println("#" + note);
+            } else {
+                // Needs to escape Unicode characters
+                pw.println("#" + escapeOnlyUnicode(note));
+            }
         }
         if (!languageBundle.getNotes().isEmpty()) {
             pw.println();
@@ -641,7 +655,66 @@ public class JavaPropertiesResource extends ResourceFilter {
 
         return buf.toString();
     }
-    
+
+    /**
+     * Escape non-ASCII code points to backslash u encoded UTF-16 code points. This method
+     * does not escape any other control characters and compatible with native2ascii.
+     * 
+     * @param str An input string
+     * @return A string without raw non-ASCII code points.
+     */
+    private static String escapeOnlyUnicode(String str) {
+        final StringBuilder buf = new StringBuilder();
+        for (int i = 0; i < str.length(); i++) {
+            final char c = str.charAt(i);
+            if (c > 0x7F) {
+                appendUnicodeEscape(buf, c);
+            } else {
+                buf.append(c);
+            }
+        }
+        return buf.toString();
+    }
+
+    /**
+     * Unescape backslash u encoded UTF-16 code points. This method does not
+     * unescape any other backslash escape sequence and compatible with native2ascii with
+     * -reverse option.
+     * 
+     * @param str An input string
+     * @return A string without backslash u encoded code points.
+     */
+    private static String unescapeOnlyUnicode(String str) {
+        final StringBuilder buf = new StringBuilder();
+        for (int i = 0; i < str.length(); i++) {
+            final char c = str.charAt(i);
+            if (c == BACKSLASH && i + 5 >= str.length()) {
+                boolean isUniEsc = false;
+                i++;
+                final char c1 = str.charAt(i);
+                if (c1 == 'u') {
+                    final String hstr = str.substring(i + 1, i + 5);
+                    try {
+                        final char codeUnit = (char)Integer.parseInt(hstr, 16);
+                        buf.append(Character.valueOf(codeUnit));
+                        i += 4;
+                        isUniEsc = true;
+                    } catch (NumberFormatException e) {
+                        // Ignore malformed pattern and just emit the sequence
+                        // starting backslash 'u'
+                    }
+                }
+                if (!isUniEsc) {
+                    // emit a backslash and following character together
+                    buf.append(c).append(c1);
+                }
+            } else {
+                buf.append(c);
+            }
+        }
+        return buf.toString();
+    }
+
     /***
      * For MessageFormat with number args, convert double single quote back to single quote during import
      * @param inputStr  The message pattern string with single quotes escaped
