@@ -140,6 +140,7 @@ public class DefaultResourceFilterProvider extends ResourceFilterProvider {
     // of ResourceFilter/MultiBundleResourceFilter interface instead. Revisit this later.
     public static boolean isJavaType(String type) {
         type = type.toUpperCase(Locale.ROOT);
-        return type.equals(Filter.JAVA.name()) || type.equals(Filter.JAVAUTF8.name());
+        return type.equals(Filter.JAVA.name()) || type.equals(Filter.JAVAUTF8.name())
+                || type.equals(Filter.JAVAMSG.name()) || type.equals(Filter.JAVAMSGUTF8.name());
     }
 }
