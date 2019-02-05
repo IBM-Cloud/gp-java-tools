@@ -42,6 +42,7 @@ import com.ibm.g11n.pipeline.resfilter.LanguageBundleBuilder;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterException;
 import com.ibm.g11n.pipeline.resfilter.ResourceString;
 import com.ibm.g11n.pipeline.resfilter.ResourceString.ResourceStringComparator;
+import com.ibm.g11n.pipeline.resfilter.impl.JavaPropertiesResource.Encoding;
 import com.ibm.g11n.pipeline.resfilter.impl.JavaPropertiesResource.MessagePatternEscape;
 import com.ibm.g11n.pipeline.resfilter.impl.JavaPropertiesResource.PropDef;
 import com.ibm.g11n.pipeline.resfilter.impl.JavaPropertiesResource.PropDef.PropSeparator;
@@ -55,6 +56,9 @@ public class JavaPropertiesResourceTest {
 
     private static final File EXPECTED_WRITE_FILE = new File(
             "src/test/resource/resfilter/properties/write-output.properties");
+    
+    private static final File EXPECTED_WRITE_FILE_ALL = new File(
+            "src/test/resource/resfilter/properties/write-output-all.properties");
 
     private static final File EXPECTED_MERGE_FILE = new File(
             "src/test/resource/resfilter/properties/merge-output.properties");
@@ -140,6 +144,29 @@ public class JavaPropertiesResourceTest {
                 " The key and element characters #, !, =, and : are written with",
                 " a preceding backslash to ensure that they are properly loaded."));
         WRITE_BUNDLE = bundleBuilder.build();
+    }
+    
+    private static LanguageBundle WRITE_BUNDLE_ALL;
+
+    static {
+        LanguageBundleBuilder bundleBuilder = new LanguageBundleBuilder(false);
+        bundleBuilder.addResourceString("A","This is a test.", 1);
+        bundleBuilder.addResourceString("B","This isn't a test.", 2);
+        bundleBuilder.addResourceString("C","This is't and won't be a test.", 3);
+        bundleBuilder.addResourceString("D","This isn't a '{0}'.", 4);
+        bundleBuilder.addResourceString("E","This isn't a '{0}' but a {1}.", 5);
+        bundleBuilder.addResourceString("F","This '{0}' isn't right.", 6);
+        bundleBuilder.addResourceString("G","This '{wasn't}' isn't right.",  7);
+        bundleBuilder.addResourceString("H","This '{''}' shouldn't be fine for '{0}'.", 8);
+        bundleBuilder.addResourceString("I","{0}", 9);
+        bundleBuilder.addResourceString("J","'{0}'", 10);
+        bundleBuilder.addResourceString("K","Using '{' and '}'", 11);
+        bundleBuilder.addResourceString("L","'{' is ok to use", 12);
+        bundleBuilder.addResourceString("M","The name '{0}' is already in use.",13);
+        bundleBuilder.addResourceString("N","length must be between '{min} and '{max}",14);
+        bundleBuilder.addResourceString("O","Password should not contain:#.-_'().",15);
+        bundleBuilder.addResourceString("P","[\\p'{'L'}'\\uFF65]", 16);
+        WRITE_BUNDLE_ALL = bundleBuilder.build();
     }
 
     private static LinkedList<PropDef> EXPECTED_PROP_DEF_LIST;
@@ -316,10 +343,10 @@ public class JavaPropertiesResourceTest {
     private static final String[][] QUOTES_TEST_CASES =
         {
                 {"You're about to delete {0} rows.","You''re about to delete {0} rows."},
-                {"You're about to delete '{0}' rows in Mike's file {0}.","You''re about to delete '{0}' rows in Mike''s file {0}."},
+                {"You're about to delete '{0}' rows in Mike's file {0}.","You''re about to delete ''{0}'' rows in Mike''s file {0}."},
                 {"Log shows '{''}' in file {0}","Log shows '{''}' in file {0}"},
                 {"Log shows '{''} in file {0}","Log shows '{''} in file {0}"},
-                {"Log shows '{'}' in file {0}","Log shows '{'}'' in file {0}"},
+                {"Log shows '{'}' in file {0}","Log shows '{'}' in file {0}"},
                 {"Log shows '{'error'}' in file {0}","Log shows '{'error'}' in file {0}"},
                 {"Log shows '{''error''}' in file {0}","Log shows '{''error''}' in file {0}"},
                 {"File {0} shows '{''error''}'","File {0} shows '{''error''}'"},
@@ -394,6 +421,19 @@ public class JavaPropertiesResourceTest {
         for (String[] testCase : TO_SINGLE_ALL_TEST_CASES) {
             String result = JavaPropertiesResource.ConvertDoubleSingleQuote(testCase[0], MessagePatternEscape.ALL);
             assertEquals("ConvertDoubleSingleQuote(" + testCase[0] + ", ALL)", testCase[1], result);
+        }
+    }
+    
+    @Test
+    public void testWriteAllQuotes() throws IOException, ResourceFilterException {
+        File tempFile = File.createTempFile(this.getClass().getSimpleName(), ".properties");
+        JavaPropertiesResource res = new JavaPropertiesResource(Encoding.ISO_8859_1, MessagePatternEscape.ALL);
+        tempFile.deleteOnExit();
+        try (OutputStream os = new FileOutputStream(tempFile)) {
+            res.write(os, WRITE_BUNDLE_ALL, null);
+            os.flush();
+            // Ignore first line in both the files (first line empty in expected, first line contains timestamp in actual) 
+            assertTrue(ResourceTestUtil.compareFiles(EXPECTED_WRITE_FILE_ALL, tempFile, 1));
         }
     }
 }
