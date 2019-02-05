@@ -842,18 +842,10 @@ public class JavaPropertiesResource extends ResourceFilter {
         }
 
         MessagePattern msgPat = null;
-        try {
-            msgPat = new MessagePattern(inputStr);
-        } catch (IllegalArgumentException e) {
-            // not a message format pattern - fall through
-        } catch (IndexOutOfBoundsException e) {
-            // might be a valid message format pattern, but cannot handle this - fall through
-        }
-        if (msgPat == null) {
-            // if the string cannot be parsed as a MessageFormat pattern string,
-            // just returns the input string.
+        if (!isMessagePatternCompatible(inputStr)) {
             return inputStr;
         }
+        msgPat = new MessagePattern(inputStr);
 
         if (msgPatEsc == MessagePatternEscape.AUTO) {
             // In AUTO mode, checks if the input string contains arguments.
@@ -875,7 +867,7 @@ public class JavaPropertiesResource extends ResourceFilter {
 
 
         /***
-         * '{1}' -> '{1}'
+         * '{1}' -> ''{1}''
          * '{''}' -> '{''}'
          * '{'' -> '{''
          * '{'}' -> '{'}''
@@ -883,47 +875,82 @@ public class JavaPropertiesResource extends ResourceFilter {
          */
 
         StringBuilder outputBuf = new StringBuilder();
-        int len = inputStr.length();
-        boolean keepQuote = false; //Flag for '{ or '}
-        int outstrIndex = 0;
-        int quoteIndex = 0;
-
-        while (quoteIndex < len) {
-            int idx = inputStr.indexOf("'", quoteIndex);
-
-            if (idx > -1) {
-                if (!keepQuote && idx + 1 < len
-                        && (inputStr.charAt(idx + 1) == '{' || inputStr.charAt(idx + 1) == '}')) {
-                    keepQuote = true;
-                    quoteIndex = idx + 2;
-                } else {
-                    if (keepQuote) { // '{ or '} is not closed yet
-                        if (idx + 1 < len && inputStr.charAt(idx + 1) == '\'') { //Ignore ''
-                            quoteIndex = idx+2;
-                        } else {
-                            keepQuote = false; //Close '{ or '} with this '
-                            quoteIndex = idx+1;
-                        }
-                    } else {
-                        outputBuf
-                            .append(inputStr.substring(outstrIndex, idx))
-                            .append("''");
-                        quoteIndex = idx+1;
-                        outstrIndex = quoteIndex;
+        
+        String[] quotedArr = inputStr.split("'");
+        // Split the sentence into string array based on single quote
+        // For each element of the array, 
+        //   if the element begins with a expression {.*
+        //   then check the following elements of the array to determine where the expression ends with }
+        //   if the expression ends on the same element, then it means that the content within {.*} 
+        //     doesn't contain any single quotes, and hence the expression can be easily appended/prepended with ''
+        //   Use single ' to append array elements between { and }
+        //   Use single ' to append on either end to wrap quoted {.*}, where the content inside { and } is having quotes.
+        //   This is still an incomplete fix, due to inconsistency in upload/download. However it handles most of the basic cases. 
+        outputBuf.append(quotedArr[0]);
+        boolean doDoubleQuote = true;
+        for  (int i = 1; i < quotedArr.length; i++) {
+            String interimStr = "";
+            if (quotedArr[i].startsWith("{")) {
+                if (quotedArr[i].endsWith("}")) {
+                    outputBuf.append("''").append(quotedArr[i]);
+                    if (i == quotedArr.length - 1) { // terminal element which ends with }'
+                        outputBuf.append("''");
                     }
+                    continue;
+                }
+                doDoubleQuote = false;
+                interimStr = quotedArr[i]; 
+                int j = i + 1;
+                // look whether there is an ending "}" in the subsequent elements
+                for  (;j < quotedArr.length && !quotedArr[j].endsWith("}"); j++) {
+                    // any element in this range will be appended with single quote. 
+                    // we don't want to corrupt the pattern  inside {}
+                    interimStr = interimStr + "'" + quotedArr[j];
+                }
+                i = Math.min (j, quotedArr.length);
+                if (i < quotedArr.length) {
+                    outputBuf.append("'").append(interimStr).append("'").append(quotedArr[j]);
+                    if (i == quotedArr.length - 1 && inputStr.endsWith("'")) {
+                        outputBuf.append("'");
+                    }
+                } else {
+                    outputBuf.append("'").append(interimStr);
                 }
             } else {
-                //No single quote is found
-                outputBuf.append(inputStr.substring(outstrIndex));
-                break;
+                if (doDoubleQuote) {
+                    outputBuf.append("''").append(quotedArr[i]);
+                } else {
+                    outputBuf.append("'").append(quotedArr[i]);
+                    doDoubleQuote = true;
+                }
             }
-        }//End while
+        }
 
-        if (quoteIndex >= len) {
-            outputBuf.append(inputStr.substring(outstrIndex));
+        // Falling back to input string, if the operations yielded a non message compatible string
+        if (!isMessagePatternCompatible(outputBuf.toString())) {
+            System.out.println(outputBuf.toString() + " is not message pattern compatible");
+            return inputStr;
         }
 
         return outputBuf.toString();
+    }
+    
+
+    public static boolean isMessagePatternCompatible(String inputStr) {
+        MessagePattern msgPat = null;
+        try {
+            msgPat = new MessagePattern(inputStr);
+        } catch (IllegalArgumentException e) {
+            // not a message format pattern - fall through
+        } catch (IndexOutOfBoundsException e) {
+            // might be a valid message format pattern, but cannot handle this - fall through
+        }
+        if (msgPat == null) {
+            // if the string cannot be parsed as a MessageFormat pattern string,
+            // just returns the input string.
+            return false;
+        }
+        return true;
     }
     
     public static int findSingleQuote(String inputStr, int start){
