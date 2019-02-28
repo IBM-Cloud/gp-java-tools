@@ -384,9 +384,9 @@ public class AmdJsResource extends ResourceFilter {
 
     /**
      * Extracts a substring that fits within the specified maximum length. When the very
-     * first segment of the given text staring with the index exceeds the specified maximum
+     * first segment of the given text starting with the index exceeds the specified maximum
      * length, this method still returns the segment. So this method always returns a
-     * non-emptry string.
+     * non-empty string.
      * 
      * @param text      The base text
      * @param startIdx  The start index within the text to be processed
