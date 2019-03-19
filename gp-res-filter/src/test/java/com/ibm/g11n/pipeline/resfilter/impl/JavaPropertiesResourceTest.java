@@ -171,6 +171,12 @@ public class JavaPropertiesResourceTest {
         bundleBuilder.addResourceString("N","length must be between '{min} and '{max}",14);
         bundleBuilder.addResourceString("O","Password should not contain:#.-_'().",15);
         bundleBuilder.addResourceString("P","[\\p'{'L'}'\\uFF65]", 16);
+        bundleBuilder.addResourceString("Q","value must be '{min}",17);
+        bundleBuilder.addResourceString("R","'",18);
+        bundleBuilder.addResourceString("S","",19);
+        bundleBuilder.addResourceString("T","'test'",20);
+        bundleBuilder.addResourceString("U","'value' should not contain '",21);
+        bundleBuilder.addResourceString("V","Don't use symbols like +-?.'",22);
         WRITE_BUNDLE_ALL = bundleBuilder.build();
     }
 

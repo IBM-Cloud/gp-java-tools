@@ -36,6 +36,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.ibm.g11n.pipeline.resfilter.FilterOptions;
 import com.ibm.g11n.pipeline.resfilter.LanguageBundle;
@@ -74,6 +76,7 @@ public class JavaPropertiesResource extends ResourceFilter {
 
     private final Encoding enc;
     private final MessagePatternEscape msgPatEsc;
+    private static final Pattern quoteWithBracePattern = Pattern.compile("\\'\\'\\{[^}\\s]+}\\'\\'");
 
     public JavaPropertiesResource(Encoding enc, MessagePatternEscape msgPatEsc){
         this.enc = enc;
@@ -874,65 +877,29 @@ public class JavaPropertiesResource extends ResourceFilter {
          * developer's -> developer''s
          */
 
-        StringBuilder outputBuf = new StringBuilder();
-        
-        String[] quotedArr = inputStr.split("'");
-        // Split the sentence into string array based on single quote
-        // For each element of the array, 
-        //   if the element begins with a expression {.*
-        //   then check the following elements of the array to determine where the expression ends with }
-        //   if the expression ends on the same element, then it means that the content within {.*} 
-        //     doesn't contain any single quotes, and hence the expression can be easily appended/prepended with ''
-        //   Use single ' to append array elements between { and }
-        //   Use single ' to append on either end to wrap quoted {.*}, where the content inside { and } is having quotes.
-        //   This is still an incomplete fix, due to inconsistency in upload/download. However it handles most of the basic cases. 
-        outputBuf.append(quotedArr[0]);
-        boolean doDoubleQuote = true;
-        for  (int i = 1; i < quotedArr.length; i++) {
-            String interimStr = "";
-            if (quotedArr[i].startsWith("{")) {
-                if (quotedArr[i].endsWith("}")) {
-                    outputBuf.append("''").append(quotedArr[i]);
-                    if (i == quotedArr.length - 1) { // terminal element which ends with }'
-                        outputBuf.append("''");
-                    }
-                    continue;
-                }
-                doDoubleQuote = false;
-                interimStr = quotedArr[i]; 
-                int j = i + 1;
-                // look whether there is an ending "}" in the subsequent elements
-                for  (;j < quotedArr.length && !quotedArr[j].endsWith("}"); j++) {
-                    // any element in this range will be appended with single quote. 
-                    // we don't want to corrupt the pattern  inside {}
-                    interimStr = interimStr + "'" + quotedArr[j];
-                }
-                i = Math.min (j, quotedArr.length);
-                if (i < quotedArr.length) {
-                    outputBuf.append("'").append(interimStr).append("'").append(quotedArr[j]);
-                    if (i == quotedArr.length - 1 && inputStr.endsWith("'")) {
-                        outputBuf.append("'");
-                    }
-                } else {
-                    outputBuf.append("'").append(interimStr);
-                }
+        String output =  inputStr.replaceAll("'", "''");// replace each occurence of single quote with double single during export
+        StringBuilder finalOutput = new StringBuilder();
+       int prevStart = 0;
+       Matcher m  = quoteWithBracePattern.matcher(output); // check for pattern like ''{..}'' - see the variable declaration  for exact pattern
+        while (m.find()) { // 
+            String subStr = output.substring(m.start(), m.end()); // isolate such a pattern in the output string
+            finalOutput.append(output.substring(prevStart, m.start())); // append the substring that precedes such an occurence in the output to final output
+            if (!isMessagePatternCompatible(subStr)) { // check if the expression of the form ''{..}'' is a valid message pattern/java message format
+                finalOutput.append(subStr.replaceAll("''", "'")); // if not a valid expression, restore the expression with single quote
             } else {
-                if (doDoubleQuote) {
-                    outputBuf.append("''").append(quotedArr[i]);
-                } else {
-                    outputBuf.append("'").append(quotedArr[i]);
-                    doDoubleQuote = true;
-                }
+                finalOutput.append(subStr);// retain the modified expression with double single quote
             }
+            prevStart = m.end();
         }
-
-        // Falling back to input string, if the operations yielded a non message compatible string
-        if (!isMessagePatternCompatible(outputBuf.toString())) {
-            System.out.println(outputBuf.toString() + " is not message pattern compatible");
+        finalOutput.append(output.substring(prevStart, output.length())); // append any remaining substring in output
+        
+        // Falling back to input string, if the operations yield a non message compatible string
+        if (!isMessagePatternCompatible(finalOutput.toString())) {
+            System.out.println(finalOutput + " is not message pattern/java message format compatible");
             return inputStr;
         }
 
-        return outputBuf.toString();
+        return finalOutput.toString();
     }
     
 
@@ -948,6 +915,11 @@ public class JavaPropertiesResource extends ResourceFilter {
         if (msgPat == null) {
             // if the string cannot be parsed as a MessageFormat pattern string,
             // just returns the input string.
+            return false;
+        }
+        try {
+            java.text.MessageFormat.format(inputStr, (Object[]) null);
+        } catch (Exception e) {
             return false;
         }
         return true;
