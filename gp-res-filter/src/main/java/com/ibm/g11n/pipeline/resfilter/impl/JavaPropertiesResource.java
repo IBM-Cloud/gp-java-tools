@@ -289,22 +289,28 @@ public class JavaPropertiesResource extends ResourceFilter {
             PropSeparator sep = null;
             int sepIdx = -1;
 
-            boolean sawSpace = false;
+            boolean sawWhiteSpace = false;
             for (int i = 0; i < line.length(); i++) {
                 char iChar = line.charAt(i);
 
-                if (sawSpace) {
+                if (sawWhiteSpace) {
                     if (iChar == PropSeparator.EQUAL.getCharacter()) {
                         sep = PropSeparator.EQUAL;
                     } else if (iChar == PropSeparator.COLON.getCharacter()) {
                         sep = PropSeparator.COLON;
-                    } else {
+                    } else if (!isPropsWhiteSpaceChar(iChar)){
+                        // One or more white space characters are used as a delimiter,
+                        // and we have reached to the first character of the value string.
                         sep = PropSeparator.SPACE;
+
+                        assert i > 0;   // sawWhiteSpace is true, so we looked at least one non white space character
+                        sepIdx = i - 1;
+                        break;
                     }
                 } else {
                     if (i > 0 && line.charAt(i - 1) != '\\') {
-                        if (iChar == ' ') {
-                            sawSpace = true;
+                        if (isPropsWhiteSpaceChar(iChar)) {
+                            sawWhiteSpace = true;
                         } else if (iChar == PropSeparator.EQUAL.getCharacter()) {
                             sep = PropSeparator.EQUAL;
                         } else if (iChar == PropSeparator.COLON.getCharacter()) {
@@ -328,7 +334,7 @@ public class JavaPropertiesResource extends ResourceFilter {
             
             PropDef pl = new PropDef(key, value, sep, null);
             return pl;
-        }   
+        }
 
         public String getKey() {
             return key;

@@ -106,6 +106,9 @@ public class JavaPropertiesResourceTest {
         lst.add(ResourceString.with("backslashes", "a\\b\\c")
                 .sequenceNumber(12).notes(Arrays.asList(" A comment with backslashes - a\\b\\c あい \\t\\n")).build());
 
+        lst.add(ResourceString.with("extraSpaces", "extra spaces before/after key/value    ")
+                .sequenceNumber(13).notes(Arrays.asList(" extra spaces")).build());
+
         Collections.sort(lst, new ResourceStringComparator());
         EXPECTED_INPUT_RES_LIST = lst;
     }
@@ -138,6 +141,8 @@ public class JavaPropertiesResourceTest {
                 Arrays.asList(" Not a Java MessageFormat param"));
         bundleBuilder.addResourceString("backslashes", "a\\b\\c", 12,
                 Arrays.asList(" A comment with backslashes - a\\b\\c あい \\t\\n"));
+        bundleBuilder.addResourceString("extraSpaces", "extra spaces before/after key/value    ", 13,
+                Arrays.asList(" extra spaces"));
         bundleBuilder.addNotes(Arrays.asList(
                 " You are reading the \".properties\" entry.",
                 " The exclamation mark can also mark text as comments.",
@@ -193,6 +198,7 @@ public class JavaPropertiesResourceTest {
         EXPECTED_PROP_DEF_LIST.add(new PropDef("withQuote", "You''re about to delete '{1}' rows in Mike''s file {0}.", PropSeparator.EQUAL));
         EXPECTED_PROP_DEF_LIST.add(new PropDef("non-param", "This {} is not a parameter.", PropSeparator.EQUAL));
         EXPECTED_PROP_DEF_LIST.add(new PropDef("backslashes", "a\\b\\c", PropSeparator.EQUAL));
+        EXPECTED_PROP_DEF_LIST.add(new PropDef("extraSpaces", "extra spaces before/after key/value    ", PropSeparator.EQUAL));
     }
 
     private static final JavaPropertiesResource res = new JavaPropertiesResource();

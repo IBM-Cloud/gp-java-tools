@@ -56,9 +56,11 @@ import com.ibm.g11n.pipeline.resfilter.ResourceString;
  */
 public class AmdJsResource extends ResourceFilter {
 
-    private static String KEY_LINE_PATTERN = "^\\s*\".+\" *:.*";
-    private static String ENTRY_END_LINE_PATTERN = ".*[\\},]\\s*";
-    private static String CLOSE_BRACE_PATTERN = ".*}.*";
+    private static final String KEY_LINE_PATTERN = "^\\s*\".+\" *:.*";
+    private static final String ENTRY_END_LINE_PATTERN = ".*[\\},]\\s*";
+    private static final String CLOSE_BRACE_PATTERN = ".*}.*";
+
+    static final int MAX_COLUMNS = 80;
 
     private static class KeyValueVisitor implements NodeVisitor {
         LinkedHashMap<String, String> elements = new LinkedHashMap<String, String>();
@@ -255,8 +257,10 @@ public class AmdJsResource extends ResourceFilter {
 
                 if (kvMap.containsKey(key)) {
                     String value = kvMap.get(key);
-                    String tabPrefix = extractTabPrefix(left);
-                    pw.write(formatEntry(key, value, tabPrefix, brkItr));
+                    String baseIndent = extractTabPrefix(left);
+                    String indent = getTabStr(baseIndent);
+
+                    pw.write(formatEntry(key, value,'"', MAX_COLUMNS, baseIndent, indent, brkItr));
 
                     while (!line.matches(ENTRY_END_LINE_PATTERN) && !in.hasNext(CLOSE_BRACE_PATTERN)) {
                         line = in.nextLine();
@@ -278,94 +282,131 @@ public class AmdJsResource extends ResourceFilter {
     }
 
     /**
-     * Formats the value into the format:
-     *
-     * \<tabPrefix\>"key" : "value",
-     *
-     * Entry may be split onto multiple lines in the form: "bear 1": "Brown " +
-     * "Bear"
+     * Format a pair of resource key/value into the format:
+     *     "key1" : "val1"
+     * 
+     * @param key           The resource key
+     * @param value         The resource value
+     * @param quote         The String quotation character, usually " or '
+     * @param maxColumn     The maximum column to be used. Note, if a single word is longer
+     *                      than this value, the line including the word may exceeds this maximum
+     *                      column width.
+     * @param baseIndent    The base indent, inserted before key
+     * @param indent        The indent used for continuation line. The 2nd or later lines will
+     *                      start with baseIndent + indent
+     * @param brkItr        The break iterator to be used for separating key/value text if necessary
+     * @return              A formatted resource key/value string
      */
-    private static String formatEntry(String key, String value, String tabPrefix, BreakIterator brkItr) {
-        int maxLineLen = 80;
-
-        StringBuilder output = new StringBuilder();
-
-        int keyLen = key.length();
-        int valueLen = value.length();
-
-        // entry fits on one line
-        if (maxLineLen > keyLen + valueLen + tabPrefix.length() + 7) {
-            return output.append(tabPrefix).append('"').append(key).append("\" : \"").append(value).append('"')
-                    .toString();
+    static String formatEntry(String key, String value, char quote, int maxColumn, String baseIndent, String indent, BreakIterator brkItr) {
+        if (maxColumn < baseIndent.length() + indent.length() + 5 /* quotes and separator */) {
+            throw new IllegalArgumentException("Not enough columns to format key/value.");
         }
 
-        // message needs to be split onto multiple lines
-        output.append(tabPrefix);
+        final int baseIndentWidth = getSpacesWidth(baseIndent);
+        final int indentWidth = getSpacesWidth(indent);
 
-        // the available char space once we account for the tabbing
-        // spaces and other necessary chars such as quotes
-        int available = maxLineLen - getSpacesSize(tabPrefix) - 2;
+        StringBuilder output = new StringBuilder();
+        int remain = maxColumn;
 
-        // the tab prefix for multi-lined entries
-        String tabStr = tabPrefix + getTabStr(tabPrefix);
+        // Emit base indent
+        output.append(baseIndent);
+        remain -= baseIndentWidth;
 
-        // actual size of prefix, i.e. tabs count as 4 spaces
-        int tabStrSize = getSpacesSize(tabStr);
+        // Emit opening quote
+        output.append(quote);
+        remain--;
 
-        // process the key first
-        // splitting it into multiple lines if necessary
-        brkItr.setText(key);
-        int start = 0;
-        int end = brkItr.first();
-        int prevEnd = end;
-        boolean firstLine = true;
-        while (end != BreakIterator.DONE) {
-            prevEnd = end;
-            end = brkItr.next();
-            if (end - start > available) {
-                output.append('"').append(key.substring(start, prevEnd)).append('"').append('\n').append(tabStr)
-                        .append("+ ");
-                start = prevEnd;
+        int idx = 0;
 
-                // after first line, indent subsequent lines with 4 additional
-                // spaces
-                if (firstLine) {
-                    available = maxLineLen - tabStrSize - 5;
-                    firstLine = false;
-                }
-            } else if (end == keyLen) {
-                output.append('"').append(key.substring(start, end)).append("\" : ");
-                available = available - 5 - (end - start);
+        // Emit key
+        String s = extractText(key, idx, remain - 1 /* space for closing quote */, brkItr);
+        idx += s.length();
+        output.append(s).append(quote);
+        remain -= (s.length() + 1);
+        if (idx < key.length()) {
+            // Process continuation lines if required
+            while (idx < key.length()) {
+                output.append('\n').append(baseIndent).append(indent).append("+ ").append(quote);
+                remain = maxColumn - baseIndentWidth - indentWidth - 3 /* +<sp><quote> */;
+                s = extractText(key, idx, remain - 1, brkItr);
+                idx += s.length();
+                output.append(s).append(quote);
+                remain -= (s.length() + 1);
             }
         }
 
-        // process the key first
-        // splitting it into multiple lines if necessary
-        brkItr.setText(value);
-        start = 0;
-        end = brkItr.first();
-        prevEnd = end;
-        firstLine = true;
-        while (end != BreakIterator.DONE) {
-            prevEnd = end;
-            end = brkItr.next();
-            if (end - start > available) {
-                output.append('"').append(value.substring(start, prevEnd)).append('"').append('\n').append(tabStr)
-                        .append("+ ");
-                start = prevEnd;
+        // Emit separator
+        if (remain < 3 /* <sp>:<sp>*/) {
+            // emit separator to next line
+            output.append('\n').append(baseIndent).append(indent).append(": ");
+            remain = maxColumn - baseIndentWidth - indentWidth - 2 /* :<sp> */;
+        } else {
+            // emit separator in the same line
+            output.append(" : ");
+            remain -= 3;
+        }
 
-                // after first line, indent subsequent lines with 4 additional
-                // spaces
-                if (firstLine) {
-                    available = maxLineLen - tabStrSize - 5;
-                    firstLine = false;
-                }
-            } else if (end == valueLen) {
-                output.append('"').append(value.substring(start, end)).append('"');
+        // Emit first substring from value
+        idx = 0;
+        s = extractText(value, idx, remain - 2 /* space for opening and closing quotes */, brkItr);
+        if (remain < s.length() + 2 /* opening/closing quotes */) {
+            // Emit the opening quote to next line
+            output.append('\n').append(baseIndent).append(indent).append(quote);
+
+            // Extract value segment again with updated remaining length
+            remain = maxColumn - baseIndentWidth - indentWidth - 1 /* opening quote */;
+            s = extractText(value, idx, remain - 1 /* space for closing quotes */, brkItr);
+            idx += s.length();
+
+            output.append(s).append(quote);
+            remain = maxColumn - baseIndentWidth - indentWidth - s.length() - 2;
+        } else {
+            idx += s.length();
+            // Emit the value to the same line
+            output.append(quote).append(s).append(quote);
+            remain -= (s.length() + 2);
+        }
+
+        if (idx < value.length()) {
+            // Process continuation lines if required
+            while (idx < value.length()) {
+                output.append('\n').append(baseIndent).append(indent).append("+ ").append(quote);
+                remain = maxColumn - baseIndentWidth - indentWidth - 3 /* +<sp><quote> */;
+                s = extractText(value, idx, remain - 1, brkItr);
+                idx += s.length();
+                output.append(s).append(quote);
+                remain -= (s.length() + 1);
             }
         }
 
         return output.toString();
+    }
+
+    /**
+     * Extracts a substring that fits within the specified maximum length. When the very
+     * first segment of the given text starting with the index exceeds the specified maximum
+     * length, this method still returns the segment. So this method always returns a
+     * non-empty string.
+     * 
+     * @param text      The base text
+     * @param startIdx  The start index within the text to be processed
+     * @param maxLen    The maximum length of substring. Note: this restriction is not
+     *                  enforced for the very first text segment.
+     * @param brkItr    The break iterator to be used for segmenting text.
+     * @return          A substring
+     */
+    static String extractText(String text, int startIdx, int maxLen, BreakIterator brkItr) {
+        String s = text.substring(startIdx);
+        brkItr.setText(s);
+        int idx = brkItr.next();
+        while (true) {
+            int tmp = brkItr.next();
+            if (tmp == BreakIterator.DONE || tmp >= maxLen) {
+                break;
+            }
+            idx = tmp;
+        }
+        return s.substring(0, idx);
     }
 
     /**
@@ -396,15 +437,17 @@ public class AmdJsResource extends ResourceFilter {
         return s.substring(0, i);
     }
 
+
+    private static final int TAB_WIDTH = 4;
     /**
-     * Gets the number of spaces the whitespace string is using. Tab chars are
-     * equal to 4 chars. i.e. a tab is considered to be of size 4.
+     * Gets the display width of the whitespace string is using. Tab chars are
+     * equal to TAB_WIDTH. i.e. a tab is considered to be of 4 in width.
      */
-    static int getSpacesSize(String whitespace) {
+    static int getSpacesWidth(String whitespace) {
         int size = 0;
         for (int i = 0; i < whitespace.length(); i++) {
             if (whitespace.charAt(i) == '\t') {
-                size += 4;
+                size += TAB_WIDTH;
             } else if (whitespace.charAt(i) == ' ') {
                 size++;
             }
