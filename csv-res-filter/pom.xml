@@ -7,9 +7,7 @@
 		<version>1.2.7-SNAPSHOT</version>
 	</parent>
 
-	<groupId>com.ibm.g11n.pipeline</groupId>
 	<artifactId>csv-res-filter</artifactId>
-	<version>1.0.0</version>
 	<name>Custom resource filter example - CSV filter</name>
 
 	<properties>
