@@ -1,2 +1,2 @@
 # The custom resource filter provider implementation class
-com.ibm.g11n.pipeline.CustomResourceFilterProvider
+com.ibm.g11n.pipeline.resfilter.csv.CustomResourceFilterProvider
