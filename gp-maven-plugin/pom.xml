@@ -188,19 +188,19 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.12</version>
+			<version>${junit-version}</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
-			<version>2.6.1</version>
+			<version>${gson-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.ibm.g11n.pipeline</groupId>
 			<artifactId>gp-java-client</artifactId>
-			<version>1.2.0</version>
+			<version>${gp-java-client-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.ibm.g11n.pipeline</groupId>

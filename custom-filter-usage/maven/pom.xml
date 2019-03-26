@@ -11,12 +11,12 @@
 			<plugin>
 				<groupId>com.ibm.g11n.pipeline</groupId>
 				<artifactId>gp-maven-plugin</artifactId>
-				<version>1.2.0</version>
+				<version>1.2.7</version>
 				<dependencies>
 					<dependency>
 						<groupId>com.ibm.g11n.pipeline</groupId>
-						<artifactId>csv-filter</artifactId>
-						<version>1.0.0</version>
+						<artifactId>csv-res-filter</artifactId>
+						<version>1.2.7</version>
 					</dependency>
 				</dependencies>
 				<configuration>
