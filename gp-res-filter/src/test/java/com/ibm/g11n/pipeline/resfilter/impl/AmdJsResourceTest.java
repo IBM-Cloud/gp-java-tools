@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2016, 2018
+ * Copyright IBM Corp. 2016, 2019
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -177,156 +176,6 @@ public class AmdJsResourceTest {
             res.merge(is, os, MERGE_BUNDLE, new FilterOptions(Locale.JAPANESE));
             os.flush();
             assertTrue(ResourceTestUtil.compareFiles(EXPECTED_MERGE_3_FILE, tempFile));
-        }
-    }
-
-    @Test
-    public void testFormatEntry() {
-        class TestCase {
-            String key;
-            String val;
-            char quote;
-            int maxColumn;
-            String baseIndent;
-            String indent;
-            BreakIterator brkItr;
-            String expected;
-
-            TestCase(String key, String val, char quote, int maxColumn, String baseIndent, String indent,
-                    BreakIterator brkItr, String expected) {
-                this.key = key;
-                this.val = val;
-                this.quote = quote;
-                this.maxColumn = maxColumn;
-                this.baseIndent = baseIndent;
-                this.indent = indent;
-                this.brkItr = brkItr;
-                this.expected = expected;
-            }
-        }
-
-        final char DQ = '"';
-        final char SQ = '\'';
-        final BreakIterator brkItr = BreakIterator.getWordInstance(Locale.ROOT);
-
-        final TestCase[] testCases = {
-                new TestCase(
-                    "key1",
-                    "val1",
-                    DQ,
-                    20,
-                    "  ",
-                    "  ",
-                    brkItr,
-                    "  \"key1\" : \"val1\""
-                ),
-                new TestCase(
-                    "key2",
-                    "val2",
-                    SQ,
-                    20,
-                    "\t",
-                    "  ",
-                    brkItr,
-                    "\t'key2' : 'val2'"
-                ),
-                new TestCase(
-                    "key3",
-                    "0 1 2",
-                    DQ,
-                    20,
-                    "  ",
-                    "  ",
-                    brkItr,
-                    "  \"key3\" : \"0 1 2\""
-                ),
-                new TestCase(
-                    "key4",
-                    "0 1 2 3",
-                    DQ,
-                    20,
-                    "  ",
-                    "  ",
-                    brkItr,
-                    "  \"key4\" : \"0 1 2 \"\n" +
-                    "    + \"3\""
-                ),
-                new TestCase(
-                    "key5",
-                    "0 1 2 3 4 5 6 7 8 9",
-                    SQ,
-                    20,
-                    "\t",
-                    "  ",
-                    brkItr,
-                    "\t'key5' : '0 1 '\n" +
-                    "\t  + '2 3 4 5 6'\n" +
-                    "\t  + ' 7 8 9'"
-                ),
-                new TestCase(
-                    "key6 0 1 2 3",
-                    "val6",
-                    SQ,
-                    20,
-                    "  ",
-                    "  ",
-                    brkItr,
-                    "  'key6 0 1 2 3' : \n" +
-                    "    'val6'"
-                ),
-                new TestCase(
-                    "key7 0 1 2 3 4",
-                    "val7",
-                    SQ,
-                    20,
-                    "  ",
-                    "  ",
-                    brkItr,
-                    "  'key7 0 1 2 3 4'\n" +
-                    "    : 'val7'"
-                ),
-                new TestCase(
-                    "key7 0 1 2 3 4 5",
-                    "val7",
-                    SQ,
-                    20,
-                    "  ",
-                    "  ",
-                    brkItr,
-                    "  'key7 0 1 2 3 4 '\n" +
-                    "    + '5' : 'val7'"
-                ),
-                new TestCase(
-                    "key8 0 1 2 3 4",
-                    "val8 0 1 2 3 4",
-                    SQ,
-                    20,
-                    "  ",
-                    "  ",
-                    brkItr,
-                    "  'key8 0 1 2 3 4'\n" +
-                    "    : 'val8 0 1 2 '\n" +
-                    "    + '3 4'"
-                ),
-                new TestCase(
-                    "key9",
-                    "val9 01234567890123456789 01234 56789 01234 56789",
-                    SQ,
-                    20,
-                    "  ",
-                    "  ",
-                    brkItr,
-                    "  'key9' : 'val9 '\n" +
-                    "    + '01234567890123456789'\n" +
-                    "    + ' 01234 '\n" +
-                    "    + '56789 01234'\n" +
-                    "    + ' 56789'"
-                ),
-        };
-
-        for (TestCase tc : testCases) {
-            String actual = AmdJsResource.formatEntry(tc.key, tc.val, tc.quote, tc.maxColumn, tc.baseIndent, tc.indent, tc.brkItr);
-            assertEquals("Format Entry for key " + tc.key, tc.expected, actual);
         }
     }
 }
