@@ -1,0 +1,19 @@
+{
+    "resourceStrings": [
+        {
+            "key": "key1",
+            "value": "'comilla simple'",
+            "sequenceNumber": 1
+        },
+        {
+            "key": "key2",
+            "value": "\"doble quote\"",
+            "sequenceNumber": 2
+        },
+        {
+            "key": "key3",
+            "value": "\tpestañas\n\ty nuevas líneas",
+            "sequenceNumber": 3
+        }
+    ]
+}

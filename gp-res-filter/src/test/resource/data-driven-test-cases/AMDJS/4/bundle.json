@@ -1,0 +1,14 @@
+{
+    "resourceStrings": [
+        {
+            "key": "red",
+            "value": "rosso",
+            "sequenceNumber": 1
+        },
+        {
+            "key": "blue",
+            "value": "blu",
+            "sequenceNumber": 2
+        }
+    ]
+}
