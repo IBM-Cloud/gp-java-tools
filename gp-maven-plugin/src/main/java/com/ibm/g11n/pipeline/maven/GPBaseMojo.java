@@ -263,8 +263,11 @@ public abstract class GPBaseMojo extends AbstractMojo {
                 Map<String, Set<String>> activeMTLangs = client.getConfiguredMTLanguages();
                 targetLanguages = activeMTLangs.get(srcLang);
             } catch (ServiceException e) {
-                targetLanguages = Collections.emptySet();
                 throw new MojoFailureException("Globalization Pipeline service error", e);
+            }
+
+            if (targetLanguages == null) {
+                targetLanguages = Collections.emptySet();
             }
 
             getLog().info("The configuration parameter 'targetLanguages' is not specified."
