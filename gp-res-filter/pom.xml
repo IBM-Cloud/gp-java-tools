@@ -76,29 +76,29 @@
 		<dependency>
 			<groupId>org.mozilla</groupId>
 			<artifactId>rhino</artifactId>
-			<version>1.7R4</version>
+			<version>1.7.11</version>
 		</dependency>
 
 		<!-- For parsing YML -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.dataformat</groupId>
 			<artifactId>jackson-dataformat-yaml</artifactId>
-			<version>2.9.8</version>
+			<version>2.9.9</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-core</artifactId>
-			<version>2.9.8</version>
+			<version>2.9.9</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.9.8</version>
+			<version>2.9.9.3</version>
 		</dependency>
 		<dependency>
 			<groupId>com.ibm.icu</groupId>
 			<artifactId>icu4j</artifactId>
-			<version>63.1</version>
+			<version>64.2</version>
 		</dependency>
 
 		<!-- JUnit -->
@@ -111,7 +111,7 @@
 		<dependency>
 			<groupId>org.xmlunit</groupId>
 			<artifactId>xmlunit-matchers</artifactId>
-			<version>2.5.1</version>
+			<version>2.6.3</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
