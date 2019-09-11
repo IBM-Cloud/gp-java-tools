@@ -893,17 +893,21 @@ public class JavaPropertiesResource extends ResourceFilter {
         }
         finalOutput.append(output.substring(prevStart, output.length())); // append any remaining substring in output
         
+        boolean icuCompatible = isICUMessagePatternCompatible(finalOutput.toString());
+        boolean javaMsgCompatible = isJavaMessageFormatCompatible(finalOutput.toString());
+        if (msgPatEsc == MessagePatternEscape.ALL && (icuCompatible || javaMsgCompatible)) {
+            return finalOutput.toString();
+        }
         // Falling back to input string, if the operations yield a non message compatible string
-        if (!isMessagePatternCompatible(finalOutput.toString())) {
+        if (!icuCompatible || !javaMsgCompatible) {
             System.out.println(finalOutput + " is not message pattern/java message format compatible");
             return inputStr;
         }
 
         return finalOutput.toString();
     }
-    
 
-    public static boolean isMessagePatternCompatible(String inputStr) {
+    public static boolean isICUMessagePatternCompatible(String inputStr) {
         MessagePattern msgPat = null;
         try {
             msgPat = new MessagePattern(inputStr);
@@ -917,12 +921,22 @@ public class JavaPropertiesResource extends ResourceFilter {
             // just returns the input string.
             return false;
         }
+        return true;
+    }
+
+    public static boolean isJavaMessageFormatCompatible(String inputStr) {
         try {
             java.text.MessageFormat.format(inputStr, (Object[]) null);
         } catch (Exception e) {
             return false;
         }
         return true;
+    }
+
+    public static boolean isMessagePatternCompatible(String inputStr) {
+        boolean icuMsgCompatible = isICUMessagePatternCompatible(inputStr);
+        boolean javaMsgCompatible = isJavaMessageFormatCompatible(inputStr);
+        return icuMsgCompatible && javaMsgCompatible;
     }
     
     public static int findSingleQuote(String inputStr, int start){
