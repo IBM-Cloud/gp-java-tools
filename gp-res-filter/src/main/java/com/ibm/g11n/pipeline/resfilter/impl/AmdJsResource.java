@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. 2015, 2018
+ * Copyright IBM Corp. 2015, 2019
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,18 @@
 package com.ibm.g11n.pipeline.resfilter.impl;
 
 import java.io.BufferedOutputStream;
+import java.io.CharArrayReader;
+import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.text.BreakIterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Scanner;
 
 import org.mozilla.javascript.Node;
 import org.mozilla.javascript.Parser;
@@ -56,14 +55,35 @@ import com.ibm.g11n.pipeline.resfilter.ResourceString;
  */
 public class AmdJsResource extends ResourceFilter {
 
-    private static final String KEY_LINE_PATTERN = "^\\s*\".+\" *:.*";
-    private static final String ENTRY_END_LINE_PATTERN = ".*[\\},]\\s*";
-    private static final String CLOSE_BRACE_PATTERN = ".*}.*";
+    /**
+     * ValueData stores value and start/end offset within JS source
+     */
+    private static class ValueData {
+        private String value;
+        private int start;
+        private int end;
 
-    static final int MAX_COLUMNS = 80;
+        public ValueData(String value, int start, int end) {
+            this.value = value;
+            this.start = start;
+            this.end = end;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public int getStart() {
+            return start;
+        }
+
+        public int getEnd() {
+            return end;
+        }
+    }
 
     private static class KeyValueVisitor implements NodeVisitor {
-        LinkedHashMap<String, String> elements = new LinkedHashMap<String, String>();
+        LinkedHashMap<String, ValueData> elements = new LinkedHashMap<>();
 
         @Override
         public boolean visit(AstNode node) {
@@ -136,7 +156,7 @@ public class AmdJsResource extends ResourceFilter {
                     }
 
                     Node propVal = kv.getRight();
-                    String val = concatStringNodes(propVal);
+                    ValueData val = concatStringNodes(propVal);
                     if (val == null) {
                         continue;
                     }
@@ -161,11 +181,16 @@ public class AmdJsResource extends ResourceFilter {
             return node;
         }
 
-        private String concatStringNodes(Node node) {
+        private ValueData concatStringNodes(Node node) {
             if (node == null) {
                 return null;
             }
+
             String result = "";
+            int start = -1;
+            int end = -1;
+            boolean lastStringLiteral = true;
+
             node = removeParenthes(node);
             while (node instanceof InfixExpression) {
                 InfixExpression infix = (InfixExpression) node;
@@ -174,6 +199,10 @@ public class AmdJsResource extends ResourceFilter {
                 if (right instanceof StringLiteral) {
                     String val = ((StringLiteral) right).getValue();
                     result = val + result;
+                    if (lastStringLiteral) {
+                        end = getNodePosition(right) + getNodeLength(right);
+                        lastStringLiteral = false;
+                    }
                 } else {
                     return null;
                 }
@@ -182,10 +211,37 @@ public class AmdJsResource extends ResourceFilter {
             if (node instanceof StringLiteral) {
                 String val = ((StringLiteral) node).getValue();
                 result = val + result;
+                start = getNodePosition(node);
+                if (lastStringLiteral) {
+                    end = start + getNodeLength(node);
+                    lastStringLiteral = false;
+                }
             } else {
                 return null;
             }
-            return result;
+            return new ValueData(result, start, end);
+        }
+
+        // Note:
+        //
+        // Following methods are used for recording location and length of string literal
+        // nodes. The parser produces AST and these nodes are instances of AstNode. However,
+        // the API used for accessing these objects return Node in the API definition.
+        // Therefore, this assumption (a Node here is an instance of AstNode, with position
+        // information) could be broken if Rhino's implementation is updated.
+
+        private static int getNodePosition(Node node) {
+            if (!(node instanceof AstNode)) {
+                throw new RuntimeException("The input node is not an AstNode.");
+            }
+            return ((AstNode) node).getAbsolutePosition();
+        }
+
+        private static int getNodeLength(Node node) {
+            if (!(node instanceof AstNode)) {
+                throw new RuntimeException("The input node is not an AstNode.");
+            }
+            return ((AstNode) node).getLength();
         }
     }
 
@@ -204,9 +260,9 @@ public class AmdJsResource extends ResourceFilter {
             AstRoot root = new Parser().parse(reader, null, 1);
             KeyValueVisitor visitor = new KeyValueVisitor();
             root.visitAll(visitor);
-            LinkedHashMap<String, String> resultMap = visitor.elements;
-            for (Entry<String, String> entry : resultMap.entrySet()) {
-                bb.addResourceString(entry.getKey(), entry.getValue());
+            LinkedHashMap<String, ValueData> resultMap = visitor.elements;
+            for (Entry<String, ValueData> entry : resultMap.entrySet()) {
+                bb.addResourceString(entry.getKey(), entry.getValue().getValue());
             }
         }
 
@@ -216,17 +272,18 @@ public class AmdJsResource extends ResourceFilter {
     @Override
     public void write(OutputStream outStream, LanguageBundle languageBundle,
             FilterOptions options) throws IOException, ResourceFilterException {
-        try (OutputStreamWriter writer = new OutputStreamWriter(new BufferedOutputStream(outStream), "UTF-8")) {
+        try (OutputStreamWriter writer = new OutputStreamWriter(new BufferedOutputStream(outStream), StandardCharsets.UTF_8)) {
             writer.write("define({\n");
             boolean first = true;
+            final Character quote = '"';
             for (ResourceString res : languageBundle.getSortedResourceStrings()) {
                 if (first) {
                     first = false;
                 } else {
                     writer.write(",\n");
                 }
-                writer.write("\"" + res.getKey() + "\": ");
-                writer.write("\"" + res.getValue() + "\"");
+                writer.write(quote + escapeString(res.getKey(), quote) + quote + ": ");
+                writer.write(quote + escapeString(res.getValue(), quote) + quote);
             }
             writer.write("\n});\n");
         }
@@ -236,222 +293,132 @@ public class AmdJsResource extends ResourceFilter {
     public void merge(InputStream baseStream, OutputStream outStream, LanguageBundle languageBundle,
             FilterOptions options) throws IOException, ResourceFilterException {
 
+        // Load entire base content to CharSequence
+        CharArrayWriter caw = new CharArrayWriter();
+        try (InputStreamReader reader = new InputStreamReader(new BomInputStream(baseStream), "UTF-8")) {
+            char[] buf = new char[1024];
+            int len;
+            while ((len = reader.read(buf)) >= 0) {
+                caw.write(buf, 0, len);
+            }
+        }
+
+        char[] baseContent = caw.toCharArray();
+        CharArrayReader car = new CharArrayReader(baseContent);
+
+        // Parse base JS and extract key-value data
+        AstRoot root = new Parser().parse(car,  null , 1);
+        KeyValueVisitor visitor = new KeyValueVisitor();
+        root.visitAll(visitor);
+        LinkedHashMap<String, ValueData> baseKVMap = visitor.elements;
+
+        // Merge translated value
         Map<String, String> kvMap = Utils.createKeyValueMap(languageBundle.getResourceStrings());
-        BreakIterator brkItr = Utils.getWordBreakIterator(options);
 
-        // do not close the scanner because it closes the base input stream
-        @SuppressWarnings("resource")
-        Scanner in = new Scanner(baseStream, "UTF-8");
-        PrintWriter pw = new PrintWriter(new OutputStreamWriter(outStream, StandardCharsets.UTF_8), true);
-        String line;
-        while (in.hasNextLine()) {
-            line = in.nextLine();
+        try (OutputStreamWriter writer = new OutputStreamWriter(new BufferedOutputStream(outStream), StandardCharsets.UTF_8)) {
+            int idx = 0;    // current index in baseContent
+            for (Entry<String, ValueData> baseEntry : baseKVMap.entrySet()) {
+                String key = baseEntry.getKey();
+                ValueData valData = baseEntry.getValue();
+                int start = valData.getStart();
+                int end = valData.getEnd();
 
-            if (!line.matches(KEY_LINE_PATTERN) || line.trim().endsWith("{")) {
-                pw.println(line);
-            } else {
-                String[] parts = line.split(":");
-                String left = parts[0];
+                if (idx < start) {
+                    // write out text up to the start of the original key-value expression
+                    writer.write(baseContent, idx, start - idx);
+                    idx = start;
+                }
 
-                String key = left.substring(left.indexOf('"') + 1, left.lastIndexOf('"')).trim();
-
-                if (kvMap.containsKey(key)) {
-                    String value = kvMap.get(key);
-                    String baseIndent = extractTabPrefix(left);
-                    String indent = getTabStr(baseIndent);
-
-                    pw.write(formatEntry(key, value,'"', MAX_COLUMNS, baseIndent, indent, brkItr));
-
-                    while (!line.matches(ENTRY_END_LINE_PATTERN) && !in.hasNext(CLOSE_BRACE_PATTERN)) {
-                        line = in.nextLine();
-                    }
-
-                    if (!in.hasNext(CLOSE_BRACE_PATTERN)) {
-                        pw.write(',');
-                    }
-                    pw.println();
+                String translatedValue = kvMap.get(key);
+                if (translatedValue == null) {
+                    // use original value
+                    writer.write(baseContent, idx, end - idx);
                 } else {
-                    pw.println(line);
-                    while (!line.matches(ENTRY_END_LINE_PATTERN)) {
-                        line = in.nextLine();
-                        pw.println(line);
-                    }
+                    // use translated value
+
+                    // opening quote
+                    char quote = baseContent[idx];
+                    writer.write(quote);
+
+                    // translation value
+                    writer.write(escapeString(translatedValue, quote));
+
+                    // closing quote
+                    assert quote == baseContent[end - 1];
+                    writer.write(quote);
+                }
+                idx = end;
+            }
+            if (idx < baseContent.length) {
+                writer.write(baseContent, idx, baseContent.length - idx);
+            }
+        }
+    }
+
+    /**
+     * Convert Java String object to JavaScript string literal.
+     * 
+     * @param str       Input String
+     * @param quoteChar Character used for JavaScript string literal definition.
+     *                  If null, both Quotation mark (U+0022) and Apostrophe (U+0027)
+     *                  are escaped.
+     * @return  JavaScript string literal expression.
+     */
+    static String escapeString(String str, Character quoteChar) {
+        StringBuilder escaped = null;
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            Character esc = null;
+            switch (c) {
+            case 0x00:  // NUL
+                esc = '0';
+                break;
+            case 0x08:  // BS
+                esc = 'b';
+                break;
+            case 0x09:  // HT
+                esc = 't';
+                break;
+            case 0x0A:  // LF
+                esc = 'n';
+                break;
+            case 0x0B:  // VT 
+                esc = 'v';
+                break;
+            case 0x0C:  // FF
+                esc = 'f';
+                break;
+            case 0x0D:  // CR
+                esc = 'r';
+                break;
+            case 0x22:  // Quotation mark
+                if (quoteChar == null || quoteChar.equals('"')) {
+                    esc = '"';
+                }
+                break;
+            case 0x27:  // Apostrophe
+                if (quoteChar == null || quoteChar.equals('\'')) {
+                    esc = '\'';
+                }
+                break;
+            case 0x5C:  // Backslash
+                esc = '\\';
+                break;
+            }
+
+            if (esc != null) {
+                if (escaped == null) {
+                    // emit characters up to the current index
+                    escaped = new StringBuilder(str.subSequence(0, i));
+                }
+                escaped.append('\\').append(esc);
+            } else {
+                if (escaped != null) {
+                    escaped.append(c);
                 }
             }
         }
-    }
 
-    /**
-     * Format a pair of resource key/value into the format:
-     *     "key1" : "val1"
-     * 
-     * @param key           The resource key
-     * @param value         The resource value
-     * @param quote         The String quotation character, usually " or '
-     * @param maxColumn     The maximum column to be used. Note, if a single word is longer
-     *                      than this value, the line including the word may exceeds this maximum
-     *                      column width.
-     * @param baseIndent    The base indent, inserted before key
-     * @param indent        The indent used for continuation line. The 2nd or later lines will
-     *                      start with baseIndent + indent
-     * @param brkItr        The break iterator to be used for separating key/value text if necessary
-     * @return              A formatted resource key/value string
-     */
-    static String formatEntry(String key, String value, char quote, int maxColumn, String baseIndent, String indent, BreakIterator brkItr) {
-        if (maxColumn < baseIndent.length() + indent.length() + 5 /* quotes and separator */) {
-            throw new IllegalArgumentException("Not enough columns to format key/value.");
-        }
-
-        final int baseIndentWidth = getSpacesWidth(baseIndent);
-        final int indentWidth = getSpacesWidth(indent);
-
-        StringBuilder output = new StringBuilder();
-        int remain = maxColumn;
-
-        // Emit base indent
-        output.append(baseIndent);
-        remain -= baseIndentWidth;
-
-        // Emit opening quote
-        output.append(quote);
-        remain--;
-
-        int idx = 0;
-
-        // Emit key
-        String s = extractText(key, idx, remain - 1 /* space for closing quote */, brkItr);
-        idx += s.length();
-        output.append(s).append(quote);
-        remain -= (s.length() + 1);
-        if (idx < key.length()) {
-            // Process continuation lines if required
-            while (idx < key.length()) {
-                output.append('\n').append(baseIndent).append(indent).append("+ ").append(quote);
-                remain = maxColumn - baseIndentWidth - indentWidth - 3 /* +<sp><quote> */;
-                s = extractText(key, idx, remain - 1, brkItr);
-                idx += s.length();
-                output.append(s).append(quote);
-                remain -= (s.length() + 1);
-            }
-        }
-
-        // Emit separator
-        if (remain < 3 /* <sp>:<sp>*/) {
-            // emit separator to next line
-            output.append('\n').append(baseIndent).append(indent).append(": ");
-            remain = maxColumn - baseIndentWidth - indentWidth - 2 /* :<sp> */;
-        } else {
-            // emit separator in the same line
-            output.append(" : ");
-            remain -= 3;
-        }
-
-        // Emit first substring from value
-        idx = 0;
-        s = extractText(value, idx, remain - 2 /* space for opening and closing quotes */, brkItr);
-        if (remain < s.length() + 2 /* opening/closing quotes */) {
-            // Emit the opening quote to next line
-            output.append('\n').append(baseIndent).append(indent).append(quote);
-
-            // Extract value segment again with updated remaining length
-            remain = maxColumn - baseIndentWidth - indentWidth - 1 /* opening quote */;
-            s = extractText(value, idx, remain - 1 /* space for closing quotes */, brkItr);
-            idx += s.length();
-
-            output.append(s).append(quote);
-            remain = maxColumn - baseIndentWidth - indentWidth - s.length() - 2;
-        } else {
-            idx += s.length();
-            // Emit the value to the same line
-            output.append(quote).append(s).append(quote);
-            remain -= (s.length() + 2);
-        }
-
-        if (idx < value.length()) {
-            // Process continuation lines if required
-            while (idx < value.length()) {
-                output.append('\n').append(baseIndent).append(indent).append("+ ").append(quote);
-                remain = maxColumn - baseIndentWidth - indentWidth - 3 /* +<sp><quote> */;
-                s = extractText(value, idx, remain - 1, brkItr);
-                idx += s.length();
-                output.append(s).append(quote);
-                remain -= (s.length() + 1);
-            }
-        }
-
-        return output.toString();
-    }
-
-    /**
-     * Extracts a substring that fits within the specified maximum length. When the very
-     * first segment of the given text starting with the index exceeds the specified maximum
-     * length, this method still returns the segment. So this method always returns a
-     * non-empty string.
-     * 
-     * @param text      The base text
-     * @param startIdx  The start index within the text to be processed
-     * @param maxLen    The maximum length of substring. Note: this restriction is not
-     *                  enforced for the very first text segment.
-     * @param brkItr    The break iterator to be used for segmenting text.
-     * @return          A substring
-     */
-    static String extractText(String text, int startIdx, int maxLen, BreakIterator brkItr) {
-        String s = text.substring(startIdx);
-        brkItr.setText(s);
-        int idx = brkItr.next();
-        while (true) {
-            int tmp = brkItr.next();
-            if (tmp == BreakIterator.DONE || tmp >= maxLen) {
-                break;
-            }
-            idx = tmp;
-        }
-        return s.substring(0, idx);
-    }
-
-    /**
-     * This method looks at the provided string to determine if a tab char or
-     * spaces are being used for tabbing.
-     *
-     * Defaults to spaces
-     */
-    static String getTabStr(String str) {
-        if (!str.isEmpty() && str.charAt(0) == '\t') {
-            return "\t\t";
-        } else {
-            return "        ";
-        }
-    }
-
-    /**
-     * Returns the whitespace prefix of the provided string e.g. if s = " hello"
-     *
-     * Then the return value will be " ".
-     */
-    private static String extractTabPrefix(String s) {
-        int i = 0;
-        while (i < s.length() && (s.charAt(i) == ' ' || s.charAt(i) == '\t')) {
-            i++;
-        }
-
-        return s.substring(0, i);
-    }
-
-
-    private static final int TAB_WIDTH = 4;
-    /**
-     * Gets the display width of the whitespace string is using. Tab chars are
-     * equal to TAB_WIDTH. i.e. a tab is considered to be of 4 in width.
-     */
-    static int getSpacesWidth(String whitespace) {
-        int size = 0;
-        for (int i = 0; i < whitespace.length(); i++) {
-            if (whitespace.charAt(i) == '\t') {
-                size += TAB_WIDTH;
-            } else if (whitespace.charAt(i) == ' ') {
-                size++;
-            }
-        }
-        return size;
+        return escaped == null ? str : escaped.toString();
     }
 }
