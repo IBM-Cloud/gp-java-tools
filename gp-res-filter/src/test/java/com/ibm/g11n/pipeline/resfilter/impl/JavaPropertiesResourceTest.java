@@ -177,6 +177,8 @@ public class JavaPropertiesResourceTest {
         bundleBuilder.addResourceString("T","'test'",20);
         bundleBuilder.addResourceString("U","'value' should not contain '",21);
         bundleBuilder.addResourceString("V","Don't use symbols like +-?.'",22);
+        bundleBuilder.addResourceString("W","length shouldn't exceed {max} characters",22);
+        bundleBuilder.addResourceString("X","length shouldn't exceed {0} characters",22);
         WRITE_BUNDLE_ALL = bundleBuilder.build();
     }
 
