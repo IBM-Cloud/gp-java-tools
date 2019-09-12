@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>com.ibm.g11n.pipeline</groupId>
 		<artifactId>gp-java-tools</artifactId>
-		<version>1.2.9-SNAPSHOT</version>
+		<version>1.2.9</version>
 	</parent>
 
 	<artifactId>csv-res-filter</artifactId>
@@ -22,7 +22,7 @@
 		<dependency>
 			<groupId>com.ibm.g11n.pipeline</groupId>
 			<artifactId>gp-res-filter</artifactId>
-			<version>1.2.9-SNAPSHOT</version>
+			<version>1.2.9</version>
 		</dependency>
 		<!-- JUnit -->
 		<dependency>
