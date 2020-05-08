@@ -354,90 +354,68 @@ public class JavaPropertiesResourceTest {
         }
     }
     
-    private static final String[][] QUOTES_TEST_CASES =
-        {
-                {"You're about to delete {0} rows.","You''re about to delete {0} rows."},
-                {"You're about to delete '{0}' rows in Mike's file {0}.","You''re about to delete ''{0}'' rows in Mike''s file {0}."},
-                {"Log shows '{''}' in file {0}","Log shows '{''}' in file {0}"},
-                {"Log shows '{''} in file {0}","Log shows '{''} in file {0}"},
-                {"Log shows '{'}' in file {0}","Log shows '{'}' in file {0}"},
-                {"Log shows '{'error'}' in file {0}","Log shows '{'error'}' in file {0}"},
-                {"Log shows '{''error''}' in file {0}","Log shows '{''error''}' in file {0}"},
-                {"File {0} shows '{''error''}'","File {0} shows '{''error''}'"},
-        };
-
-    private static final String[][] TO_DOUBLE_AUTO_TEST_CASES =
-        {
-            //  { input , expected }
-                {"The file isn't in use.", "The file isn't in use."},
-        };
-
-    private static final String[][] TO_DOUBLE_ALL_TEST_CASES =
-        {
-            //  { input , expected }
-                {"The file isn't in use.", "The file isn''t in use."},
-        };
-
-    private static final String[][] TO_SINGLE_AUTO_TEST_CASES =
-        {
-            //  { input , expected }
-                {"File {0} isn't in use.", "File {0} isn't in use."},
-                {"The file isn''t in use.", "The file isn''t in use."}, // no arguments - not unescaped
-        };
-
-    private static final String[][] TO_SINGLE_ALL_TEST_CASES =
-        {
-            //  { input , expected }
-                {"File {0} isn't in use.", "File {0} isn't in use."},
-                {"The file isn''t in use.", "The file isn't in use."},
-        };
+    private static final String[][] MESSAGE_PATTERN_TEST_CASES = {
+        // {<GP expression>,
+        //     <props expression - auto>[,
+        //     <props expression - all>,                    // if absent, use <prop expression - auto>
+        //     <GP expression after round trip - auto>,     // if absent, use <GP expression>
+        //     <GP expression after round trip - all>]}     // if absent, use <GP expression>
+        { "You're about to delete {0} rows.",
+            "You''re about to delete {0} rows." },
+        { "You're about to delete '{0}' rows in Mike's file {0}.",
+            "You''re about to delete '{0}' rows in Mike''s file {0}." },
+        { "Log shows '{''}' in file {0}",
+            "Log shows '{''}' in file {0}" },
+        { "Log shows '{''} in file {0}",
+            "Log shows '{''} in file {0}",
+            "Log shows '{''} in file {0}'", // escape with MessagePatternEscape.ALL
+            null,
+            "Log shows '{''} in file {0}'"}, // round trip with MessagePatternEscape.ALL
+        { "Log shows '{'}' in file {0}",
+            "Log shows '{'}'' in file {0}" },
+        { "Log shows '{'error'}' in file {0}",
+            "Log shows '{'error'}' in file {0}" },
+        { "Log shows '{''error''}' in file {0}",
+            "Log shows '{''error''}' in file {0}" },
+        { "File {0} shows '{''error''}'",
+            "File {0} shows '{''error''}'" },
+        { "The file isn't in use.",
+            "The file isn't in use.",
+            "The file isn''t in use." }, // escape with MessagePatternEscape.ALL
+        { "File {0} isn't in use.",
+            "File {0} isn''t in use."},
+    };
 
     @Test
-    public void testConvertSingleQuote(){
-        for (String[] testCase : QUOTES_TEST_CASES) {
-            String result = JavaPropertiesResource.ConvertSingleQuote(testCase[0], MessagePatternEscape.AUTO);
-            assertEquals("ConvertSingleQuote(" + testCase[0] + ", AUTO)", testCase[1], result);
+    public void testEscapeMessagePattern() throws ResourceFilterException {
+        for (String[] testCase : MESSAGE_PATTERN_TEST_CASES) {
+            String result = JavaPropertiesResource.escapeMessagePattern(testCase[0], MessagePatternEscape.AUTO);
+            assertEquals("escapeMessagePattern(" + testCase[0] + ", AUTO)", testCase[1], result);
         }
 
-        for (String[] testCase : QUOTES_TEST_CASES) {
-            String result = JavaPropertiesResource.ConvertSingleQuote(testCase[0], MessagePatternEscape.ALL);
-            assertEquals("ConvertSingleQuote(" + testCase[0] + ", ALL)", testCase[1], result);
-        }
-
-        for (String[] testCase : TO_DOUBLE_AUTO_TEST_CASES) {
-            String result = JavaPropertiesResource.ConvertSingleQuote(testCase[0], MessagePatternEscape.AUTO);
-            assertEquals("ConvertSingleQuote(" + testCase[0] + ", AUTO)", testCase[1], result);
-        }
-
-        for (String[] testCase : TO_DOUBLE_ALL_TEST_CASES) {
-            String result = JavaPropertiesResource.ConvertSingleQuote(testCase[0], MessagePatternEscape.ALL);
-            assertEquals("ConvertSingleQuote(" + testCase[0] + ", ALL)", testCase[1], result);
+        for (String[] testCase : MESSAGE_PATTERN_TEST_CASES) {
+            String result = JavaPropertiesResource.escapeMessagePattern(testCase[0], MessagePatternEscape.ALL);
+            String expected = testCase.length >= 3 && testCase[2] != null ? testCase[2] : testCase[1];
+            assertEquals("escapeMessagePattern(" + testCase[0] + ", ALL)", expected, result);
         }
     }
 
     @Test
-    public void testConvertDoubleSingleQuoteAuto(){
-        for (String[] testCase : QUOTES_TEST_CASES) {
-            String result = JavaPropertiesResource.ConvertDoubleSingleQuote(testCase[1], MessagePatternEscape.AUTO);
-            assertEquals("ConvertDoubleSingleQuote(" + testCase[1] + ", AUTO)", testCase[0], result);
+    public void testUnescapeMessagePattern() throws ResourceFilterException {
+        for (String[] testCase : MESSAGE_PATTERN_TEST_CASES) {
+            String result = JavaPropertiesResource.unescapeMessagePattern(testCase[1], MessagePatternEscape.AUTO);
+            String expected = testCase.length >= 4 && testCase[3] != null ? testCase[3] : testCase[0];
+            assertEquals("unescapeMessagePattern(" + testCase[1] + ", AUTO)", expected, result);
         }
 
-        for (String[] testCase : QUOTES_TEST_CASES) {
-            String result = JavaPropertiesResource.ConvertDoubleSingleQuote(testCase[1], MessagePatternEscape.ALL);
-            assertEquals("ConvertDoubleSingleQuote(" + testCase[1] + ", ALL)", testCase[0], result);
-        }
-
-        for (String[] testCase : TO_SINGLE_AUTO_TEST_CASES) {
-            String result = JavaPropertiesResource.ConvertDoubleSingleQuote(testCase[0], MessagePatternEscape.AUTO);
-            assertEquals("ConvertDoubleSingleQuote(" + testCase[0] + ", AUTO)", testCase[1], result);
-        }
-
-        for (String[] testCase : TO_SINGLE_ALL_TEST_CASES) {
-            String result = JavaPropertiesResource.ConvertDoubleSingleQuote(testCase[0], MessagePatternEscape.ALL);
-            assertEquals("ConvertDoubleSingleQuote(" + testCase[0] + ", ALL)", testCase[1], result);
+        for (String[] testCase : MESSAGE_PATTERN_TEST_CASES) {
+            String input = testCase.length >= 3 && testCase[2] != null ? testCase[2] : testCase[1];
+            String result = JavaPropertiesResource.unescapeMessagePattern(input, MessagePatternEscape.ALL);
+            String expected = testCase.length >= 5 && testCase[4] != null ? testCase[4] : testCase[0];
+            assertEquals("unescapeMessagePattern(" + input + ", ALL)", expected, result);
         }
     }
-    
+
     @Test
     public void testWriteAllQuotes() throws IOException, ResourceFilterException {
         File tempFile = File.createTempFile(this.getClass().getSimpleName(), ".properties");
