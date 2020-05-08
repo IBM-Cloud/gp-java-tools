@@ -36,8 +36,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.ibm.g11n.pipeline.resfilter.FilterOptions;
 import com.ibm.g11n.pipeline.resfilter.LanguageBundle;
@@ -46,6 +44,7 @@ import com.ibm.g11n.pipeline.resfilter.ResourceFilter;
 import com.ibm.g11n.pipeline.resfilter.ResourceFilterException;
 import com.ibm.g11n.pipeline.resfilter.ResourceString;
 import com.ibm.icu.text.MessagePattern;
+import com.ibm.icu.text.MessagePattern.ApostropheMode;
 import com.ibm.icu.text.MessagePattern.Part;
 import com.ibm.icu.text.MessagePattern.Part.Type;
 
@@ -76,7 +75,6 @@ public class JavaPropertiesResource extends ResourceFilter {
 
     private final Encoding enc;
     private final MessagePatternEscape msgPatEsc;
-    private static final Pattern quoteWithBracePattern = Pattern.compile("\\'\\'\\{[^}\\s]+}\\'\\'");
 
     public JavaPropertiesResource(Encoding enc, MessagePatternEscape msgPatEsc){
         this.enc = enc;
@@ -171,7 +169,7 @@ public class JavaPropertiesResource extends ResourceFilter {
                 }
                 String logicalLine = sb.toString();
                 PropDef pd = PropDef.parseLine(logicalLine);
-                String value = ConvertDoubleSingleQuote(pd.getValue(), msgPatEsc);  
+                String value = unescapeMessagePattern(pd.getValue(), msgPatEsc);  
                 
                 props.setProperty(pd.getKey(), value);
                 if (!currentNotes.isEmpty()) {
@@ -231,7 +229,7 @@ public class JavaPropertiesResource extends ResourceFilter {
         pw.println("#"+new Date().toString());
         for (ResourceString res : resStrings) {
             String value = res.getValue();  
-            value = ConvertSingleQuote(value, msgPatEsc);
+            value = escapeMessagePattern(value, msgPatEsc);
             PropDef pd = new PropDef(res.getKey(),value,PropDef.PropSeparator.EQUAL,res.getNotes());
             pd.print(pw, brkItr, (enc == Encoding.UTF_8));
         }
@@ -728,219 +726,191 @@ public class JavaPropertiesResource extends ResourceFilter {
         return buf.toString();
     }
 
-    /***
-     * For MessageFormat with number args, convert double single quote back to single quote during import
-     * @param inputStr  The message pattern string with single quotes escaped
-     * @param msgPatEsc Option for message pattern processing
-     * @return  A modified message pattern string not using single quote escape sequences.
+    /*
+     * Private enum used by unescapeLiteralSingleQuotes below.
      */
-    public static String ConvertDoubleSingleQuote(String inputStr, MessagePatternEscape msgPatEsc){
-        // Quick check - if there are no doubled single quotes, skip this operation.
+    private enum PrevState {
+        OTHER,
+        DEFERRED_APOSTROPHE,
+        ARG_LIMIT
+    };
+
+    /**
+     * Unescape literal apostrophes in MessageFormat pattern string. 
+     * @param inputStr      A resource string read from properties file.
+     * @param msgPatEsc     An option for message pattern processing.
+     * @return  A string without escaped (doubled) apostrophes if input is a valid MessageFormat string.
+     * @throws ResourceFilterException when <code>msgPatEsc</code> is <code>MessagePatternEscape.ALL</code>
+     *      and <code>inputStr</code> is not a valid message pattern string.
+     */
+    static String unescapeMessagePattern(String inputStr, MessagePatternEscape msgPatEsc) throws ResourceFilterException {
+        // Quick check - if there are no double apostrophes, skip this operation.
         if (inputStr.indexOf("''") < 0) {
             return inputStr;
         }
 
-        MessagePattern msgPat = null;
+        MessagePattern msgPat = new MessagePattern(ApostropheMode.DOUBLE_OPTIONAL);
+
         try {
-            msgPat = new MessagePattern(inputStr);
-        } catch (IllegalArgumentException e) {
-            // not a message format pattern - fall through
-        } catch (IndexOutOfBoundsException e) {
-            // might be a valid message format pattern, but cannot handle this - fall through
-        }
-        if (msgPat == null) {
-            // if the string cannot be parsed as a MessageFormat pattern string,
-            // just returns the input string.
+            msgPat.parse(inputStr);
+
+            if (msgPatEsc == MessagePatternEscape.AUTO && !hasArgs(msgPat)) {
+                // In AUTO mode, a strings is not handled as message format pattern
+                // when no arguments are found.
+
+                // TODO: A string like "Can''t delete a file." is most likely a message format
+                // pattern without arguments and the implementation can turn it to
+                // "Can't delete a file." during import. However, in this case, there is
+                // no way to determine whether the apostrophe is emitted as-is, or doubled
+                // for export, unless we store the information (whether it was imported as
+                // message format pattern or not) separately. Revisit this later.
+
+                return inputStr;
+            }
+        } catch (Exception e) {
+            // This input string cannot be parsed as MessageFormat pattern.
+            if (msgPatEsc == MessagePatternEscape.ALL) {
+                throw new ResourceFilterException("Illegal message pattern string: " + inputStr);
+            }
+            // If msgPatEsc is not MessagePatternEscape.ALL, input string does
+            // not need to be a valid message pattern. In this case, just return
+            // the input as is.
             return inputStr;
         }
 
-        if (msgPatEsc == MessagePatternEscape.AUTO) {
-            // In AUTO mode, checks if the input string contains arguments.
-            int numParts = msgPat.countParts();
-            boolean hasArguments = false;
-            for (int i = 0; i < numParts; i++) {
-                Part part = msgPat.getPart(i);
-                //Only check ARG_NUMBER at current stage. ARG_NAME may need to be handled in future
-                if(part.getType().equals(Type.ARG_NUMBER)){ 
-                    hasArguments = true;
-                    break;
+        StringBuilder buf = new StringBuilder();
+        int start = 0;
+        PrevState prev = PrevState.OTHER;
+        boolean inQuote = false;
+
+        for (int i = 0; i < msgPat.countParts(); i++) {
+            Part part = msgPat.getPart(i);
+            int limit = part.getLimit();
+            int endIdx = limit;
+
+            Type type = part.getType();
+            if (type == Type.ARG_START) {
+                // If an argument start *IMMEDIATELY* after doubled apostrophe,
+                // this code append the second apostrophe.
+                if (prev == PrevState.DEFERRED_APOSTROPHE && (limit - start) == 1) {
+                    buf.append("'");
                 }
-            }
-            if (!hasArguments) {
-                // No arguments - just return the string as is
-                return inputStr;
-            }
-        }
-
-        /***
-         * '{1}' -> '{1}'
-         * '{''}' -> '{''}'
-         * '{'' -> '{''
-         * '{'}'' -> '{'}'
-         * developer''s -> developer's
-         */
-
-        StringBuilder outputBuf = new StringBuilder();
-        int len = inputStr.length();
-        boolean keepQuote = false; //Flag for '{ or '}
-        int outstrIndex = 0;
-        int quoteIndex = 0;
-
-        while (quoteIndex < len) {
-            int idx = inputStr.indexOf("'", quoteIndex);
-
-            if (idx > -1) {
-                if (!keepQuote && idx + 1 < len
-                        && (inputStr.charAt(idx + 1) == '{' || inputStr.charAt(idx + 1) == '}')) {
-                    keepQuote = true;
-                    quoteIndex = idx + 2;
-                } else {
-                    if (keepQuote) { // '{ or '} is not closed yet
-                        if (idx + 1 < len && inputStr.charAt(idx + 1) == '\'') { //Ignore ''
-                            quoteIndex = idx+2;
+                prev = PrevState.OTHER;
+            } else if (type == Type.SKIP_SYNTAX) {
+                // Is this skip part a single apostrophe?
+                boolean curApos = msgPat.getSubstring(part).equals("'");
+                // Preceded by an apostrophe?
+                boolean doubleApos = false;
+                if (curApos) {
+                    // Check character before this skip part.
+                    // limit is the index after the skip part,
+                    // and limit -1 is the index for this skip part,
+                    // so the previous character is at the index of
+                    // limit - 2.
+                    doubleApos = inputStr.charAt(limit - 2) == '\'';
+                }
+                if (doubleApos) {
+                    boolean emitSecondApos = false;
+                    if (inQuote) {
+                        // Double apostrophes in a quoted segment are
+                        // always emitted as is.
+                        emitSecondApos = true;
+                        prev = PrevState.OTHER;
+                    } else if (prev == PrevState.ARG_LIMIT) {
+                        // If previous part was end of argument, and
+                        // double apostrophes immediately follow, then
+                        // double apostrophes are emitted as is.
+                        // Otherwise, defer the decision.
+                        if (start == limit - 2) {
+                            emitSecondApos = true;
+                            prev = PrevState.OTHER;
                         } else {
-                            keepQuote = false; //Close '{ or '} with this '
-                            quoteIndex = idx+1;
+                            prev = PrevState.DEFERRED_APOSTROPHE;
                         }
                     } else {
-                        if (idx + 1 < len && inputStr.charAt(idx + 1) == '\'') { //Convert '' to '
-                            outputBuf
-                                .append(inputStr.substring(outstrIndex, idx))
-                                .append("'");
-                            quoteIndex = idx+2;
-                            outstrIndex = quoteIndex;
-                        } else {
-                            // stand alone single quote - just emit it.
-                            quoteIndex = idx+1;
-                            outputBuf.append(inputStr.substring(outstrIndex, quoteIndex));
-                            outstrIndex = quoteIndex;
-                        }
+                        // Defer whether second apostrophe is emitted
+                        // or not after checking next part.
+                        prev = PrevState.DEFERRED_APOSTROPHE;
+                    }
+
+                    if (!emitSecondApos) {
+                        endIdx = part.getIndex();
+                    }
+                } else {
+                    prev = PrevState.OTHER;
+                    if (curApos) {
+                        // Single apostrophe designates either start or end of
+                        // quoted segment.
+                        inQuote = !inQuote;
                     }
                 }
+            } else if (type == Type.ARG_LIMIT) {
+                prev = PrevState.ARG_LIMIT;
             } else {
-                //No single quote is found
-                outputBuf.append(inputStr.substring(outstrIndex));
-                break;
+                prev = PrevState.OTHER;
             }
-        }//End while
-        
-        if (quoteIndex >= len) {
-            outputBuf.append(inputStr.substring(outstrIndex));
+
+            buf.append(inputStr.substring(start, endIdx));
+            start = limit;
         }
-        
-        return outputBuf.toString();
+
+        // Append remaining text
+        if (start < inputStr.length()) {
+            buf.append(inputStr.substring(start, inputStr.length()));
+        }
+
+        return buf.toString();
     }
 
-    /***
-     * For MessageFormat with number args, convert single quote to double single quote during export
-     * @param inputStr  The message pattern without single quotes escaped
-     * @param msgPatEsc Option for message pattern processing
-     * @return  A modified message pattern string using single quote escape sequences (standard JDK
-     *          MessageFormat pattern string).
+    /**
+     * Escape literal apostrophes in MessageFormat pattern string.
+     * @param inputStr      A resource string from Globalization Pipeline.
+     * @param msgPatEsc     An option for message pattern processing.
+     * @return  A string with escaped (doubled) apostrophes if input is a valid MessageFormat string.
      */
-    public static String ConvertSingleQuote(String inputStr, MessagePatternEscape msgPatEsc){
-        // Quick check - if there are no single quotes, skip this operation.
+    static String escapeMessagePattern(String inputStr, MessagePatternEscape msgPatEsc) throws ResourceFilterException {
+        // Quick check - if there are no apostrophes, skip this operation.
         if (inputStr.indexOf("'") < 0) {
             return inputStr;
         }
 
-        MessagePattern msgPat = null;
-        if (!isMessagePatternCompatible(inputStr)) {
-            return inputStr;
-        }
-        msgPat = new MessagePattern(inputStr);
+        MessagePattern msgPat = new MessagePattern(ApostropheMode.DOUBLE_OPTIONAL);
 
-        if (msgPatEsc == MessagePatternEscape.AUTO) {
-            // In AUTO mode, checks if the input string contains arguments.
-            int numParts = msgPat.countParts();
-            boolean hasArguments = false;
-            for (int i = 0; i < numParts; i++) {
-                Part part = msgPat.getPart(i);
-                //Only check ARG_NUMBER at current stage. ARG_NAME may need to be handled in future
-                if(part.getType().equals(Type.ARG_NUMBER)){ 
-                    hasArguments = true;
-                    break;
-                }
-            }
-            if (!hasArguments) {
-                // No arguments - just return the string as is
+        try {
+            msgPat.parse(inputStr);
+
+            if (msgPatEsc == MessagePatternEscape.AUTO && !hasArgs(msgPat)) {
+                // In AUTO mode, a strings is not handled as message format pattern
+                // when no arguments are found.
+
+                // TODO: See the comment in unescapeMessagePattern()
+
                 return inputStr;
             }
-        }
-
-
-        /***
-         * '{1}' -> ''{1}''
-         * '{''}' -> '{''}'
-         * '{'' -> '{''
-         * '{'}' -> '{'}''
-         * developer's -> developer''s
-         */
-
-        String output =  inputStr.replaceAll("'", "''");// replace each occurence of single quote with double single during export
-        StringBuilder finalOutput = new StringBuilder();
-       int prevStart = 0;
-       Matcher m  = quoteWithBracePattern.matcher(output); // check for pattern like ''{..}'' - see the variable declaration  for exact pattern
-        while (m.find()) { // 
-            String subStr = output.substring(m.start(), m.end()); // isolate such a pattern in the output string
-            finalOutput.append(output.substring(prevStart, m.start())); // append the substring that precedes such an occurence in the output to final output
-            if (!isMessagePatternCompatible(subStr)) { // check if the expression of the form ''{..}'' is a valid message pattern/java message format
-                finalOutput.append(subStr.replaceAll("''", "'")); // if not a valid expression, restore the expression with single quote
-            } else {
-                finalOutput.append(subStr);// retain the modified expression with double single quote
+        } catch (Exception e) {
+            // This input string cannot be parsed as MessageFormat pattern.
+            if (msgPatEsc == MessagePatternEscape.ALL) {
+                throw new ResourceFilterException("Illegal message pattern string: " + inputStr);
             }
-            prevStart = m.end();
-        }
-        finalOutput.append(output.substring(prevStart, output.length())); // append any remaining substring in output
-        
-        boolean icuCompatible = isICUMessagePatternCompatible(finalOutput.toString());
-        boolean javaMsgCompatible = isJavaMessageFormatCompatible(finalOutput.toString());
-        if (msgPatEsc == MessagePatternEscape.ALL && (icuCompatible || javaMsgCompatible)) {
-            return finalOutput.toString();
-        }
-        // Falling back to input string, if the operations yield a non message compatible string
-        if (!icuCompatible || !javaMsgCompatible) {
-            System.out.println(finalOutput + " is not message pattern/java message format compatible");
+            // If msgPatEsc is not MessagePatternEscape.ALL, input string does
+            // not need to be a valid message pattern. In this case, just return
+            // the input as is.
             return inputStr;
         }
 
-        return finalOutput.toString();
+        return msgPat.autoQuoteApostropheDeep();
     }
 
-    public static boolean isICUMessagePatternCompatible(String inputStr) {
-        MessagePattern msgPat = null;
-        try {
-            msgPat = new MessagePattern(inputStr);
-        } catch (IllegalArgumentException e) {
-            // not a message format pattern - fall through
-        } catch (IndexOutOfBoundsException e) {
-            // might be a valid message format pattern, but cannot handle this - fall through
+    static boolean hasArgs(MessagePattern msgPat) {
+        boolean hasArgs = false;
+        for (int i = 0; i < msgPat.countParts(); i++) {
+            Part part = msgPat.getPart(i);
+            if (part.getType() == Type.ARG_START) {
+                hasArgs = true;
+                break;
+            }
         }
-        if (msgPat == null) {
-            // if the string cannot be parsed as a MessageFormat pattern string,
-            // just returns the input string.
-            return false;
-        }
-        return true;
-    }
-
-    public static boolean isJavaMessageFormatCompatible(String inputStr) {
-        try {
-            java.text.MessageFormat.format(inputStr, (Object[]) null);
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
-    }
-
-    public static boolean isMessagePatternCompatible(String inputStr) {
-        boolean icuMsgCompatible = isICUMessagePatternCompatible(inputStr);
-        boolean javaMsgCompatible = isJavaMessageFormatCompatible(inputStr);
-        return icuMsgCompatible && javaMsgCompatible;
-    }
-    
-    public static int findSingleQuote(String inputStr, int start){
-        return -1;
+        return hasArgs;
     }
 
     @Override
@@ -1011,7 +981,7 @@ public class JavaPropertiesResource extends ResourceFilter {
                     }
                     // Write the property key and value
                     String key = pd.getKey();
-                    String value = ConvertSingleQuote(kvMap.get(key), msgPatEsc);
+                    String value = escapeMessagePattern(kvMap.get(key), msgPatEsc);
                     PropDef modPd = new PropDef(key, value , pd.getSeparator(), null);
                     modPd.print(outWriter, brkItr, (enc == Encoding.UTF_8));
                 } else {
