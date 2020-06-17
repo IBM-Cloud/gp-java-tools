@@ -17,11 +17,11 @@
    </phase-group>
   </header>
   <body>
-   <trans-unit id="1" maxbytes="14">
+   <trans-unit id="1" resname="Quetzal" maxbytes="14">
     <source xml:lang="en-US">Quetzal</source>
     <target xml:lang="ja-JP">Quetzal</target>
    </trans-unit>
-   <trans-unit id="3" maxbytes="114">
+   <trans-unit id="3" resname="" maxbytes="114">
     <source xml:lang="en-US">An application to manipulate and 
      process XLIFF documents</source>
     <target xml:lang="ja-JP">XLIFF 文書を編集、または処理

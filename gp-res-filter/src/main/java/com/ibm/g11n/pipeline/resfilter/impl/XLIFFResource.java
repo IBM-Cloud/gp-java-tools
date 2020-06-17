@@ -59,6 +59,7 @@ public class XLIFFResource extends ResourceFilter {
 
     private static final String UNIT_STRING = "trans-unit";
     private static final String ID_STRING = "id";
+    private static final String RESNAME_STRING = "resname";
     private static final String SOURCE_STRING = "source";
     private static final String TARGET_STRING = "target";
     private static final String XLIFF_STRING = "xliff";
@@ -106,7 +107,13 @@ public class XLIFFResource extends ResourceFilter {
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
             if (node.getNodeName().lastIndexOf(UNIT_STRING) != -1) {
-                String newkey = node.getAttributes().getNamedItem(ID_STRING).getNodeValue();
+                Node resnameAttr = node.getAttributes().getNamedItem(RESNAME_STRING);
+                String newkey = "";
+                if(resnameAttr != null && !resnameAttr.getNodeValue().isEmpty()) {
+                    newkey = resnameAttr.getNodeValue();
+                } else {
+                    newkey = node.getAttributes().getNamedItem(ID_STRING).getNodeValue();
+                }
                 collectResourceStrings(node.getChildNodes(), bb, version, newkey);
             } else if (node.getNodeName().equals(SOURCE_STRING)) {
                 String value = node.getTextContent().replaceAll("\\s*\n\\s*", " ");

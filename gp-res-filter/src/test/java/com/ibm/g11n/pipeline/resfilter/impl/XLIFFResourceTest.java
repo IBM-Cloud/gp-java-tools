@@ -63,7 +63,7 @@ public class XLIFFResourceTest {
     static {
         List<ResourceString> lst = new LinkedList<>();
 
-        lst.add(ResourceString.with("1", "Quetzal").sequenceNumber(1).build());
+        lst.add(ResourceString.with("Quetzal", "Quetzal").sequenceNumber(1).build());
         lst.add(ResourceString.with("3", "An application to manipulate and process XLIFF documents").sequenceNumber(2)
                 .build());
         lst.add(ResourceString.with("4", "XLIFF Data Manager").sequenceNumber(3).build());
