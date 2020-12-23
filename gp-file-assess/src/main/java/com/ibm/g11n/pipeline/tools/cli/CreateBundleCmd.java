@@ -55,6 +55,6 @@ final class CreateBundleCmd extends BundleCmd {
             throw new RuntimeException(e);
         }
 
-        System.out.println("A new bundle '" + bundleId + "' was successfully created.");
+//        System.out.println("A new bundle '" + bundleId + "' was successfully created.");
     }
 }

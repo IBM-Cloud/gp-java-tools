@@ -29,5 +29,14 @@ public class ListBundlesCmdTest {
     public void test() {
         FakebrokerMgr.run("list");
     }
+    
+    @Test
+    public void testt() {
+        String[] testFiles = {"E:\\\\notExist.json", "E:\\notJsonRoot.json", "E:\\duplicateKey.json", "E:\\test.json"};
+        for(int i = 0; i < testFiles.length; i++) {
+            String[] cmd = {"assess-file", "-j", "E:\\GP\\Github\\gp-java-tools\\test-gpconfig.json", "-t", "JSON", "-f", testFiles[i]};
+            GPCmd.main(cmd);
+        }
+    }
 
 }

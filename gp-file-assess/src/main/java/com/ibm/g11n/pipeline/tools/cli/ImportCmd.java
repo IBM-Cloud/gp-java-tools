@@ -137,7 +137,7 @@ final class ImportCmd extends BundleCmd {
             throw new RuntimeException(e);
         }
 
-        System.out.println("Resource data extracted from " + fileName
+        System.out.println("Pass - Resource data extracted from " + fileName
                 + " was successfully imported to bundle:" + bundleId
                 + ", language:" + languageId);
     }

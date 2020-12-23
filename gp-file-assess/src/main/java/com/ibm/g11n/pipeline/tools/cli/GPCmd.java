@@ -69,6 +69,8 @@ public class GPCmd {
         jc.addCommand("update-document", new UpdateDocumentCmd());
         jc.addCommand("export-document", new ExportDocumentCmd());
         jc.addCommand("import-document", new ImportDocumentCmd());
+        
+        jc.addCommand("assess-file", new FileAssessCmd());
 
         try {
             jc.parse(args);

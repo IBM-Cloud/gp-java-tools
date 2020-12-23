@@ -19,7 +19,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-class BomInputStream extends InputStream {
+public class BomInputStream extends InputStream {
     private BufferedInputStream is;
     private Bom BOM;
 
